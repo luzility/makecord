@@ -60,6 +60,7 @@ export function Stripe({ side }: { side: "left" | "right" }) {
   const bottom = side === "left" ? toolsIn("bottom") : [];
   return (
     <nav
+      data-tip-side={side === "left" ? "right" : "left"}
       className={cn(
         "flex w-10 shrink-0 flex-col items-center justify-between bg-chrome py-1.5",
         side === "left" ? "border-r border-line" : "border-l border-line",

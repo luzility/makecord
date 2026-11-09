@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NewProjectDialog } from "./components/NewProjectDialog";
 import { SettingsDialog } from "./components/SettingsDialog";
+import { TooltipLayer } from "./components/TooltipLayer";
 import { Welcome } from "./components/Welcome";
 import { Workbench } from "./components/Workbench";
 import { actions, runAction } from "./lib/actions";
@@ -58,6 +59,7 @@ export function App() {
   return (
     <>
       {project ? <Workbench key={project.root} /> : <Welcome />}
+      <TooltipLayer />
       {newProjectOpen && <NewProjectDialog />}
       {settingsOpen && <SettingsDialog />}
     </>
