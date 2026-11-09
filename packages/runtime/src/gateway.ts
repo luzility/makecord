@@ -23,10 +23,10 @@ function summarize(client: Client, t: string, d: Data): string {
   const parts: string[] = [];
   switch (t) {
     case "READY":
-      parts.push(`${d.user?.username} · ${d.guilds?.length ?? 0} servers`);
+      parts.push(`${d.user?.username}, ${d.guilds?.length ?? 0} servers`);
       break;
     case "GUILD_CREATE":
-      parts.push(`${d.name} · ${d.member_count ?? "?"} members`);
+      parts.push(`${d.name}, ${d.member_count ?? "?"} members`);
       break;
     case "MESSAGE_CREATE":
     case "MESSAGE_UPDATE":

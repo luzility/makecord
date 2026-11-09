@@ -147,6 +147,15 @@ export function Dialog({
   );
 }
 
+export function Sep({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn("inline-block h-3 w-px shrink-0 self-center bg-line-strong", className)}
+    />
+  );
+}
+
 export function Empty({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-full items-center justify-center p-6 text-center text-label text-faint">

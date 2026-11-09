@@ -18,7 +18,7 @@ const flat = rows.flatMap((r) => (r.children ? [r, ...r.children.map((c) => ({ .
     {
       flat.map((r) => (
         <tr>
-          <td><code>{prefix}{r.name}</code>{r.required && <span class="mk-required"> · {labels.required}</span>}</td>
+          <td><code>{prefix}{r.name}</code>{r.required && <span class="mk-required">{labels.required}</span>}</td>
           <td><code>{r.type}</code></td>
           <td>{r.default ? <code>{r.default}</code> : "—"}</td>
           <td>{r.description ?? ""}</td>
@@ -30,7 +30,11 @@ const flat = rows.flatMap((r) => (r.children ? [r, ...r.children.map((c) => ({ .
 
 <style>
   .mk-required {
+    margin-inline-start: 0.5rem;
+    padding: 0 0.375rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 4px;
     color: var(--sl-color-gray-3);
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
   }
 </style>

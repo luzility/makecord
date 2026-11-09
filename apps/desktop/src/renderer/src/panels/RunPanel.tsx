@@ -1,7 +1,7 @@
 import { Ban, Play, Search, Square, X } from "lucide-react";
 import { type ReactNode, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Led } from "@/components/Logo";
-import { cn, IconButton } from "@/components/ui";
+import { cn, IconButton, Sep } from "@/components/ui";
 import { useT } from "@/i18n";
 import { openFile } from "@/lib/dock";
 import { runErrorKey } from "@/lib/runError";
@@ -55,9 +55,9 @@ function Line({ e }: { e: LogEntry }) {
         <span className="flex items-center gap-2">
           {e.status === "ready" && <Led on />}
           {t(`status.${e.status}`)}
+          {(e.online || e.detail || e.code) && <Sep />}
           {(e.online || e.detail || e.code) && (
             <span className="text-faint">
-              ·{" "}
               {e.online
                 ? tn("status.online", e.online.guilds, { tag: e.online.tag })
                 : runErrorKey(e.code)

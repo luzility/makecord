@@ -397,8 +397,8 @@ export function RowForm({
           level={1}
           title={
             c.type === "button"
-              ? `${t("message.button")} · ${c.label || c.emoji || ""}`
-              : `${t("message.menu")} · ${c.customId}`
+              ? `${t("message.button")}: ${c.label || c.emoji || ""}`
+              : `${t("message.menu")}: ${c.customId}`
           }
           onDelete={items.length > 1 ? () => onChange(removeAt(items, i)) : undefined}
         >

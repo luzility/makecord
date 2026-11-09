@@ -87,7 +87,7 @@ function AppearancePage() {
               <span className="text-title font-medium text-fg">
                 {f.family.replace(" Variable", "")}
               </span>
-              <span className="text-label text-muted">Değişken Ata · Reply</span>
+              <span className="text-label text-muted">Değişken Ata, Reply</span>
               <span className="font-sans text-meta text-faint">{f.style}</span>
             </button>
           ))}

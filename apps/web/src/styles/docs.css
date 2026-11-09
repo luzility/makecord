@@ -111,3 +111,12 @@ code {
   height: 1.75rem;
   width: auto;
 }
+
+.mk-sep {
+  display: inline-block;
+  width: 1px;
+  height: 0.8em;
+  margin-inline: 0.6em;
+  vertical-align: -0.05em;
+  background: var(--sl-color-gray-5);
+}

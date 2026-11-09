@@ -42,7 +42,10 @@ const usable = (m: NodeMeta) =>
               <p>{t.description}</p>
               <p class="mk-meta">
                 <code>{m.type}</code>
-                {` · ${usable(m)} · ${l.outputs}: ${m.outputs.map((o) => t.output(o)).join(", ")}`}
+                <span class="mk-sep" aria-hidden="true" />
+                <span>{usable(m)}</span>
+                <span class="mk-sep" aria-hidden="true" />
+                <span>{`${l.outputs}: ${m.outputs.map((o) => t.output(o)).join(", ")}`}</span>
               </p>
               {t.rows.length ? <ConfigTable rows={t.rows} labels={l} /> : <p class="mk-muted">{l.noFields}</p>}
             </section>

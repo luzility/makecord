@@ -1,6 +1,6 @@
 export const en = {
   meta: {
-    title: "Makecord · An IDE for Discord bots",
+    title: "Makecord: an IDE for Discord bots",
     description:
       "Build Discord bots as visual flows, watch them run live while you save, and ship the same folder to your own server. Free and open source.",
   },
@@ -33,8 +33,8 @@ export const en = {
     used: "used",
     message: "Hey Mira, welcome to the server",
     today: "Today at 19:42",
-    online: "Bramble#4821 is online · 3 servers",
-    done: "done · 84 ms",
+    online: "Bramble#4821 is online in 3 servers",
+    done: "done in 84 ms",
   },
   features: {
     title: "From the first command to a bot on your server",
@@ -66,7 +66,7 @@ export const en = {
     comment1: "# on your server",
     comment2: "# fill in DISCORD_TOKEN",
     comment3: "# or",
-    online: "Bramble#4821 is online · 3 servers",
+    online: "Bramble#4821 is online in 3 servers",
     registered: "Registered 3 commands: /ping /greet /rank",
   },
   plugins: {

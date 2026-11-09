@@ -2,7 +2,7 @@ import type { Dict } from "./en";
 
 export const tr: Dict = {
   meta: {
-    title: "Makecord · Discord botları için IDE",
+    title: "Makecord: Discord botları için IDE",
     description:
       "Discord botlarını görsel akışlarla kur, kaydettiğin anda canlı izle ve aynı klasörü kendi sunucuna taşı. Ücretsiz ve açık kaynak.",
   },
@@ -35,8 +35,8 @@ export const tr: Dict = {
     used: "kullandı",
     message: "Selam Mira, sunucuya hoş geldin",
     today: "Bugün 19:42",
-    online: "Bramble#4821 çevrimiçi · 3 sunucu",
-    done: "bitti · 84 ms",
+    online: "Bramble#4821, 3 sunucuda çevrimiçi",
+    done: "84 ms'de bitti",
   },
   features: {
     title: "İlk komuttan sunucundaki bota kadar",
@@ -68,7 +68,7 @@ export const tr: Dict = {
     comment1: "# sunucunda",
     comment2: "# DISCORD_TOKEN değerini gir",
     comment3: "# ya da",
-    online: "Bramble#4821 çevrimiçi · 3 sunucu",
+    online: "Bramble#4821, 3 sunucuda çevrimiçi",
     registered: "3 komut kaydedildi: /ping /greet /rank",
   },
   plugins: {

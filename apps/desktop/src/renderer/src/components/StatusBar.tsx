@@ -6,7 +6,7 @@ import { focusToolWindow } from "@/lib/dock";
 import { runErrorKey } from "@/lib/runError";
 import { useStore } from "@/lib/store";
 import { Led } from "./Logo";
-import { cn } from "./ui";
+import { cn, Sep } from "./ui";
 
 export function StatusBar() {
   const { t, tn } = useT();
@@ -54,9 +54,12 @@ export function StatusBar() {
         )}
         <span className={cn(status === "ready" && "text-muted")}>{t(`status.${status}`)}</span>
         {(status === "ready" || status === "error") && detail && (
-          <span className={cn("max-w-[480px] truncate", status === "error" && "text-bad")}>
-            · {detail}
-          </span>
+          <>
+            <Sep />
+            <span className={cn("max-w-[480px] truncate", status === "error" && "text-bad")}>
+              {detail}
+            </span>
+          </>
         )}
       </button>
       <button
@@ -91,9 +94,14 @@ export function StatusBar() {
       )}
       <div className="flex-1" />
       {metrics && (
-        <span className="font-mono tabular-nums" title={t("status.memory")}>
-          {t("status.ide", { mb: metrics.ideMB })}
-          {metrics.botMB !== null && <span> · {t("status.bot", { mb: metrics.botMB })}</span>}
+        <span className="flex items-center gap-2 font-mono tabular-nums" title={t("status.memory")}>
+          <span>{t("status.ide", { mb: metrics.ideMB })}</span>
+          {metrics.botMB !== null && (
+            <>
+              <Sep />
+              <span>{t("status.bot", { mb: metrics.botMB })}</span>
+            </>
+          )}
         </span>
       )}
     </footer>

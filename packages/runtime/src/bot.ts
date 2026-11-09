@@ -367,7 +367,7 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
     emit({
       type: "status",
       status: "ready",
-      detail: `${c.user.tag} is online · ${c.guilds.cache.size} ${c.guilds.cache.size === 1 ? "server" : "servers"}`,
+      detail: `${c.user.tag} is online in ${c.guilds.cache.size} ${c.guilds.cache.size === 1 ? "server" : "servers"}`,
       online: { tag: c.user.tag, guilds: c.guilds.cache.size },
     });
     try {
