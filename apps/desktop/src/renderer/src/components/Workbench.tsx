@@ -1,33 +1,27 @@
 import {
   type DockviewApi,
-  DockviewDefaultTab,
   DockviewReact,
   type DockviewReadyEvent,
-  type IDockviewPanelHeaderProps,
   type IDockviewPanelProps,
   themeDark,
 } from "dockview-react";
 import { useEffect, useState } from "react";
+import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import {
   defaultLayout,
   EDITOR_GROUP_ANCHOR,
-  ensureToolWindows,
   focusToolWindow,
   type LayoutSaver,
   openFile,
+  openStart,
   retitle,
   setDockApi,
   setLayoutSaver,
 } from "@/lib/dock";
 import { useStore } from "@/lib/store";
-import { DebugPanel } from "@/panels/DebugPanel";
+import { sanitizeTools } from "@/lib/tools";
 import { EditorPanel } from "@/panels/EditorPanel";
-import { EventsPanel } from "@/panels/EventsPanel";
-import { ProblemsPanel } from "@/panels/ProblemsPanel";
-import { ProjectPanel } from "@/panels/ProjectPanel";
-import { PropertiesPanel } from "@/panels/PropertiesPanel";
-import { RunPanel } from "@/panels/RunPanel";
 import { StartPanel } from "@/panels/StartPanel";
 import { InviteDialog } from "./InviteDialog";
 import { NewFlowDialog } from "./NewFlowDialog";
@@ -35,34 +29,57 @@ import { SearchEverywhere } from "./SearchEverywhere";
 import { SecretsDialog } from "./SecretsDialog";
 import { StatusBar } from "./StatusBar";
 import { Toolbar } from "./Toolbar";
+import { Sash, Stripe, ToolArea } from "./ToolWindows";
+import { Button, Kbd } from "./ui";
 
 const components: Record<string, React.FunctionComponent<IDockviewPanelProps>> = {
-  project: ProjectPanel,
-  properties: PropertiesPanel,
-  run: RunPanel,
-  problems: ProblemsPanel,
-  debug: DebugPanel,
-  events: EventsPanel,
   start: StartPanel,
   editor: EditorPanel as React.FunctionComponent<IDockviewPanelProps>,
 };
 
-const tabComponents = {
-  tool: (props: IDockviewPanelHeaderProps) => <DockviewDefaultTab {...props} hideClose />,
-};
+function EmptyEditors() {
+  const { t } = useT();
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-4 bg-panel p-6 text-center">
+      <p className="text-body text-muted">{t("editor.noneOpen")}</p>
+      <div className="grid grid-cols-[auto_auto] items-center gap-x-6 gap-y-2 text-label text-faint">
+        <span className="text-left">{t("toolbar.search")}</span>
+        <span className="flex gap-1">
+          <Kbd>Shift</Kbd>
+          <Kbd>Shift</Kbd>
+        </span>
+        <span className="text-left">{t("project.newFlow")}</span>
+        <span className="flex gap-1">
+          <Kbd>Ctrl</Kbd>
+          <Kbd>N</Kbd>
+        </span>
+        <span className="text-left">{t("panels.project")}</span>
+        <span className="flex gap-1">
+          <Kbd>Alt</Kbd>
+          <Kbd>1</Kbd>
+        </span>
+      </div>
+      <Button variant="ghost" onClick={openStart}>
+        {t("panels.start")}
+      </Button>
+    </div>
+  );
+}
 
 const theme = { ...themeDark, className: `${themeDark.className} mk-dock` };
 
 const WORKSPACE_FILE = ".makecord/workspace.json";
+const WORKSPACE_VERSION = 2;
 
 async function restoreLayout(dock: DockviewApi): Promise<boolean> {
   try {
     const text = await api.fs.readOptional(WORKSPACE_FILE);
     if (!text) return false;
-    dock.fromJSON(JSON.parse(text));
-    const ok = ["project", "properties", "run", "problems"].every((id) => dock.getPanel(id));
-    if (ok) ensureToolWindows(dock);
-    return ok;
+    const data = JSON.parse(text) as { version?: number; tools?: unknown; editors?: unknown };
+    if (data.version !== WORKSPACE_VERSION) return false;
+    useStore.getState().set({ tools: sanitizeTools(data.tools) });
+    if (data.editors) dock.fromJSON(data.editors as Parameters<DockviewApi["fromJSON"]>[0]);
+    return true;
   } catch {
     return false;
   }
@@ -77,19 +94,34 @@ async function buildLayout(dock: DockviewApi): Promise<LayoutSaver> {
   const trackActive = () => {
     const panel = dock.activePanel;
     const path = panel?.id.startsWith("editor:") ? panel.id.slice("editor:".length) : null;
-    if (path || panel?.id === EDITOR_GROUP_ANCHOR) useStore.getState().set({ activePath: path });
+    if (path || !panel || panel.id === EDITOR_GROUP_ANCHOR)
+      useStore.getState().set({ activePath: path });
   };
   trackActive();
   dock.onDidActivePanelChange(trackActive);
 
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const write = () => api.fs.write(WORKSPACE_FILE, JSON.stringify(dock.toJSON())).catch(() => {});
-  dock.onDidLayoutChange(() => {
+  const write = () =>
+    api.fs
+      .write(
+        WORKSPACE_FILE,
+        JSON.stringify({
+          version: WORKSPACE_VERSION,
+          tools: useStore.getState().tools,
+          editors: dock.toJSON(),
+        }),
+      )
+      .catch(() => {});
+  const schedule = () => {
     clearTimeout(timer);
     timer = setTimeout(() => {
       timer = undefined;
       void write();
     }, 1000);
+  };
+  dock.onDidLayoutChange(schedule);
+  const offTools = useStore.subscribe((s, prev) => {
+    if (s.tools !== prev.tools) schedule();
   });
   const saver: LayoutSaver = {
     async flush() {
@@ -101,6 +133,7 @@ async function buildLayout(dock: DockviewApi): Promise<LayoutSaver> {
     cancel() {
       clearTimeout(timer);
       timer = undefined;
+      offTools();
     },
   };
   return saver;
@@ -112,6 +145,9 @@ export function Workbench() {
   const inviteOpen = useStore((s) => s.inviteOpen);
   const searchOpen = useStore((s) => s.searchOpen);
   const newFlowOpen = useStore((s) => s.newFlowOpen);
+  const left = useStore((s) => s.tools.left.open);
+  const right = useStore((s) => s.tools.right.open);
+  const bottom = useStore((s) => s.tools.bottom.open);
 
   useEffect(() => {
     const { onDiskChange, pushRuntime } = useStore.getState();
@@ -179,15 +215,39 @@ export function Workbench() {
   return (
     <div className="flex h-full flex-col">
       <Toolbar />
-      <div className="min-h-0 flex-1">
-        <DockviewReact
-          components={components}
-          tabComponents={tabComponents}
-          onReady={({ api: dockApi }: DockviewReadyEvent) => {
-            void buildLayout(dockApi).then((saver) => setDock({ api: dockApi, saver }));
-          }}
-          theme={theme}
-        />
+      <div className="flex min-h-0 flex-1">
+        <Stripe side="left" />
+        {left && (
+          <>
+            <ToolArea area="left" />
+            <Sash area="left" />
+          </>
+        )}
+        <div className="flex min-w-[320px] flex-1 flex-col">
+          <div className="min-h-0 flex-1">
+            <DockviewReact
+              components={components}
+              watermarkComponent={EmptyEditors}
+              onReady={({ api: dockApi }: DockviewReadyEvent) => {
+                void buildLayout(dockApi).then((saver) => setDock({ api: dockApi, saver }));
+              }}
+              theme={theme}
+            />
+          </div>
+          {bottom && (
+            <>
+              <Sash area="bottom" />
+              <ToolArea area="bottom" />
+            </>
+          )}
+        </div>
+        {right && (
+          <>
+            <Sash area="right" />
+            <ToolArea area="right" />
+          </>
+        )}
+        <Stripe side="right" />
       </div>
       <StatusBar />
       {secretsOpen && <SecretsDialog />}

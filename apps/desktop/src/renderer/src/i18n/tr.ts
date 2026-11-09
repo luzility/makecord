@@ -129,6 +129,7 @@ export const tr: Messages = {
     empty: "Bot çalışırken Discord'un gönderdiği olaylar burada görünür",
     handled: "Bu olay için bir akış çalışır",
   },
+  tools: { hide: "Gizle" },
   files: {
     open: "Aç",
     new: "Yeni",
@@ -442,6 +443,7 @@ export const tr: Messages = {
     viewSplit: "Bölünmüş",
     viewPreview: "Önizleme",
     missing: "Bu dosya artık yok",
+    noneOpen: "Açık dosya yok",
     closeTab: "Sekmeyi kapat",
     fixBelow: "Aşağıdaki dosyayı düzeltince akış editörü geri gelir",
   },

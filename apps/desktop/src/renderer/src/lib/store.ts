@@ -12,6 +12,14 @@ import {
   type RuntimeStatus,
   type Settings,
 } from "./api";
+import {
+  type Area,
+  DEFAULT_TOOLS,
+  SIZE_LIMITS,
+  type ToolId,
+  type ToolLayout,
+  toolInfo,
+} from "./tools";
 
 export interface Doc {
   text: string;
@@ -30,6 +38,8 @@ export interface Notice {
 }
 
 export type LogEntry = RuntimeMessage & { id: number };
+
+export type { Area, ToolId, ToolLayout } from "./tools";
 
 export interface PausedRun {
   runId: string;
@@ -69,6 +79,11 @@ interface State {
   runBusy: boolean;
   notice: Notice | null;
   logs: LogEntry[];
+  tools: ToolLayout;
+  showTool(id: ToolId): void;
+  toggleTool(id: ToolId): void;
+  hideArea(area: Area): void;
+  resizeArea(area: Area, size: number): void;
   gateway: GatewayEntry[];
   breakpoints: Record<string, string[]>;
   paused: PausedRun[];
@@ -250,6 +265,7 @@ export const useStore = create<State>((set, get) => {
     problems: [],
     status: "idle",
     logs: [],
+    tools: DEFAULT_TOOLS,
     gateway: [],
     breakpoints: {},
     paused: [],
@@ -463,6 +479,28 @@ export const useStore = create<State>((set, get) => {
 
     resumeRun(runId, mode) {
       void api.runtime.debug({ type: "resume", runId, mode }).catch(() => {});
+    },
+
+    showTool(id) {
+      const { area } = toolInfo(id);
+      set((s) => ({ tools: { ...s.tools, [area]: { ...s.tools[area], open: true, active: id } } }));
+    },
+
+    toggleTool(id) {
+      const { area } = toolInfo(id);
+      const current = get().tools[area];
+      if (current.open && current.active === id) get().hideArea(area);
+      else get().showTool(id);
+    },
+
+    hideArea(area) {
+      set((s) => ({ tools: { ...s.tools, [area]: { ...s.tools[area], open: false } } }));
+    },
+
+    resizeArea(area, size) {
+      const { min, max } = SIZE_LIMITS[area];
+      const clamped = Math.round(Math.min(max, Math.max(min, size)));
+      set((s) => ({ tools: { ...s.tools, [area]: { ...s.tools[area], size: clamped } } }));
     },
 
     clearGateway() {

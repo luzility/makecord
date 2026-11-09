@@ -16,7 +16,7 @@ import {
 import type { MessageKey } from "@/i18n/locale";
 import { LOCALES, type Locale } from "@/i18n/locale";
 import { api } from "./api";
-import { flushAll, focusToolWindow, resetLayout } from "./dock";
+import { flushAll, resetLayout } from "./dock";
 import type { Shortcut } from "./shortcuts";
 import { cleanError, isFlowFile, useStore } from "./store";
 import { isRunning, startBot, stopBot } from "./useRun";
@@ -171,7 +171,7 @@ export const actions: Action[] = [
     shortcuts: ["Alt+1"],
     project: true,
     global: true,
-    run: () => focusToolWindow("project"),
+    run: () => st().toggleTool("project"),
   },
   {
     id: "view.properties",
@@ -179,7 +179,7 @@ export const actions: Action[] = [
     shortcuts: ["Alt+2"],
     project: true,
     global: true,
-    run: () => focusToolWindow("properties"),
+    run: () => st().toggleTool("properties"),
   },
   {
     id: "view.run",
@@ -187,7 +187,7 @@ export const actions: Action[] = [
     shortcuts: ["Alt+4"],
     project: true,
     global: true,
-    run: () => focusToolWindow("run"),
+    run: () => st().toggleTool("run"),
   },
   {
     id: "view.problems",
@@ -195,7 +195,7 @@ export const actions: Action[] = [
     shortcuts: ["Alt+6"],
     project: true,
     global: true,
-    run: () => focusToolWindow("problems"),
+    run: () => st().toggleTool("problems"),
   },
   {
     id: "view.debug",
@@ -203,7 +203,7 @@ export const actions: Action[] = [
     shortcuts: ["Alt+5"],
     project: true,
     global: true,
-    run: () => focusToolWindow("debug"),
+    run: () => st().toggleTool("debug"),
   },
   {
     id: "view.events",
@@ -211,7 +211,7 @@ export const actions: Action[] = [
     shortcuts: ["Alt+7"],
     project: true,
     global: true,
-    run: () => focusToolWindow("events"),
+    run: () => st().toggleTool("events"),
   },
   {
     id: "debug.toggleBreakpoint",

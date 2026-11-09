@@ -1,6 +1,7 @@
 import type { DockviewApi } from "dockview-react";
 import { translate } from "@/i18n/locale";
 import { useStore } from "./store";
+import { DEFAULT_TOOLS, type ToolId } from "./tools";
 
 let dock: DockviewApi | null = null;
 export const EDITOR_GROUP_ANCHOR = "start";
@@ -22,16 +23,31 @@ export async function openFile(path: string, nodeId?: string) {
     existing.api.setActive();
     return;
   }
-  const anchor =
-    dock.panels.find((p) => p.id.startsWith("editor:")) ?? dock.getPanel(EDITOR_GROUP_ANCHOR);
+  const group =
+    dock.activeGroup ??
+    dock.panels.find((p) => p.id.startsWith("editor:"))?.group ??
+    dock.getPanel(EDITOR_GROUP_ANCHOR)?.group;
   dock.addPanel({
     id,
     component: "editor",
     title: titleOf(path),
     params: { path },
-    position: anchor
-      ? { referenceGroup: anchor.group }
-      : { referencePanel: "project", direction: "right" },
+    position: group ? { referenceGroup: group } : undefined,
+  });
+}
+
+export function openStart() {
+  if (!dock) return;
+  const existing = dock.getPanel(EDITOR_GROUP_ANCHOR);
+  if (existing) {
+    existing.api.setActive();
+    return;
+  }
+  dock.addPanel({
+    id: EDITOR_GROUP_ANCHOR,
+    component: "start",
+    title: translate(useStore.getState().locale, "panels.start"),
+    position: dock.activeGroup ? { referenceGroup: dock.activeGroup } : undefined,
   });
 }
 
@@ -45,43 +61,8 @@ export function closeFile(path: string) {
   dock?.getPanel(`editor:${path}`)?.api.close();
 }
 
-const LATE_TOOLS: Record<string, string> = { debug: "debug", events: "events" };
-
-export function ensureToolWindows(api: DockviewApi) {
-  const anchor = api.getPanel("run") ?? api.getPanel("problems");
-  if (!anchor) return;
-  for (const id of Object.keys(LATE_TOOLS)) {
-    if (api.getPanel(id)) continue;
-    api.addPanel({
-      id,
-      component: LATE_TOOLS[id]!,
-      tabComponent: "tool",
-      title: "",
-      position: { referencePanel: anchor.id, direction: "within" },
-      inactive: true,
-    });
-  }
-}
-
-export function focusToolWindow(id: string) {
-  if (!dock) return;
-  const existing = dock.getPanel(id);
-  if (existing) {
-    existing.api.setActive();
-    return;
-  }
-  const component = LATE_TOOLS[id];
-  if (!component) return;
-  const anchor = dock.getPanel("run") ?? dock.getPanel("problems");
-  dock.addPanel({
-    id,
-    component,
-    tabComponent: "tool",
-    title: translate(useStore.getState().locale, TOOL_TITLES[id as keyof typeof TOOL_TITLES]),
-    position: anchor
-      ? { referencePanel: anchor.id, direction: "within" }
-      : { referencePanel: EDITOR_GROUP_ANCHOR, direction: "below" },
-  });
+export function focusToolWindow(id: ToolId) {
+  useStore.getState().showTool(id);
 }
 
 export interface LayoutSaver {
@@ -97,74 +78,20 @@ export async function flushAll() {
   await Promise.all([useStore.getState().flushSaves(), layoutSaver?.flush()]);
 }
 
-const TOOL_TITLES = {
-  [EDITOR_GROUP_ANCHOR]: "panels.start",
-  project: "panels.project",
-  properties: "panels.properties",
-  run: "panels.run",
-  problems: "panels.problems",
-  debug: "panels.debug",
-  events: "panels.events",
-} as const;
-
-export function retitle(dock: DockviewApi) {
+export function retitle(api: DockviewApi) {
   const locale = useStore.getState().locale;
-  for (const [id, key] of Object.entries(TOOL_TITLES))
-    dock.getPanel(id)?.api.setTitle(translate(locale, key));
-  for (const panel of dock.panels) {
+  api.getPanel(EDITOR_GROUP_ANCHOR)?.api.setTitle(translate(locale, "panels.start"));
+  for (const panel of api.panels) {
     if (panel.id.startsWith("editor:")) panel.api.setTitle(titleOf(panel.id.slice(7)));
   }
 }
 
-export function defaultLayout(dock: DockviewApi) {
-  dock.addPanel({ id: EDITOR_GROUP_ANCHOR, component: "start", title: "" });
-  dock.addPanel({
-    id: "project",
-    component: "project",
-    tabComponent: "tool",
-    title: "",
-    position: { referencePanel: EDITOR_GROUP_ANCHOR, direction: "left" },
-    initialWidth: 240,
-  });
-  dock.addPanel({
-    id: "properties",
-    component: "properties",
-    tabComponent: "tool",
-    title: "",
-    position: { referencePanel: EDITOR_GROUP_ANCHOR, direction: "right" },
-    initialWidth: 300,
-  });
-  dock.addPanel({
-    id: "run",
-    component: "run",
-    tabComponent: "tool",
-    title: "",
-    position: { referencePanel: EDITOR_GROUP_ANCHOR, direction: "below" },
-    initialHeight: 220,
-  });
-  dock.addPanel({
-    id: "problems",
-    component: "problems",
-    tabComponent: "tool",
-    title: "",
-    position: { referencePanel: "run", direction: "within" },
-    inactive: true,
-  });
-  for (const id of ["debug", "events"]) {
-    dock.addPanel({
-      id,
-      component: id,
-      tabComponent: "tool",
-      title: "",
-      position: { referencePanel: "run", direction: "within" },
-      inactive: true,
-    });
-  }
-  dock.getPanel("run")?.api.setActive();
-  dock.getPanel(EDITOR_GROUP_ANCHOR)?.api.setActive();
+export function defaultLayout(api: DockviewApi) {
+  api.addPanel({ id: EDITOR_GROUP_ANCHOR, component: "start", title: "" });
 }
 
 export function resetLayout() {
+  useStore.getState().set({ tools: structuredClone(DEFAULT_TOOLS) });
   if (!dock) return;
   const editors = dock.panels
     .filter((p) => p.id.startsWith("editor:"))

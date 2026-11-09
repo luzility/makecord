@@ -127,6 +127,7 @@ export const en = {
     empty: "Events Discord sends the bot show up here while it runs",
     handled: "A flow runs for this event",
   },
+  tools: { hide: "Hide" },
   files: {
     open: "Open",
     new: "New",
@@ -438,6 +439,7 @@ export const en = {
     viewSplit: "Split",
     viewPreview: "Preview",
     missing: "This file no longer exists",
+    noneOpen: "No files are open",
     closeTab: "Close tab",
     fixBelow: "Fix the file below and the flow editor comes back",
   },

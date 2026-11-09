@@ -127,7 +127,8 @@ textarea {
   --dv-drag-over-background-color: rgb(237 237 237 / 0.06);
   --dv-icon-hover-background-color: var(--color-hover);
 }
-html[data-modal] .dv-sash {
+html[data-modal] .dv-sash,
+html[data-modal] .mk-sash {
   pointer-events: none;
 }
 .mk-dock .dv-tab {
