@@ -1,0 +1,25 @@
+{
+  "name": "makecord",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.17.0",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "dev:desktop": "turbo run dev --filter=@makecord/desktop",
+    "dev:web": "turbo run dev --filter=@makecord/web",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "lint": "biome check .",
+    "format": "biome check --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.6",
+    "@types/node": "^26.6.6",
+    "turbo": "2.11.10",
+    "typescript": "7.0.2"
+  }
+}
