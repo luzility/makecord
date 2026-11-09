@@ -1,9 +1,11 @@
 import { watch } from "node:fs";
 import {
+  BASE_BOT_PERMISSIONS,
   type CacheConfig,
   type CommandFlow,
   type CommandOptionType,
   type EventFlow,
+  isBotPermission,
   type MessageDesign,
   matchesCustomId,
   type ProjectConfig,
@@ -319,6 +321,33 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
     }
   };
 
+  const requiredPermissions = () => {
+    const needed = new Set<string>(BASE_BOT_PERMISSIONS);
+    for (const { flow } of project.flows) {
+      for (const node of flow.nodes) {
+        for (const p of registry.get(node.type)?.node.meta.permissions ?? []) needed.add(p);
+      }
+    }
+    return [...needed].filter(isBotPermission);
+  };
+
+  const checkPermissions = (c: Client<true>) => {
+    const needed = requiredPermissions();
+    for (const guild of [...c.guilds.cache.values()].slice(0, 50)) {
+      const me = guild.members.me;
+      if (!me || me.permissions.has("Administrator")) continue;
+      const missing = needed.filter((p) => !me.permissions.has(p));
+      if (missing.length) {
+        emit({
+          type: "log",
+          level: "warn",
+          message: `Missing permissions in ${guild.name}: ${missing.join(", ")}. Some blocks will fail there`,
+          source: "permissions",
+        });
+      }
+    }
+  };
+
   client.once(Events.ClientReady, async (c) => {
     emit({
       type: "status",
@@ -338,6 +367,7 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
     }
     void dispatch("clientReady")(c);
     setupSchedules();
+    checkPermissions(c);
   });
 
   client.on(Events.Error, (e) =>
@@ -384,7 +414,14 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
   } catch (e) {
     watcher?.close();
     await client.destroy();
-    throw codedError("login-failed", `Couldn't connect to Discord: ${(e as Error).message}`);
+    const message = (e as Error).message;
+    if (/disallowed intents/i.test(message)) {
+      throw codedError(
+        "disallowed-intents",
+        "Discord refused the privileged intents. Turn them on under Bot in the Developer Portal",
+      );
+    }
+    throw codedError("login-failed", `Couldn't connect to Discord: ${message}`);
   }
 
   return {

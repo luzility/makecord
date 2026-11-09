@@ -10,6 +10,7 @@ export function setDockApi(api: DockviewApi | null) {
 }
 
 const basename = (p: string) => p.split("/").pop() ?? p;
+const titleOf = (path: string) => basename(path).replace(/\.(flow|message)\.json$/, "");
 
 export async function openFile(path: string, nodeId?: string) {
   await useStore.getState().loadDoc(path);
@@ -26,12 +27,18 @@ export async function openFile(path: string, nodeId?: string) {
   dock.addPanel({
     id,
     component: "editor",
-    title: basename(path).replace(/\.(flow|message)\.json$/, ""),
+    title: titleOf(path),
     params: { path },
     position: anchor
       ? { referenceGroup: anchor.group }
       : { referencePanel: "project", direction: "right" },
   });
+}
+
+export function openPaths(): string[] {
+  return (dock?.panels ?? [])
+    .filter((p) => p.id.startsWith("editor:"))
+    .map((p) => p.id.slice("editor:".length));
 }
 
 export function closeFile(path: string) {
@@ -67,6 +74,9 @@ export function retitle(dock: DockviewApi) {
   const locale = useStore.getState().locale;
   for (const [id, key] of Object.entries(TOOL_TITLES))
     dock.getPanel(id)?.api.setTitle(translate(locale, key));
+  for (const panel of dock.panels) {
+    if (panel.id.startsWith("editor:")) panel.api.setTitle(titleOf(panel.id.slice(7)));
+  }
 }
 
 export function defaultLayout(dock: DockviewApi) {

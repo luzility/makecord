@@ -25,6 +25,7 @@ import { ProjectPanel } from "@/panels/ProjectPanel";
 import { PropertiesPanel } from "@/panels/PropertiesPanel";
 import { RunPanel } from "@/panels/RunPanel";
 import { StartPanel } from "@/panels/StartPanel";
+import { InviteDialog } from "./InviteDialog";
 import { NewFlowDialog } from "./NewFlowDialog";
 import { SearchEverywhere } from "./SearchEverywhere";
 import { SecretsDialog } from "./SecretsDialog";
@@ -100,6 +101,7 @@ async function buildLayout(dock: DockviewApi): Promise<LayoutSaver> {
 export function Workbench() {
   const [dock, setDock] = useState<{ api: DockviewApi; saver: LayoutSaver } | null>(null);
   const secretsOpen = useStore((s) => s.secretsOpen);
+  const inviteOpen = useStore((s) => s.inviteOpen);
   const searchOpen = useStore((s) => s.searchOpen);
   const newFlowOpen = useStore((s) => s.newFlowOpen);
 
@@ -175,6 +177,7 @@ export function Workbench() {
       </div>
       <StatusBar />
       {secretsOpen && <SecretsDialog />}
+      {inviteOpen && <InviteDialog />}
       {searchOpen && <SearchEverywhere />}
       {newFlowOpen && <NewFlowDialog />}
     </div>

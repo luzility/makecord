@@ -108,6 +108,7 @@ export const sendMessage = defineNodeMeta({
   title: "Send Message",
   description: "Sends a message to a channel.",
   category: "action",
+  permissions: ["ViewChannel", "SendMessages", "EmbedLinks"],
   fields: z
     .object({
       channelId: line("Channel ID", "For example {{channel.id}}").min(1),
@@ -180,6 +181,7 @@ export const addReaction = defineNodeMeta({
   title: "Add Reaction",
   description: "Reacts to a message with an emoji.",
   category: "action",
+  permissions: ["AddReactions", "ReadMessageHistory"],
   fields: z.object({
     emoji: line("Emoji", "A unicode emoji, or a custom one as name:id").min(1),
     channelId: line("Channel ID").default("{{channel.id}}"),
@@ -204,6 +206,7 @@ export const deleteMessage = defineNodeMeta({
   description:
     "Deletes a message. The bot needs the Manage Messages permission for other people's messages.",
   category: "action",
+  permissions: ["ManageMessages", "ReadMessageHistory"],
   fields: z.object({
     channelId: line("Channel ID").default("{{channel.id}}"),
     messageId: line("Message ID").default("{{message.id}}"),
@@ -222,6 +225,7 @@ export const addRole = defineNodeMeta({
   title: "Add Role",
   description: "Gives a member a role. The bot needs the Manage Roles permission.",
   category: "action",
+  permissions: ["ManageRoles"],
   fields: z.object({
     roleId: line("Role ID").min(1),
     userId: userId(),
@@ -240,6 +244,7 @@ export const removeRole = defineNodeMeta({
   title: "Remove Role",
   description: "Takes a role away from a member. The bot needs the Manage Roles permission.",
   category: "action",
+  permissions: ["ManageRoles"],
   fields: z.object({
     roleId: line("Role ID").min(1),
     userId: userId(),
@@ -258,6 +263,7 @@ export const kick = defineNodeMeta({
   title: "Kick Member",
   description: "Removes a member from the server. They can join again with an invite.",
   category: "action",
+  permissions: ["KickMembers"],
   fields: z.object({ userId: userId(), reason: reason() }),
   locales: {
     tr: {
@@ -273,6 +279,7 @@ export const ban = defineNodeMeta({
   title: "Ban Member",
   description: "Bans a user from the server.",
   category: "action",
+  permissions: ["BanMembers"],
   fields: z.object({
     userId: userId(),
     reason: reason(),
@@ -301,6 +308,7 @@ export const timeout = defineNodeMeta({
   title: "Timeout Member",
   description: "Mutes a member for a while. Use 0 minutes to lift a timeout.",
   category: "action",
+  permissions: ["ModerateMembers"],
   fields: z.object({
     userId: userId(),
     minutes: line("Minutes", "Up to 40320 (28 days)").default("10"),

@@ -113,6 +113,29 @@ export async function writeProjectFile(rel: string, content: string, { create = 
   await writeFile(abs, content, "utf8");
 }
 
+const exists = (abs: string) =>
+  stat(abs).then(
+    () => true,
+    () => false,
+  );
+
+export async function renameProjectFile(from: string, to: string) {
+  const src = projectPath(from);
+  const dest = projectPath(to);
+  const root = requireProject().root;
+  if (src === root || dest === root) throw new Error("The project root can't be renamed");
+  if (dest.startsWith(`${src}${sep}`)) throw new Error("A folder can't be moved into itself");
+  if (await exists(dest)) throw new Error(`${to} already exists`);
+  await mkdir(dirname(dest), { recursive: true });
+  await rename(src, dest);
+}
+
+export async function createProjectFolder(rel: string) {
+  const abs = projectPath(rel);
+  if (await exists(abs)) throw new Error(`${rel} already exists`);
+  await mkdir(abs, { recursive: true });
+}
+
 export async function removeProjectFile(rel: string) {
   const abs = projectPath(rel);
   if (abs === requireProject().root) throw new Error("The project root can't be deleted");

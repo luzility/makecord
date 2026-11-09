@@ -53,6 +53,7 @@ export interface MakecordApi {
     tree(): Promise<FileNode>;
     inspect(): Promise<Problem[]>;
     catalog(): Promise<Catalog>;
+    botId(): Promise<string | null>;
   };
   plugins: {
     search(query: string): Promise<MarketplacePlugin[]>;
@@ -71,6 +72,8 @@ export interface MakecordApi {
     write(path: string, content: string): Promise<void>;
     create(path: string, content: string): Promise<void>;
     remove(path: string): Promise<void>;
+    rename(from: string, to: string): Promise<void>;
+    mkdir(path: string): Promise<void>;
     onChange(cb: (paths: string[]) => void): () => void;
   };
   secrets: {

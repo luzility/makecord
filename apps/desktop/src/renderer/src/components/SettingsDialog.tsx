@@ -1,4 +1,4 @@
-import { IntentName, PROJECT_FILE, ProjectConfig } from "@makecord/spec";
+import { IntentName, PRIVILEGED_INTENTS, PROJECT_FILE, ProjectConfig } from "@makecord/spec";
 import { AlertTriangle, CircleAlert, ExternalLink, FolderOpen, Search } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useT } from "@/i18n";
@@ -13,7 +13,7 @@ import { Button, cn, Dialog, Field, Input, Kbd } from "./ui";
 
 const DOCS_PLUGINS = "https://makecord.app/docs/writing-plugins/";
 
-const PRIVILEGED = new Set<string>(["GuildMembers", "GuildPresences", "MessageContent"]);
+const PRIVILEGED = new Set<string>(PRIVILEGED_INTENTS);
 
 function Section({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   return (

@@ -1,5 +1,13 @@
 import { ChevronRight } from "lucide-react";
-import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import {
+  type KeyboardEvent,
+  type ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
 import { cn, useModalFlag } from "./ui";
 
 export type MenuEntry =
@@ -226,5 +234,56 @@ function OpenMenu({
     <div className={cn("absolute top-full z-[1000] pt-1", align === "end" ? "right-0" : "left-0")}>
       <MenuList items={items} onClose={onClose} />
     </div>
+  );
+}
+
+export function ContextMenu({
+  x,
+  y,
+  items,
+  onClose,
+}: {
+  x: number;
+  y: number;
+  items: MenuEntry[];
+  onClose: () => void;
+}) {
+  useModalFlag();
+  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ x, y });
+
+  useLayoutEffect(() => {
+    const r = ref.current?.getBoundingClientRect();
+    if (!r) return;
+    setPos({
+      x: Math.max(4, Math.min(x, window.innerWidth - r.width - 4)),
+      y: Math.max(4, Math.min(y, window.innerHeight - r.height - 4)),
+    });
+  }, [x, y]);
+
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) onClose();
+    };
+    window.addEventListener("mousedown", onDown);
+    window.addEventListener("blur", onClose);
+    window.addEventListener("resize", onClose);
+    return () => {
+      window.removeEventListener("mousedown", onDown);
+      window.removeEventListener("blur", onClose);
+      window.removeEventListener("resize", onClose);
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      ref={ref}
+      className="fixed z-[1000]"
+      style={{ left: pos.x, top: pos.y }}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      <MenuList items={items} onClose={onClose} />
+    </div>,
+    document.body,
   );
 }

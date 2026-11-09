@@ -26,6 +26,7 @@ const api: MakecordApi = {
     tree: invoke("project:tree"),
     inspect: invoke("project:inspect"),
     catalog: invoke("project:catalog"),
+    botId: invoke("project:botId"),
   } as MakecordApi["project"],
   plugins: {
     search: invoke("plugins:search"),
@@ -44,6 +45,8 @@ const api: MakecordApi = {
     write: invoke("fs:write"),
     create: invoke("fs:create"),
     remove: invoke("fs:remove"),
+    rename: invoke("fs:rename"),
+    mkdir: invoke("fs:mkdir"),
     onChange: subscribe("fs:changed"),
   } as MakecordApi["fs"],
   secrets: {

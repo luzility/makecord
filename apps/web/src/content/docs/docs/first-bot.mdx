@@ -15,8 +15,6 @@ By the end of this page your bot is online in a test server and answers `/ping`.
 
 2. Go to **Bot** and press **Reset Token**. Copy the token and keep the page open. Treat the token like a password: anyone who has it controls your bot.
 
-3. Go to **OAuth2 → URL Generator**, tick the `bot` and `applications.commands` scopes, then open the generated URL to invite the bot to a server you manage.
-
 </Steps>
 
 ## Create the project
@@ -27,7 +25,9 @@ By the end of this page your bot is online in a test server and answers `/ping`.
 
 2. Press **Open Secrets** on the Get started tab, paste the token into `DISCORD_TOKEN` and save. The token is encrypted with your system keychain. It's never written to the project folder, and you can't view it again in the IDE.
 
-3. Open `makecord.json` and add your test server's ID as `devGuildId`. To find the ID, enable Developer Mode in Discord's settings, then right-click the server and choose **Copy Server ID**.
+3. Press **Create invite link** on the Get started tab, or choose **Run › Invite bot to a server**. Makecord reads the bot's ID from the token and ticks the permissions your blocks need, such as **Manage Roles** for **Add Role**. Open the link and pick a server you manage. If the project uses privileged intents, the dialog links straight to the page where you turn them on.
+
+4. Open `makecord.json` and add your test server's ID as `devGuildId`. To find the ID, enable Developer Mode in Discord's settings, then right-click the server and choose **Copy Server ID**.
 
    ```json title="makecord.json" ins={4}
    {

@@ -1,4 +1,5 @@
 import { type Flow, isInteractionFlow } from "@makecord/spec";
+import { StickyNote } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui";
 import { useT } from "@/i18n";
@@ -6,7 +7,15 @@ import { type NodeDescriptor, nodeText, useNodes } from "@/lib/nodes";
 
 export const DRAG_MIME = "application/x-makecord-node";
 
-export function Palette({ flow, onAdd }: { flow: Flow; onAdd: (meta: NodeDescriptor) => void }) {
+export function Palette({
+  flow,
+  onAdd,
+  onAddNote,
+}: {
+  flow: Flow;
+  onAdd: (meta: NodeDescriptor) => void;
+  onAddNote: () => void;
+}) {
   const { t, locale } = useT();
   const [q, setQ] = useState("");
   const nodeMetas = useNodes();
@@ -58,6 +67,19 @@ export function Palette({ flow, onAdd }: { flow: Flow; onAdd: (meta: NodeDescrip
             })}
           </section>
         ))}
+        {!q && (
+          <section className="flex flex-col gap-0.5">
+            <h3 className="mb-1 px-2 text-meta text-faint">{t("palette.canvas")}</h3>
+            <button
+              type="button"
+              onClick={onAddNote}
+              className="flex h-7 items-center gap-2 rounded-md px-2 text-left text-body text-muted transition-colors duration-150 ease-out hover:bg-hover hover:text-fg"
+            >
+              <StickyNote size={14} strokeWidth={1.5} className="shrink-0 text-faint" />
+              {t("flow.addNote")}
+            </button>
+          </section>
+        )}
       </div>
     </aside>
   );

@@ -75,10 +75,20 @@ export const SlashCommand = z.object({
 });
 export type SlashCommand = z.infer<typeof SlashCommand>;
 
+export const FlowNote = z.object({
+  id: z.string().min(1),
+  position: Position,
+  text: z.string().max(4000).default(""),
+  width: z.number().min(120).max(1200).optional(),
+  height: z.number().min(60).max(1200).optional(),
+});
+export type FlowNote = z.infer<typeof FlowNote>;
+
 const FlowBase = z.object({
   specVersion: z.literal(SPEC_VERSION),
   nodes: z.array(FlowNode),
   edges: z.array(FlowEdge).default([]),
+  notes: z.array(FlowNote).optional(),
 });
 
 export const CommandFlow = FlowBase.extend({

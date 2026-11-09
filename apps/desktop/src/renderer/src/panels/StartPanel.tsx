@@ -30,13 +30,19 @@ export function StartPanel() {
               {t("start.openSecrets")}
             </Button>
           </Step>
-          <Step n={2} title={t("start.commandTitle")}>
+          <Step n={2} title={t("start.inviteTitle")}>
+            <p>{t("start.inviteBody")}</p>
+            <Button className="mt-3" onClick={() => set({ inviteOpen: true })}>
+              {t("start.openInvite")}
+            </Button>
+          </Step>
+          <Step n={3} title={t("start.commandTitle")}>
             <p>{t("start.commandBody")}</p>
           </Step>
-          <Step n={3} title={t("start.runTitle")}>
+          <Step n={4} title={t("start.runTitle")}>
             <p>{t("start.runBody")}</p>
           </Step>
-          <Step n={4} title={t("start.searchTitle")}>
+          <Step n={5} title={t("start.searchTitle")}>
             <p>{t("start.searchBody")}</p>
             <p className="mt-3 flex items-center gap-1 text-label text-faint">
               <Kbd>Shift</Kbd> <Kbd>Shift</Kbd> <span className="mx-1">{t("start.or")}</span>{" "}

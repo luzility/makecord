@@ -51,6 +51,7 @@ interface State {
   logs: LogEntry[];
   executed: Record<string, number>;
   secretsOpen: boolean;
+  inviteOpen: boolean;
   searchOpen: boolean;
   newFlowOpen: false | "command" | "event" | "message";
   newProjectOpen: boolean;
@@ -68,6 +69,7 @@ interface State {
   refreshTree(): Promise<void>;
   refreshProblems(): Promise<void>;
   loadDoc(path: string): Promise<void>;
+  dropDoc(path: string): void;
   setText(path: string, text: string): void;
   flushSaves(): Promise<void>;
   updateFlow(path: string, fn: (flow: Flow) => Flow, mergeKey?: string): void;
@@ -221,6 +223,7 @@ export const useStore = create<State>((set, get) => {
     logs: [],
     executed: {},
     secretsOpen: false,
+    inviteOpen: false,
     searchOpen: false,
     newFlowOpen: false,
     newProjectOpen: false,
@@ -301,6 +304,20 @@ export const useStore = create<State>((set, get) => {
               : { text, savedText: text, ...parse(path, text) },
         },
       }));
+    },
+
+    dropDoc(path) {
+      clearTimeout(timers.get(path));
+      timers.delete(path);
+      histories.delete(path);
+      set((s) => {
+        const { [path]: _, ...docs } = s.docs;
+        return {
+          docs,
+          selection: s.selection?.path === path ? null : s.selection,
+          activePath: s.activePath === path ? null : s.activePath,
+        };
+      });
     },
 
     async flushSaves() {

@@ -45,7 +45,11 @@ export const tr: Messages = {
   project: { newFlow: "Yeni komut, event veya mesaj" },
   start: {
     title: "Başlarken",
-    subtitle: "Botunu dört adımda çalıştır",
+    subtitle: "Botunu birkaç adımda çalıştır",
+    inviteTitle: "Bir sunucuya davet et",
+    inviteBody:
+      "Makecord davet linkini token'ından oluşturur, bloklarının ihtiyaç duyduğu yetkiler zaten işaretli olur.",
+    openInvite: "Davet linki oluştur",
     tokenTitle: "Token'ı ekle",
     tokenBody:
       "Botunun token'ını Discord Developer Portal'dan kopyala ve Secrets'a DISCORD_TOKEN olarak kaydet. Sistem anahtar zincirinde şifrelenir, projeye asla yazılmaz.",
@@ -66,10 +70,53 @@ export const tr: Messages = {
     action: "Eylemler",
     logic: "Mantık",
     data: "Veri",
+    canvas: "Tuval",
   },
   flow: {
     unreadable: "Bu akış dosyası okunamadı",
     unknownNode: "Bilinmeyen node tipi",
+    copy: "Kopyala",
+    cut: "Kes",
+    paste: "Yapıştır",
+    duplicate: "Çoğalt",
+    selectAll: "Tümünü seç",
+    addNote: "Not ekle",
+    notePlaceholder: "Bir not yaz…",
+  },
+  invite: {
+    title: "Botu davet et",
+    intro:
+      "Linki aç, yönettiğin bir sunucu seç ve yetkilendir. Blokların kullandığı yetkiler zaten işaretli.",
+    noToken:
+      "Önce bot token'ını Secrets'a DISCORD_TOKEN olarak ekle. Davet linki içindeki bot ID'sinden oluşturulur",
+    permissions: "Yetkiler",
+    used: "kullanılıyor",
+    testServer: "Ayarlar'daki test sunucusunu önceden seç",
+    privileged:
+      "Bu proje %{intents} kullanıyor. Privileged Gateway Intents altında aç, yoksa bot giriş yapamaz.",
+    openPortal: "Developer Portal'ı aç",
+    copy: "Kopyala",
+    copied: "Kopyalandı",
+    open: "Tarayıcıda aç",
+  },
+  files: {
+    open: "Aç",
+    new: "Yeni",
+    newFlow: "Komut veya event…",
+    newMessage: "Mesaj tasarımı…",
+    newFile: "Yeni dosya",
+    newFolder: "Yeni klasör",
+    rename: "Yeniden adlandır",
+    renameTitle: "%{name} adını değiştir",
+    duplicate: "Çoğalt",
+    copyPath: "Yolu kopyala",
+    name: "Ad",
+    nameIn: "Ad, %{dir} içinde",
+    nameEmpty: "Bir ad yaz",
+    nameInvalid: 'Adlar \\ : * ? " < > | içeremez',
+    deleteTitle: "%{name} silinsin mi?",
+    deleteFile: "%{path} diskten silinecek. Geri al ile geri getirilemez",
+    deleteFolder: "%{path} ve içindeki her şey diskten silinecek. Geri al ile geri getirilemez",
   },
   properties: {
     empty: "Bir akış aç veya bir blok seç",
@@ -301,6 +348,8 @@ export const tr: Messages = {
   runErrors: {
     missingToken: "DISCORD_TOKEN ayarlanmamış. Secrets'tan ekle",
     loginFailed: "Discord token'ı reddetti. Secrets'taki DISCORD_TOKEN'ı kontrol et",
+    disallowedIntents:
+      "Discord ayrıcalıklı bir intent'i reddetti. Developer Portal'da Bot altında aç ya da Ayarlar'dan kaldır",
   },
   menu: {
     main: "Ana menü",
@@ -325,6 +374,7 @@ export const tr: Messages = {
     resetLayout: "Yerleşimi sıfırla",
     docs: "Dokümantasyon",
     reportIssue: "Sorun bildir",
+    invite: "Botu bir sunucuya davet et…",
   },
   settings: {
     title: "Ayarlar",

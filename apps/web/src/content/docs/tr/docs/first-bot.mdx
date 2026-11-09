@@ -15,8 +15,6 @@ Bu sayfanın sonunda botun bir test sunucusunda çevrimiçi olacak ve `/ping` ko
 
 2. **Bot** bölümüne git ve **Reset Token**'a bas. Token'ı kopyala, sayfayı açık tut. Token'a şifre gibi davran: Ona sahip olan herkes botunu kontrol eder.
 
-3. **OAuth2 → URL Generator** bölümünde `bot` ve `applications.commands` kapsamlarını işaretle, oluşan adresi açıp botu yönettiğin bir sunucuya davet et.
-
 </Steps>
 
 ## Projeyi oluştur
@@ -27,7 +25,9 @@ Bu sayfanın sonunda botun bir test sunucusunda çevrimiçi olacak ve `/ping` ko
 
 2. Başlarken sekmesindeki **Secrets'ı aç**'a bas, token'ı `DISCORD_TOKEN` alanına yapıştır ve kaydet. Token sistem anahtar zincirinde şifrelenir. Proje klasörüne asla yazılmaz ve IDE'de tekrar görüntülenemez.
 
-3. `makecord.json`'ı aç ve test sunucunun ID'sini `devGuildId` olarak ekle. ID'yi bulmak için Discord ayarlarından Geliştirici Modu'nu aç, sonra sunucuya sağ tıklayıp **Sunucu ID'sini Kopyala**'yı seç.
+3. Başlarken sekmesindeki **Davet linki oluştur**'a ya da **Run › Botu bir sunucuya davet et**'e bas. Makecord botun ID'sini token'dan okur ve bloklarının ihtiyaç duyduğu yetkileri işaretler, örneğin **Rol Ver** için **Manage Roles**. Linki aç ve yönettiğin bir sunucu seç. Proje ayrıcalıklı intent kullanıyorsa diyalog bunları açacağın sayfaya doğrudan bağlantı verir.
+
+4. `makecord.json`'ı aç ve test sunucunun ID'sini `devGuildId` olarak ekle. ID'yi bulmak için Discord ayarlarından Geliştirici Modu'nu aç, sonra sunucuya sağ tıklayıp **Sunucu ID'sini Kopyala**'yı seç.
 
    ```json title="makecord.json" ins={4}
    {

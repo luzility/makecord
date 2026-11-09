@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { isAbsolute, join } from "node:path";
 import { coreNodeMetas } from "@makecord/plugin-core/meta";
 import { describeNode } from "@makecord/runtime/describe";
-import { PROJECT_FILE, ProjectConfig } from "@makecord/spec";
+import { botIdFromToken, PROJECT_FILE, ProjectConfig } from "@makecord/spec";
 import {
   app,
   BrowserWindow,
@@ -28,17 +28,25 @@ const RUNTIME_VERSION_FALLBACK = "0.1.0";
 import {
   closeProject,
   createProject,
+  createProjectFolder,
   currentProject,
   inspect,
   openProject,
   projectPath,
   readTree,
   removeProjectFile,
+  renameProjectFile,
   requireProject,
   writeProjectFile,
 } from "./project";
 import { botPid, startBot, stopBot } from "./runtime-host";
-import { listSecretNames, removeSecret, secretsBackend, setSecret } from "./secrets";
+import {
+  decryptSecrets,
+  listSecretNames,
+  removeSecret,
+  secretsBackend,
+  setSecret,
+} from "./secrets";
 import { appState } from "./state";
 
 let win: BrowserWindow | null = null;
@@ -212,6 +220,10 @@ function registerIpc() {
   handle("project:tree", () => readTree());
   handle("project:inspect", () => inspectWithService().catch(() => inspect()));
   handle("project:catalog", () => getCatalog().catch(() => localCatalog()));
+  handle("project:botId", async () => {
+    const token = (await decryptSecrets(requireProject().root)).DISCORD_TOKEN;
+    return token ? botIdFromToken(token) : null;
+  });
 
   handle("plugins:search", (query: string) => searchMarketplace(String(query ?? "")));
   handle("plugins:install", async (spec: string) => {
@@ -253,6 +265,8 @@ function registerIpc() {
     writeProjectFile(rel, content, { create: true }),
   );
   handle("fs:remove", (rel: string) => removeProjectFile(rel));
+  handle("fs:rename", (from: string, to: string) => renameProjectFile(from, to));
+  handle("fs:mkdir", (rel: string) => createProjectFolder(rel));
 
   handle("secrets:list", async () => {
     const { root } = requireProject();

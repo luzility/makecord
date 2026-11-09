@@ -43,7 +43,11 @@ export const en = {
   project: { newFlow: "New command, event or message" },
   start: {
     title: "Get started",
-    subtitle: "Get your bot running in four steps",
+    subtitle: "Get your bot running in a few steps",
+    inviteTitle: "Invite it to a server",
+    inviteBody:
+      "Makecord builds the invite link from your token, with the permissions your blocks need already ticked.",
+    openInvite: "Create invite link",
     tokenTitle: "Add your token",
     tokenBody:
       "Copy your bot token from the Discord Developer Portal and save it in Secrets as DISCORD_TOKEN. It's encrypted with your system keychain and never written to the project.",
@@ -64,10 +68,54 @@ export const en = {
     action: "Actions",
     logic: "Logic",
     data: "Data",
+    canvas: "Canvas",
   },
   flow: {
     unreadable: "Couldn't read this flow file",
     unknownNode: "Unknown node type",
+    copy: "Copy",
+    cut: "Cut",
+    paste: "Paste",
+    duplicate: "Duplicate",
+    selectAll: "Select all",
+    addNote: "Add note",
+    notePlaceholder: "Write a note…",
+  },
+  invite: {
+    title: "Invite bot",
+    intro:
+      "Open the link, pick a server you manage and authorize. Permissions your blocks use are ticked already.",
+    noToken:
+      "Add your bot token as DISCORD_TOKEN in Secrets first. The invite link is built from the bot ID inside it",
+    permissions: "Permissions",
+    used: "used",
+    testServer: "Preselect the test server from Settings",
+    privileged:
+      "This project uses %{intents}. Turn them on under Privileged Gateway Intents, or the bot can't log in.",
+    openPortal: "Open the Developer Portal",
+    copy: "Copy",
+    copied: "Copied",
+    open: "Open in browser",
+  },
+  files: {
+    open: "Open",
+    new: "New",
+    newFlow: "Command or event…",
+    newMessage: "Message design…",
+    newFile: "New file",
+    newFolder: "New folder",
+    rename: "Rename",
+    renameTitle: "Rename %{name}",
+    duplicate: "Duplicate",
+    copyPath: "Copy path",
+    name: "Name",
+    nameIn: "Name, inside %{dir}",
+    nameEmpty: "Type a name",
+    nameInvalid: "Names can't contain \\ : * ? \" < > |",
+    deleteTitle: "Delete %{name}?",
+    deleteFile: "%{path} will be deleted from disk. Undo can't bring it back",
+    deleteFolder:
+      "%{path} and everything in it will be deleted from disk. Undo can't bring it back",
   },
   properties: {
     empty: "Open a flow or select a block",
@@ -297,6 +345,8 @@ export const en = {
   runErrors: {
     missingToken: "DISCORD_TOKEN isn't set. Add it in Secrets",
     loginFailed: "Discord rejected the token. Check DISCORD_TOKEN in Secrets",
+    disallowedIntents:
+      "Discord refused a privileged intent. Turn it on under Bot in the Developer Portal, or remove it in Settings",
   },
   menu: {
     main: "Main menu",
@@ -321,6 +371,7 @@ export const en = {
     resetLayout: "Reset layout",
     docs: "Documentation",
     reportIssue: "Report an issue",
+    invite: "Invite bot to a server…",
   },
   settings: {
     title: "Settings",

@@ -11,6 +11,7 @@ import {
   Settings,
   Square,
   Undo2,
+  UserPlus,
 } from "lucide-react";
 import type { MessageKey } from "@/i18n/locale";
 import { LOCALES, type Locale } from "@/i18n/locale";
@@ -233,6 +234,14 @@ export const actions: Action[] = [
     run: () => st().set({ secretsOpen: true }),
   },
   {
+    id: "run.invite",
+    label: "actions.invite",
+    icon: UserPlus,
+    project: true,
+    global: true,
+    run: () => st().set({ inviteOpen: true }),
+  },
+  {
     id: "help.docs",
     label: "actions.docs",
     shortcuts: ["F1"],
@@ -291,6 +300,6 @@ export const MENU: { label: MessageKey; items: string[] }[] = [
       ...languageActions.map((a) => a.id),
     ],
   },
-  { label: "menu.run", items: ["run.start", "run.stop", "-", "run.secrets"] },
+  { label: "menu.run", items: ["run.start", "run.stop", "-", "run.secrets", "run.invite"] },
   { label: "menu.help", items: ["help.docs", "help.issue"] },
 ];
