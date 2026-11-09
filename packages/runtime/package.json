@@ -1,0 +1,61 @@
+{
+  "name": "@makecord/runtime",
+  "version": "0.1.0",
+  "description": "Headless engine that runs Makecord projects \u2014 inside the IDE or on any server",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "makecord": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./protocol": {
+      "types": "./dist/protocol.d.ts",
+      "default": "./dist/protocol.js"
+    },
+    "./cli": "./dist/cli.js",
+    "./project": {
+      "types": "./dist/project.d.ts",
+      "default": "./dist/project.js"
+    },
+    "./inspect": {
+      "types": "./dist/inspect.d.ts",
+      "default": "./dist/inspect.js"
+    },
+    "./describe": {
+      "types": "./dist/describe.d.ts",
+      "default": "./dist/describe.js"
+    },
+    "./language-service": {
+      "types": "./dist/language-service.d.ts",
+      "default": "./dist/language-service.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test dist/**/*.test.js"
+  },
+  "dependencies": {
+    "@makecord/plugin-core": "workspace:*",
+    "@makecord/plugin-sdk": "workspace:*",
+    "@makecord/spec": "workspace:*",
+    "discord.js": "14.28.1",
+    "semver": "7.8.6",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@makecord/config": "workspace:*",
+    "@types/semver": "^7.8.0"
+  }
+}
