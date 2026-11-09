@@ -1,4 +1,5 @@
 import { coreNodeMetas } from "@makecord/plugin-core/meta";
+import { MESSAGE_FIELD_FORMAT } from "@makecord/plugin-sdk";
 import { describeNode, type NodeDescriptor } from "@makecord/runtime/describe";
 import type { Locale } from "@/i18n/locale";
 import { useStore } from "./store";
@@ -20,7 +21,7 @@ export interface FieldSpec {
   key: string;
   title: string;
   description?: string;
-  kind: "text" | "multiline" | "boolean" | "number" | "enum";
+  kind: "text" | "multiline" | "boolean" | "number" | "enum" | "message";
   options?: string[];
   defaultValue?: unknown;
   required: boolean;
@@ -53,15 +54,18 @@ export function fieldsOf(node: NodeDescriptor, locale: Locale = "en"): FieldSpec
   const required = new Set(schema.required ?? []);
   const localized = node.locales?.[locale]?.fields ?? {};
   const out = Object.entries(schema.properties ?? {}).map(([key, p]): FieldSpec => {
-    const kind: FieldSpec["kind"] = Array.isArray(p.enum)
-      ? "enum"
-      : p.type === "boolean"
-        ? "boolean"
-        : p.type === "number" || p.type === "integer"
-          ? "number"
-          : p.multiline
-            ? "multiline"
-            : "text";
+    const kind: FieldSpec["kind"] =
+      p.format === MESSAGE_FIELD_FORMAT
+        ? "message"
+        : Array.isArray(p.enum)
+          ? "enum"
+          : p.type === "boolean"
+            ? "boolean"
+            : p.type === "number" || p.type === "integer"
+              ? "number"
+              : p.multiline
+                ? "multiline"
+                : "text";
     return {
       key,
       title: localized[key]?.title ?? (p.title as string) ?? key,

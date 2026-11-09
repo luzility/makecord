@@ -4,6 +4,7 @@ import {
   FileJson,
   FileText,
   Folder,
+  MessageSquare,
   Plus,
   Workflow,
   Zap,
@@ -20,6 +21,7 @@ const icon = { size: 16, strokeWidth: 1.5, className: "shrink-0 text-faint" };
 function iconFor(node: FileNode) {
   if (node.path.startsWith("events/") && node.name.endsWith(".flow.json")) return <Zap {...icon} />;
   if (node.name.endsWith(".flow.json")) return <Workflow {...icon} />;
+  if (node.name.endsWith(".message.json")) return <MessageSquare {...icon} />;
   if (node.name.endsWith(".json")) return <FileJson {...icon} />;
   if (/\.(ts|js)$/.test(node.name)) return <FileCode2 {...icon} />;
   return <FileText {...icon} />;
@@ -87,7 +89,7 @@ function TreeItem({ node, depth }: { node: FileNode; depth: number }) {
             errors && "underline decoration-bad/70 decoration-wavy underline-offset-4",
           )}
         >
-          {node.name.replace(/\.flow\.json$/, "")}
+          {node.name.replace(/\.(flow|message)\.json$/, "")}
         </span>
       </button>
     </li>
@@ -102,7 +104,7 @@ export function ProjectPanel() {
     <div className="flex h-full flex-col">
       <div className="flex h-9 shrink-0 items-center justify-between pr-1 pl-3">
         <span className="truncate text-label font-medium">{tree?.name}</span>
-        <IconButton label={t("project.newFlow")} onClick={() => set({ newFlowOpen: true })}>
+        <IconButton label={t("project.newFlow")} onClick={() => set({ newFlowOpen: "command" })}>
           <Plus size={16} strokeWidth={1.5} />
         </IconButton>
       </div>

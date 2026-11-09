@@ -1,4 +1,4 @@
-import { defineNodeMeta } from "@makecord/plugin-sdk";
+import { defineNodeMeta, MESSAGE_FIELD_FORMAT } from "@makecord/plugin-sdk";
 import { z } from "zod";
 
 const text = (title: string, description?: string) =>
@@ -21,6 +21,32 @@ const userIdTr = { title: "Kullanıcı ID", description: "Örneğin {{options.us
 const reason = () =>
   z.string().default("").meta({ title: "Reason", description: "Shown in the audit log" });
 const reasonTr = { title: "Sebep", description: "Denetim kaydında görünür" };
+const content = () =>
+  z.string().max(2000).default("").meta({
+    title: "Message",
+    description: "Use variables like {{user.displayName}}",
+    multiline: true,
+  });
+const design = () =>
+  z.string().default("").meta({
+    title: "Message design",
+    description: "Sends a design from messages/ instead of the text above",
+    format: MESSAGE_FIELD_FORMAT,
+  });
+const contentTr = {
+  title: "Mesaj",
+  description: "{{user.displayName}} gibi değişkenler kullanılabilir",
+};
+const designTr = {
+  title: "Mesaj tasarımı",
+  description: "Yukarıdaki metin yerine messages/ içindeki bir tasarımı gönderir",
+};
+const contentOrDesign = <T extends { content: string; message: string }>(d: T) =>
+  Boolean(d.content.trim() || d.message.trim());
+const contentOrDesignError = {
+  message: "Write a message or pick a message design",
+  path: ["content"],
+};
 
 export const trigger = defineNodeMeta({
   type: "core.trigger",
@@ -39,19 +65,20 @@ export const reply = defineNodeMeta({
   description: "Replies to the command, button, menu or form that started the flow.",
   category: "action",
   needsInteraction: true,
-  fields: z.object({
-    content: text("Message", "Use variables like {{user.displayName}}").min(1).max(2000),
-    ephemeral: z.boolean().default(false).meta({ title: "Only visible to the user" }),
-  }),
+  fields: z
+    .object({
+      content: content(),
+      message: design(),
+      ephemeral: z.boolean().default(false).meta({ title: "Only visible to the user" }),
+    })
+    .refine(contentOrDesign, contentOrDesignError),
   locales: {
     tr: {
       title: "Yanıt Ver",
       description: "Akışı başlatan komuta, butona, menüye veya forma yanıt verir.",
       fields: {
-        content: {
-          title: "Mesaj",
-          description: "{{user.displayName}} gibi değişkenler kullanılabilir",
-        },
+        content: contentTr,
+        message: designTr,
         ephemeral: { title: "Sadece kullanana göster" },
       },
     },
@@ -81,17 +108,21 @@ export const sendMessage = defineNodeMeta({
   title: "Send Message",
   description: "Sends a message to a channel.",
   category: "action",
-  fields: z.object({
-    channelId: line("Channel ID", "For example {{channel.id}}").min(1),
-    content: text("Message").min(1).max(2000),
-  }),
+  fields: z
+    .object({
+      channelId: line("Channel ID", "For example {{channel.id}}").min(1),
+      content: content(),
+      message: design(),
+    })
+    .refine(contentOrDesign, contentOrDesignError),
   locales: {
     tr: {
       title: "Mesaj Gönder",
       description: "Bir kanala mesaj gönderir.",
       fields: {
         channelId: { title: "Kanal ID", description: "Örneğin {{channel.id}}" },
-        content: { title: "Mesaj" },
+        content: contentTr,
+        message: designTr,
       },
     },
   },
@@ -103,17 +134,43 @@ export const sendDM = defineNodeMeta({
   description: "Sends a direct message to a user. Fails if they don't accept DMs.",
   category: "action",
   outputs: ["next", "failed"],
-  fields: z.object({
-    userId: userId(),
-    content: text("Message").min(1).max(2000),
-  }),
+  fields: z
+    .object({
+      userId: userId(),
+      content: content(),
+      message: design(),
+    })
+    .refine(contentOrDesign, contentOrDesignError),
   locales: {
     tr: {
       title: "DM Gönder",
       description:
         "Bir kullanıcıya özel mesaj gönderir. Kullanıcı DM kabul etmiyorsa başarısız olur.",
-      fields: { userId: userIdTr, content: { title: "Mesaj" } },
+      fields: { userId: userIdTr, content: contentTr, message: designTr },
       outputs: { next: "gönderildi", failed: "başarısız" },
+    },
+  },
+});
+
+export const updateMessage = defineNodeMeta({
+  type: "core.updateMessage",
+  title: "Update Message",
+  description:
+    "Changes the message whose button or menu was used, like a vote count or a next page.",
+  category: "action",
+  needsInteraction: true,
+  fields: z
+    .object({
+      content: content(),
+      message: design(),
+    })
+    .refine(contentOrDesign, contentOrDesignError),
+  locales: {
+    tr: {
+      title: "Mesajı Güncelle",
+      description:
+        "Butonu veya menüsü kullanılan mesajı değiştirir, örneğin oy sayısı ya da sonraki sayfa.",
+      fields: { content: contentTr, message: designTr },
     },
   },
 });
@@ -606,6 +663,7 @@ export const coreNodeMetas = [
   deferReply,
   sendMessage,
   sendDM,
+  updateMessage,
   addReaction,
   deleteMessage,
   addRole,

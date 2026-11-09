@@ -1,0 +1,91 @@
+---
+title: Message designs
+description: Design rich messages with embeds, buttons, menus and Components V2, then send them from any flow.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+A message design is a reusable message that you build visually and send from **Reply**, **Send Message**, **Send DM** or **Update Message**. Each design is one file in the `messages/` folder, like `messages/welcome.message.json`.
+
+## Creating a design
+
+Use **+** in the Project panel and pick **Message**. The name is how blocks find the design, and `/` creates folders: `tickets/open` lives at `messages/tickets/open.message.json`.
+
+The editor shows a form on the left and a Discord-style preview on the right. **Code** switches to the JSON file, which has autocomplete and validation. Undo and redo work as in flows.
+
+To send a design, select a **Reply** or **Send Message** block and pick it under **Message design**. When a design is picked, the block's own text is ignored.
+
+## Two formats
+
+Pick the format at the top of the editor. You can switch at any time: Makecord converts what it can, and undo brings back the original.
+
+### Classic
+
+The format Discord has always had:
+
+- **Text** up to 2000 characters.
+- Up to 10 **embeds**, each with a color, author, title and link, description, up to 25 fields, thumbnail, image, footer and timestamp.
+- Up to 5 **rows** of components. A row holds up to 5 buttons or a single menu.
+
+### Components V2
+
+Discord's newer layout system. The message is a stack of blocks:
+
+| Block | What it is |
+| --- | --- |
+| Text | Markdown text, including `#` headings and `-#` small text |
+| Container | A box with an accent color that groups other blocks |
+| Section | Up to 3 texts with a button or a thumbnail next to them |
+| Gallery | 1 to 10 images in a grid |
+| Separator | Space between blocks, with or without a line |
+| Buttons | A row of up to 5 buttons, or a menu |
+
+A Components V2 message can't have plain text or embeds outside these blocks, and holds up to 40 components in total. The editor counts them for you.
+
+## Variables
+
+Every text in a design can use [variables](/docs/variables/), like `{{user.displayName}}` or `{{vars.score}}`. They're filled in when the block sends the message, so a design can show values computed earlier in the flow. The preview shows them as highlighted names.
+
+Image URLs can be variables too, such as `{{user.avatar}}` for a thumbnail.
+
+## Buttons and menus
+
+Every button (except link buttons) and every menu has a **custom ID**. When someone uses it, Discord tells the bot, and the event flow with a matching custom ID runs:
+
+1. Add a button with the custom ID `vote:pizza` to a design.
+2. Create an event flow for **When a button is clicked** with the custom ID `vote:*`.
+3. In that flow, `{{customId}}` is `vote:pizza`, and **Update Message** can redraw the message with new numbers.
+
+The Problems panel warns about buttons and menus that no flow handles.
+
+Menu options are written one per line as `Label | value | description`. The picked values arrive in the flow as `{{value}}` (the first) and `{{values}}` (all of them).
+
+<Aside>
+  Discord gives the bot 3 seconds to answer a click. Put **Defer Reply** first when the flow does something slow.
+</Aside>
+
+## The file format
+
+```json title="messages/welcome.message.json"
+{
+  "specVersion": 1,
+  "kind": "componentsV2",
+  "components": [
+    {
+      "type": "container",
+      "accentColor": "#5865f2",
+      "components": [
+        { "type": "text", "content": "## Welcome {{user.displayName}}" },
+        {
+          "type": "row",
+          "components": [
+            { "type": "button", "style": "success", "label": "Get roles", "customId": "roles:open" }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+Classic designs use `"kind": "classic"` with `content`, `embeds` and `components`.

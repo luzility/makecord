@@ -1,14 +1,19 @@
 import type { LogLevel, NodeContext } from "@makecord/plugin-sdk";
-import type { Flow } from "@makecord/spec";
+import type { Flow, MessageDesign } from "@makecord/spec";
 import { TRIGGER_NODE_TYPE } from "@makecord/spec";
+import { buildMessage } from "./message.js";
 import type { NodeRegistry } from "./plugins.js";
 import type { Emit } from "./reporter.js";
 import { renderData } from "./templates.js";
 
 const MAX_STEPS = 2000;
 
-export type ExecutionBase = Omit<NodeContext, "secret" | "log" | "vars" | "scope" | "nodeId"> & {
+export type ExecutionBase = Omit<
+  NodeContext,
+  "secret" | "log" | "vars" | "scope" | "nodeId" | "message"
+> & {
   scope: Record<string, unknown>;
+  messages?: ReadonlyMap<string, MessageDesign>;
 };
 
 export async function executeFlow(opts: {
@@ -43,9 +48,15 @@ export async function executeFlow(opts: {
 
     const { plugin } = entry;
     const scope = { ...base.scope, vars: Object.fromEntries(vars) };
+    const { messages, ...shared } = base;
     const ctx: NodeContext = {
-      ...base,
+      ...shared,
       scope,
+      message: (name) => {
+        const design = messages?.get(name.trim());
+        if (!design) throw new Error(`Message design "${name}" doesn't exist in messages/`);
+        return buildMessage(design, { ...base.scope, vars: Object.fromEntries(vars) });
+      },
       vars,
       nodeId: node.id,
       secret: (name) =>

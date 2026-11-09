@@ -1,5 +1,6 @@
-import { FlowEventName, INTERACTION_EVENTS } from "@makecord/spec";
+import { FlowEventName, INTERACTION_EVENTS, messageFileOf } from "@makecord/spec";
 import { useState } from "react";
+import { newMessage } from "@/editors/message/model";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import { openFile } from "@/lib/dock";
@@ -18,14 +19,19 @@ async function freePath(base: string) {
 export function NewFlowDialog() {
   const { t } = useT();
   const set = useStore((s) => s.set);
-  const [kind, setKind] = useState<"command" | "event">("command");
+  const initial = useStore((s) => s.newFlowOpen);
+  const [kind, setKind] = useState<"command" | "event" | "message">(initial || "command");
+  const [messageKind, setMessageKind] = useState<"classic" | "componentsV2">("componentsV2");
   const [name, setName] = useState("");
   const [event, setEvent] = useState<FlowEventName>("guildMemberAdd");
   const [customId, setCustomId] = useState("");
   const interaction = INTERACTION_EVENTS.includes(event);
   const [error, setError] = useState<string | null>(null);
   const close = () => set({ newFlowOpen: false });
-  const validName = /^[-_\p{Ll}\p{N}]{1,32}$/u.test(name);
+  const validName =
+    kind === "message"
+      ? /^[-_\p{L}\p{N}]+(\/[-_\p{L}\p{N}]+)*$/u.test(name) && name.length <= 64
+      : /^[-_\p{Ll}\p{N}]{1,32}$/u.test(name);
 
   const create = async () => {
     const slug = customId
@@ -36,15 +42,22 @@ export function NewFlowDialog() {
       kind === "command"
         ? `commands/${name}`
         : `events/${interaction && slug ? `${event}-${slug}` : event}`;
-    const path = kind === "command" ? `${base}.flow.json` : await freePath(base);
+    const path =
+      kind === "message"
+        ? messageFileOf(name)
+        : kind === "command"
+          ? `${base}.flow.json`
+          : await freePath(base);
     const flow =
-      kind === "command"
-        ? newCommandFlow(
-            name,
-            t("templates.commandDescription", { name }),
-            t("templates.commandReply"),
-          )
-        : newEventFlow(event, customId.trim() || undefined);
+      kind === "message"
+        ? newMessage(messageKind, t("templates.messageText"))
+        : kind === "command"
+          ? newCommandFlow(
+              name,
+              t("templates.commandDescription", { name }),
+              t("templates.commandReply"),
+            )
+          : newEventFlow(event, customId.trim() || undefined);
     try {
       await api.fs.create(path, toJson(flow));
       close();
@@ -66,8 +79,8 @@ export function NewFlowDialog() {
           if (kind === "event" || validName) void create();
         }}
       >
-        <fieldset className="m-0 grid min-w-0 grid-cols-2 gap-1 rounded-lg border border-line bg-chrome p-1">
-          {(["command", "event"] as const).map((k) => (
+        <fieldset className="m-0 grid min-w-0 grid-cols-3 gap-1 rounded-lg border border-line bg-chrome p-1">
+          {(["command", "event", "message"] as const).map((k) => (
             <button
               key={k}
               type="button"
@@ -78,11 +91,36 @@ export function NewFlowDialog() {
                 kind === k ? "bg-hover text-fg" : "text-faint hover:text-fg",
               )}
             >
-              {t(k === "command" ? "newFlow.command" : "newFlow.event")}
+              {t(`newFlow.${k}`)}
             </button>
           ))}
         </fieldset>
-        {kind === "command" ? (
+        {kind === "message" ? (
+          <>
+            <Field label={t("newFlow.messageName")} hint={t("newFlow.messageNameHint")}>
+              <div className="flex items-center rounded-md border border-line bg-chrome focus-within:border-fg/40">
+                <span className="pl-2 font-mono text-label text-faint">messages/</span>
+                <input
+                  autoFocus
+                  value={name}
+                  onChange={(e) => setName(e.target.value.replace(/\s/g, "-"))}
+                  placeholder="welcome"
+                  className="h-7 flex-1 bg-transparent px-1 font-mono text-label outline-none focus-visible:outline-none placeholder:text-faint"
+                />
+              </div>
+            </Field>
+            <Field label={t("message.format")} hint={t("newFlow.formatHint")}>
+              <select
+                value={messageKind}
+                onChange={(e) => setMessageKind(e.target.value as "classic" | "componentsV2")}
+                className={selectCls}
+              >
+                <option value="componentsV2">{t("message.componentsV2")}</option>
+                <option value="classic">{t("message.classic")}</option>
+              </select>
+            </Field>
+          </>
+        ) : kind === "command" ? (
           <Field label={t("newFlow.commandName")} hint={t("newFlow.commandNameHint")}>
             <div className="flex items-center rounded-md border border-line bg-chrome focus-within:border-fg/40">
               <span className="pl-2 font-mono text-label text-faint">/</span>
@@ -126,7 +164,7 @@ export function NewFlowDialog() {
           <Button variant="ghost" onClick={close}>
             {t("common.cancel")}
           </Button>
-          <Button variant="primary" type="submit" disabled={kind === "command" && !validName}>
+          <Button variant="primary" type="submit" disabled={kind !== "event" && !validName}>
             {t("common.create")}
           </Button>
         </div>

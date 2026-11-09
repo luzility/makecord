@@ -93,7 +93,7 @@ export const actions: Action[] = [
     icon: FilePlus2,
     project: true,
     global: true,
-    run: () => st().set({ newFlowOpen: true }),
+    run: () => st().set({ newFlowOpen: "command" }),
   },
   {
     id: "file.settings",

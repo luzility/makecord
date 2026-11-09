@@ -3,13 +3,16 @@ import {
   type Flow,
   FlowEventName,
   INTERACTION_EVENTS,
+  messageFileOf,
   PermissionName,
   type Schedule,
 } from "@makecord/spec";
-import { Plus, Trash2 } from "lucide-react";
+import { ExternalLink, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button, Empty, Field, IconButton, Input, selectCls } from "@/components/ui";
 import { useT } from "@/i18n";
+import { openFile } from "@/lib/dock";
+import { useMessageNames } from "@/lib/messages";
 import { descriptorOf, fieldsOf, type NodeDescriptor, nodeText, useNodes } from "@/lib/nodes";
 import { problemText } from "@/lib/problems";
 import { useStore } from "@/lib/store";
@@ -115,7 +118,9 @@ function NodeForm({
         }
         return (
           <Field key={f.key} label={f.title} hint={f.description}>
-            {f.kind === "enum" ? (
+            {f.kind === "message" ? (
+              <MessagePicker value={String(value ?? "")} onChange={(v) => setField(f.key, v)} />
+            ) : f.kind === "enum" ? (
               <select
                 className={selectCls}
                 value={String(value ?? "")}
@@ -337,6 +342,41 @@ function FlowSettings({ path, flow }: { path: string; flow: Flow }) {
           ))}
         </div>
       </Field>
+    </div>
+  );
+}
+
+function MessagePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { t } = useT();
+  const names = useMessageNames();
+  const set = useStore((s) => s.set);
+  const known = !value || names.includes(value);
+  return (
+    <div className="flex gap-1">
+      <select
+        className={selectCls}
+        value={value}
+        onChange={(e) => {
+          if (e.target.value === "\u0000new") set({ newFlowOpen: "message" });
+          else onChange(e.target.value);
+        }}
+      >
+        <option value="">{t("properties.noDesign")}</option>
+        {names.map((n) => (
+          <option key={n} value={n}>
+            {n}
+          </option>
+        ))}
+        {!known && <option value={value}>{value}</option>}
+        <option value={"\u0000new"}>{t("properties.newDesign")}</option>
+      </select>
+      <IconButton
+        label={t("properties.openDesign")}
+        disabled={!value || !known}
+        onClick={() => void openFile(messageFileOf(value))}
+      >
+        <ExternalLink size={14} strokeWidth={1.5} />
+      </IconButton>
     </div>
   );
 }

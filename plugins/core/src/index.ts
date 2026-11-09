@@ -1,4 +1,9 @@
-import { defineNode, definePlugin, type NodeContext } from "@makecord/plugin-sdk";
+import {
+  type BuiltMessage,
+  defineNode,
+  definePlugin,
+  type NodeContext,
+} from "@makecord/plugin-sdk";
 import * as m from "./meta.js";
 
 const toNumber = (value: string, field: string): number => {
@@ -49,6 +54,19 @@ async function messageOf(ctx: NodeContext, channelId: string, messageId: string)
   return channel.messages.fetch(messageId);
 }
 
+const EPHEMERAL = 1 << 6;
+const COMPONENTS_V2 = 1 << 15;
+
+function payloadOf(ctx: NodeContext, data: { content: string; message: string }): BuiltMessage {
+  if (data.message.trim()) return ctx.message(data.message);
+  return { content: data.content };
+}
+
+function withFlags(payload: BuiltMessage, extra: number): BuiltMessage {
+  const flags = (payload.flags ?? 0) | extra;
+  return flags ? { ...payload, flags } : payload;
+}
+
 function requireInteraction(ctx: NodeContext) {
   if (!ctx.interaction)
     throw new Error("This block needs a command, button, menu or form to answer");
@@ -82,10 +100,12 @@ export default definePlugin({
 
     defineNode(m.reply, async (ctx, data) => {
       const i = requireInteraction(ctx);
-      const flags = data.ephemeral ? (["Ephemeral"] as const) : undefined;
-      if (i.deferred && !i.replied) await i.editReply({ content: data.content });
-      else if (i.replied) await i.followUp({ content: data.content, flags });
-      else await i.reply({ content: data.content, flags });
+      const payload = withFlags(payloadOf(ctx, data), data.ephemeral ? EPHEMERAL : 0);
+      if (i.deferred && !i.replied) {
+        const { flags, ...rest } = payload;
+        await i.editReply({ ...rest, flags: flags && flags & ~EPHEMERAL });
+      } else if (i.replied) await i.followUp(payload);
+      else await i.reply(payload);
     }),
 
     defineNode(m.deferReply, async (ctx, data) => {
@@ -96,18 +116,30 @@ export default definePlugin({
     }),
 
     defineNode(m.sendMessage, async (ctx, data) => {
-      await (await sendableChannel(ctx, data.channelId)).send(data.content);
+      await (await sendableChannel(ctx, data.channelId)).send(payloadOf(ctx, data));
     }),
 
     defineNode(m.sendDM, async (ctx, data) => {
       try {
         const user = await ctx.client.users.fetch(data.userId);
-        await user.send(data.content);
+        await user.send(payloadOf(ctx, data));
         return "next";
       } catch (e) {
         ctx.log("warn", `Couldn't DM ${data.userId}: ${(e as Error).message}`);
         return "failed";
       }
+    }),
+
+    defineNode(m.updateMessage, async (ctx, data) => {
+      const i = requireInteraction(ctx);
+      if (!i.isMessageComponent()) {
+        throw new Error("Update Message only works after a button click or a menu pick");
+      }
+      const payload = payloadOf(ctx, data);
+      const update =
+        (payload.flags ?? 0) & COMPONENTS_V2 ? payload : { embeds: [], components: [], ...payload };
+      if (i.deferred || i.replied) await i.editReply(update);
+      else await i.update(update);
     }),
 
     defineNode(m.addReaction, async (ctx, data) => {

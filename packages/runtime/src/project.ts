@@ -3,6 +3,9 @@ import { join, relative, sep } from "node:path";
 import {
   FLOW_FILE_SUFFIX,
   Flow,
+  MESSAGE_FILE_SUFFIX,
+  MessageDesign,
+  messageNameOf,
   PROJECT_FILE,
   ProjectConfig,
   TRIGGER_NODE_TYPE,
@@ -11,6 +14,12 @@ import {
 export interface LoadedFlow {
   file: string;
   flow: Flow;
+}
+
+export interface LoadedMessage {
+  file: string;
+  name: string;
+  design: MessageDesign;
 }
 
 export interface ProjectProblem {
@@ -22,6 +31,7 @@ export interface LoadedProject {
   dir: string;
   config: ProjectConfig;
   flows: LoadedFlow[];
+  messages: Map<string, LoadedMessage>;
   problems: ProjectProblem[];
 }
 
@@ -36,7 +46,7 @@ async function* walk(dir: string): AsyncGenerator<string> {
     if (e.name.startsWith(".") || e.name === "node_modules") continue;
     const p = join(dir, e.name);
     if (e.isDirectory()) yield* walk(p);
-    else if (e.name.endsWith(FLOW_FILE_SUFFIX)) yield p;
+    else if (e.name.endsWith(FLOW_FILE_SUFFIX) || e.name.endsWith(MESSAGE_FILE_SUFFIX)) yield p;
   }
 }
 
@@ -53,6 +63,7 @@ export async function loadProject(dir: string): Promise<LoadedProject> {
   const flows: LoadedFlow[] = [];
   const problems: ProjectProblem[] = [];
   const commandNames = new Map<string, string>();
+  const messages = new Map<string, LoadedMessage>();
 
   for await (const path of walk(dir)) {
     const file = relative(dir, path).split(sep).join("/");
@@ -61,6 +72,17 @@ export async function loadProject(dir: string): Promise<LoadedProject> {
       json = JSON.parse(await readFile(path, "utf8"));
     } catch (e) {
       problems.push({ file, message: `Couldn't parse JSON: ${(e as Error).message}` });
+      continue;
+    }
+    if (file.endsWith(MESSAGE_FILE_SUFFIX)) {
+      const name = messageNameOf(file);
+      if (!name) {
+        problems.push({ file, message: "Message designs have to be inside the messages/ folder" });
+        continue;
+      }
+      const msg = MessageDesign.safeParse(json);
+      if (!msg.success) problems.push({ file, message: formatZod(msg.error.issues) });
+      else messages.set(name, { file, name, design: msg.data });
       continue;
     }
     const res = Flow.safeParse(json);
@@ -91,5 +113,5 @@ export async function loadProject(dir: string): Promise<LoadedProject> {
     flows.push({ file, flow });
   }
 
-  return { dir, config: parsed.data, flows, problems };
+  return { dir, config: parsed.data, flows, messages, problems };
 }

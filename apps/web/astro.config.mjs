@@ -42,6 +42,7 @@ export default defineConfig({
             { slug: "docs/projects" },
             { slug: "docs/flows" },
             { slug: "docs/variables" },
+            { slug: "docs/messages" },
             { slug: "docs/secrets" },
           ],
         },

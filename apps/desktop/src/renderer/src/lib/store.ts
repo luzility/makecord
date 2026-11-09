@@ -1,5 +1,5 @@
 import { isEmptyIssue } from "@makecord/runtime/inspect";
-import { Flow } from "@makecord/spec";
+import { Flow, MESSAGE_FILE_SUFFIX, MessageDesign } from "@makecord/spec";
 import { create } from "zustand";
 import { initialLocale, type Locale, persistLocale } from "@/i18n/locale";
 import {
@@ -17,6 +17,7 @@ export interface Doc {
   text: string;
   savedText: string;
   flow?: Flow;
+  message?: MessageDesign;
   parseError?: string;
   invalid?: { field: string; message: string; empty: boolean };
   missing?: boolean;
@@ -51,7 +52,7 @@ interface State {
   executed: Record<string, number>;
   secretsOpen: boolean;
   searchOpen: boolean;
-  newFlowOpen: boolean;
+  newFlowOpen: false | "command" | "event" | "message";
   newProjectOpen: boolean;
   activePath: string | null;
   locale: Locale;
@@ -70,6 +71,11 @@ interface State {
   setText(path: string, text: string): void;
   flushSaves(): Promise<void>;
   updateFlow(path: string, fn: (flow: Flow) => Flow, mergeKey?: string): void;
+  updateMessage(
+    path: string,
+    fn: (message: MessageDesign) => MessageDesign,
+    mergeKey?: string,
+  ): void;
   undo(path: string): void;
   redo(path: string): void;
   canUndo(path: string): boolean;
@@ -83,9 +89,11 @@ interface State {
 
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
 
+type Model = Flow | MessageDesign;
+
 interface History {
-  past: Flow[];
-  future: Flow[];
+  past: Model[];
+  future: Model[];
   mergeKey?: string;
   at: number;
 }
@@ -102,18 +110,30 @@ const historyOf = (path: string) => {
 };
 let logId = 0;
 
-function parse(text: string): Pick<Doc, "flow" | "parseError"> {
+export const isFlowFile = (path: string) => path.endsWith(".flow.json");
+export const isMessageFile = (path: string) => path.endsWith(MESSAGE_FILE_SUFFIX);
+const isModelFile = (path: string) => isFlowFile(path) || isMessageFile(path);
+
+function parse(path: string, text: string): Pick<Doc, "flow" | "message" | "parseError"> {
+  if (!isModelFile(path)) return {};
   try {
-    const res = Flow.safeParse(JSON.parse(text));
+    const json = JSON.parse(text);
+    if (isMessageFile(path)) {
+      const res = MessageDesign.safeParse(json);
+      return res.success
+        ? { message: res.data, flow: undefined, parseError: undefined }
+        : { message: undefined, parseError: res.error.issues[0]?.message ?? "Invalid message" };
+    }
+    const res = Flow.safeParse(json);
     return res.success
-      ? { flow: res.data }
-      : { parseError: res.error.issues[0]?.message ?? "Invalid flow" };
+      ? { flow: res.data, message: undefined, parseError: undefined }
+      : { flow: undefined, parseError: res.error.issues[0]?.message ?? "Invalid flow" };
   } catch (e) {
-    return { parseError: (e as Error).message };
+    return { flow: undefined, message: undefined, parseError: (e as Error).message };
   }
 }
 
-export const isFlowFile = (path: string) => path.endsWith(".flow.json");
+const modelOf = (doc: Doc | undefined): Model | undefined => doc?.flow ?? doc?.message;
 
 export const cleanError = (e: unknown) =>
   String((e as Error)?.message ?? e).replace(
@@ -141,10 +161,12 @@ export const useStore = create<State>((set, get) => {
     });
   };
 
-  const applyFlow = (path: string, flow: Flow) => {
+  const applyModel = (path: string, model: Model) => {
     const doc = get().docs[path];
     if (!doc) return;
-    const check = Flow.safeParse(flow);
+    const isMessage = isMessageFile(path);
+    const key = isMessage ? "message" : "flow";
+    const check = isMessage ? MessageDesign.safeParse(model) : Flow.safeParse(model);
     if (!check.success) {
       const issue = check.error.issues[0];
       const invalid = {
@@ -152,19 +174,33 @@ export const useStore = create<State>((set, get) => {
         message: issue?.message ?? "Invalid flow",
         empty: issue ? isEmptyIssue(issue as Parameters<typeof isEmptyIssue>[0]) : false,
       };
-      set((s) => ({ docs: { ...s.docs, [path]: { ...doc, flow, invalid } } }));
+      set((s) => ({ docs: { ...s.docs, [path]: { ...doc, [key]: model, invalid } } }));
       clearTimeout(timers.get(path));
       timers.delete(path);
       return;
     }
-    const text = `${JSON.stringify(flow, null, 2)}\n`;
+    const text = `${JSON.stringify(model, null, 2)}\n`;
     set((s) => ({
       docs: {
         ...s.docs,
-        [path]: { ...doc, flow, text, parseError: undefined, invalid: undefined },
+        [path]: { ...doc, [key]: model, text, parseError: undefined, invalid: undefined },
       },
     }));
     scheduleSave(path);
+  };
+
+  const record = (path: string, current: Model, next: Model, mergeKey?: string) => {
+    const h = historyOf(path);
+    const now = Date.now();
+    const merge = mergeKey !== undefined && h.mergeKey === mergeKey && now - h.at < MERGE_WINDOW;
+    if (!merge) {
+      h.past.push(current);
+      if (h.past.length > HISTORY_LIMIT) h.past.shift();
+    }
+    h.future = [];
+    h.mergeKey = mergeKey;
+    h.at = now;
+    applyModel(path, next);
   };
 
   const scheduleSave = (path: string) => {
@@ -262,7 +298,7 @@ export const useStore = create<State>((set, get) => {
           [path]:
             text === null
               ? { text: "", savedText: "", missing: true }
-              : { text, savedText: text, ...(isFlowFile(path) ? parse(text) : {}) },
+              : { text, savedText: text, ...parse(path, text) },
         },
       }));
     },
@@ -277,46 +313,40 @@ export const useStore = create<State>((set, get) => {
       set((s) => ({
         docs: {
           ...s.docs,
-          [path]: { ...s.docs[path]!, text, ...(isFlowFile(path) ? parse(text) : {}) },
+          [path]: { ...s.docs[path]!, text, ...parse(path, text) },
         },
       }));
       scheduleSave(path);
     },
 
     updateFlow(path, fn, mergeKey) {
-      const doc = get().docs[path];
-      if (!doc?.flow) return;
-      const h = historyOf(path);
-      const now = Date.now();
-      const merge = mergeKey !== undefined && h.mergeKey === mergeKey && now - h.at < MERGE_WINDOW;
-      if (!merge) {
-        h.past.push(doc.flow);
-        if (h.past.length > HISTORY_LIMIT) h.past.shift();
-      }
-      h.future = [];
-      h.mergeKey = mergeKey;
-      h.at = now;
-      applyFlow(path, fn(doc.flow));
+      const flow = get().docs[path]?.flow;
+      if (flow) record(path, flow, fn(flow), mergeKey);
+    },
+
+    updateMessage(path, fn, mergeKey) {
+      const message = get().docs[path]?.message;
+      if (message) record(path, message, fn(message), mergeKey);
     },
 
     undo(path) {
-      const doc = get().docs[path];
+      const current = modelOf(get().docs[path]);
       const h = histories.get(path);
-      const prev = h?.past.pop();
-      if (!doc?.flow || !h || !prev) return;
-      h.future.push(doc.flow);
+      if (!current || !h?.past.length) return;
+      const prev = h.past.pop()!;
+      h.future.push(current);
       h.mergeKey = undefined;
-      applyFlow(path, prev);
+      applyModel(path, prev);
     },
 
     redo(path) {
-      const doc = get().docs[path];
+      const current = modelOf(get().docs[path]);
       const h = histories.get(path);
-      const next = h?.future.pop();
-      if (!doc?.flow || !h || !next) return;
-      h.past.push(doc.flow);
+      if (!current || !h?.future.length) return;
+      const next = h.future.pop()!;
+      h.past.push(current);
       h.mergeKey = undefined;
-      applyFlow(path, next);
+      applyModel(path, next);
     },
 
     canUndo: (path) => (histories.get(path)?.past.length ?? 0) > 0,
@@ -334,7 +364,7 @@ export const useStore = create<State>((set, get) => {
         set((s) => ({
           docs: {
             ...s.docs,
-            [path]: { text, savedText: text, ...(isFlowFile(path) ? parse(text) : {}) },
+            [path]: { text, savedText: text, ...parse(path, text) },
           },
         }));
       }

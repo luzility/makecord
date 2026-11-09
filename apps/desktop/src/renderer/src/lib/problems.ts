@@ -8,6 +8,8 @@ const KEYS: Record<string, MessageKey> = {
   "wrong-context": "problems.wrongContext",
   "needs-interaction": "problems.needsInteraction",
   "missing-schedule": "problems.missingSchedule",
+  "missing-message": "problems.missingMessage",
+  "unhandled-component": "problems.unhandledComponent",
   "invalid-field": "problems.invalidField",
   "dangling-edge": "problems.danglingEdge",
   "multiple-edges": "problems.multipleEdges",

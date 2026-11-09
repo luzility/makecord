@@ -1,5 +1,5 @@
 import { Command } from "cmdk";
-import { Circle, FileCode2, Workflow, Zap } from "lucide-react";
+import { Circle, FileCode2, MessageSquare, Workflow, Zap } from "lucide-react";
 import { useMemo } from "react";
 import { useT } from "@/i18n";
 import { actions, isAvailable, runAction } from "@/lib/actions";
@@ -91,7 +91,9 @@ export function SearchEverywhere() {
                 ? Zap
                 : f.name.endsWith(".flow.json")
                   ? Workflow
-                  : FileCode2;
+                  : f.name.endsWith(".message.json")
+                    ? MessageSquare
+                    : FileCode2;
               return (
                 <Command.Item
                   key={f.path}

@@ -9,6 +9,7 @@ my-bot/
 ├── makecord.json           # ad, intent'ler, plugin'ler, secret adları, cache limitleri
 ├── commands/*.flow.json    # slash komutları (görsel akış)
 ├── events/*.flow.json      # gateway event'leri
+├── messages/*.message.json # mesaj tasarımları (embed / Components V2)
 ├── data/store.json         # kalıcı anahtar/değer verisi (store blokları). gitignore'da
 ├── package.json            # "start": "makecord start ."  → @makecord/runtime
 ├── Dockerfile, docker-compose.yml, .env.example
@@ -27,6 +28,7 @@ VPS'e taşımak için: `cp .env.example .env && npm install && npm start` ya da 
 - **Etkileşimler:** Buton, seçim menüsü ve modal gönderimleri `buttonClick` / `selectMenu` / `modalSubmit` event akışlarına `customId` ile yönlendirilir (`vote:*` önek eşleşmesi, boş = hepsi). Komutlar ve bu üç event "etkileşimli akış"tır (`isInteractionFlow`). `needsInteraction` işaretli bloklar (Reply, Defer Reply, Show Form) sadece bunlarda kullanılabilir. Inspection bunu `needs-interaction` olarak raporlar, palet de bu blokları gizler.
 - **Zamanlama:** `schedule` akışları `everyMinutes` için `setInterval`, `dailyAt` için kendini yeniden kuran `setTimeout` ile çalışır. Bot kapalıyken kaçan çalışmalar telafi edilmez.
 - **Komutlar:** Seçeneklerde en fazla 25 `choices`, komutta `permissions` (`defaultMemberPermissions` olarak gönderilir).
+- **Mesaj tasarımları:** `messages/**/*.message.json` dosyaları (`spec/src/message.ts`), `classic` (metin + embed + satırlar) ya da `componentsV2` (container, section, gallery, separator, text, row; `IsComponentsV2` bayrağı) biçimindedir. `runtime/src/message.ts` tasarımı şablonları doldurarak ham Discord API JSON'una çevirir, boş kalan embed/blokları atar. Bloklar `ctx.message(ad)` ile kullanır. Tasarım seçen alanlar JSON şemasında `format: "makecord-message"` taşır (`MESSAGE_FIELD_FORMAT`), IDE bunu seçici olarak gösterir, inspection `missing-message` ve karşılıksız butonlar için `unhandled-component` üretir. IDE'de tasarımcı `editors/message/` altındadır: form + Discord benzeri önizleme (markdown `marked` değil, küçük bir Discord markdown çeviricisi + DOMPurify).
 - **Hata izolasyonu:** Bozuk bir flow dosyası botu düşürmez, problem olarak raporlanır.
 - **Hot reload:** `--watch` ile `*.flow.json` değişince akışlar yeniden yüklenir. Komut seti değiştiyse slash komutları yeniden kaydedilir (imza karşılaştırılarak, gereksiz API çağrısı yapılmaz).
 - **Transport:** Electron `utilityProcess` içinde `parentPort`, `fork` ile başlatılınca `process.send`, tek başına çalışırken okunabilir stdout kullanılır (`src/reporter.ts`). Mesaj tipleri `@makecord/runtime/protocol`'de tanımlıdır.

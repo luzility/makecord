@@ -55,7 +55,11 @@
     {
       "includes": [
         "apps/desktop/src/renderer/src/components/Menu.tsx",
-        "apps/desktop/src/renderer/src/panels/PropertiesPanel.tsx"
+        "apps/desktop/src/renderer/src/panels/PropertiesPanel.tsx",
+        "apps/desktop/src/renderer/src/editors/message/MessagePreview.tsx",
+        "apps/desktop/src/renderer/src/editors/message/ClassicForm.tsx",
+        "apps/desktop/src/renderer/src/editors/message/LayoutForm.tsx",
+        "apps/desktop/src/renderer/src/editors/message/parts.tsx"
       ],
       "linter": {
         "rules": {
@@ -81,7 +85,10 @@
       }
     },
     {
-      "includes": ["apps/desktop/src/renderer/src/editors/MarkdownPreview.tsx"],
+      "includes": [
+        "apps/desktop/src/renderer/src/editors/MarkdownPreview.tsx",
+        "apps/desktop/src/renderer/src/editors/message/MessagePreview.tsx"
+      ],
       "linter": {
         "rules": {
           "security": {

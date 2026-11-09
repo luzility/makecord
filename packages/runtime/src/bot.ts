@@ -4,6 +4,7 @@ import {
   type CommandFlow,
   type CommandOptionType,
   type EventFlow,
+  type MessageDesign,
   matchesCustomId,
   type ProjectConfig,
 } from "@makecord/spec";
@@ -119,6 +120,15 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
   }
 
   let project: LoadedProject = await loadProject(projectDir);
+  const designCache = new WeakMap<LoadedProject, Map<string, MessageDesign>>();
+  const designsOf = (p: LoadedProject) => {
+    let map = designCache.get(p);
+    if (!map) {
+      map = new Map([...p.messages].map(([name, m]) => [name, m.design]));
+      designCache.set(p, map);
+    }
+    return map;
+  };
   const config: ProjectConfig = project.config;
   const plugins = await loadPlugins(projectDir, config.plugins);
   const registry: NodeRegistry = plugins.registry;
@@ -180,11 +190,16 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
   const run = (
     file: string,
     flow: CommandFlow | EventFlow,
-    base: Omit<Parameters<typeof executeFlow>[0]["base"], "store">,
+    base: Omit<Parameters<typeof executeFlow>[0]["base"], "store" | "messages">,
   ) =>
-    executeFlow({ file, flow, registry, base: { ...base, store }, env, emit }).catch((e: Error) =>
-      emit({ type: "flow", phase: "error", flow: file, error: e.message }),
-    );
+    executeFlow({
+      file,
+      flow,
+      registry,
+      base: { ...base, store, messages: designsOf(project) },
+      env,
+      emit,
+    }).catch((e: Error) => emit({ type: "flow", phase: "error", flow: file, error: e.message }));
 
   const eventFlows = (event: EventFlow["event"]) =>
     project.flows.filter(
@@ -358,7 +373,7 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
   if (opts.watch) {
     let timer: NodeJS.Timeout | undefined;
     watcher = watch(projectDir, { recursive: true }, (_e, name) => {
-      if (!name?.endsWith(".flow.json")) return;
+      if (!name?.endsWith(".flow.json") && !name?.endsWith(".message.json")) return;
       clearTimeout(timer);
       timer = setTimeout(() => void reload(), 250);
     });

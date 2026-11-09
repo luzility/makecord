@@ -1,4 +1,9 @@
-import type { Client, RepliableInteraction } from "discord.js";
+import type {
+  APIEmbed,
+  APIMessageTopLevelComponent,
+  Client,
+  RepliableInteraction,
+} from "discord.js";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -12,6 +17,13 @@ export interface KeyValueStore {
   keys(prefix?: string): string[];
 }
 
+export interface BuiltMessage {
+  content?: string;
+  embeds?: APIEmbed[];
+  components?: APIMessageTopLevelComponent[];
+  flags?: number;
+}
+
 export interface NodeContext {
   readonly client: Client<true>;
   readonly interaction?: RepliableInteraction;
@@ -20,6 +32,7 @@ export interface NodeContext {
   readonly vars: Map<string, unknown>;
   readonly nodeId: string;
   readonly store: KeyValueStore;
+  message(name: string): BuiltMessage;
   secret(name: string): string | undefined;
   log(level: LogLevel, message: string): void;
 }

@@ -2,10 +2,11 @@ import type { IDockviewPanelProps } from "dockview-react";
 import { useEffect } from "react";
 import { Button, Empty } from "@/components/ui";
 import { FlowEditor } from "@/editors/FlowEditor";
+import { MessageEditor } from "@/editors/message/MessageEditor";
 import { TextEditor } from "@/editors/TextEditor";
 import { useT } from "@/i18n";
 import { closeFile } from "@/lib/dock";
-import { isFlowFile, useStore } from "@/lib/store";
+import { isFlowFile, isMessageFile, useStore } from "@/lib/store";
 
 export function EditorPanel({ params }: IDockviewPanelProps<{ path: string }>) {
   const { t } = useT();
@@ -26,9 +27,7 @@ export function EditorPanel({ params }: IDockviewPanelProps<{ path: string }>) {
       </Empty>
     );
   }
-  return isFlowFile(params.path) ? (
-    <FlowEditor path={params.path} />
-  ) : (
-    <TextEditor path={params.path} />
-  );
+  if (isFlowFile(params.path)) return <FlowEditor path={params.path} />;
+  if (isMessageFile(params.path)) return <MessageEditor path={params.path} />;
+  return <TextEditor path={params.path} />;
 }

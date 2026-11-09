@@ -25,7 +25,7 @@ function memoryStore() {
 const starter = join(dirname(fileURLToPath(import.meta.url)), "../../templates/starter");
 
 function fakeInteraction() {
-  const replies: { content: string; flags?: readonly string[] }[] = [];
+  const replies: { content: string; flags?: number }[] = [];
   return {
     replies,
     interaction: {
@@ -81,7 +81,7 @@ test("/greet without a target replies ephemerally", async () => {
     options: {},
   });
   assert.equal(replies[0]!.content, "Hey Luzi, welcome to the server");
-  assert.deepEqual(replies[0]!.flags, ["Ephemeral"]);
+  assert.equal(replies[0]!.flags, 64);
 });
 
 test("errors are reported with the failing node", async () => {
@@ -261,4 +261,65 @@ test("a plugin that can't be loaded is reported, and core still loads", async ()
   assert.equal(missing?.loaded, false);
   assert.ok(missing?.error);
   assert.equal(plugins.find((p) => p.name === "core")?.compatible, true);
+});
+
+test("message designs: missing ones and buttons nobody handles are reported", async () => {
+  const { inspectProject } = await import("./inspect.js");
+  const { coreNodeMetas } = await import("@makecord/plugin-core/meta");
+  const { MessageDesign } = await import("@makecord/spec");
+  const project = await loadProject(starter);
+  project.messages.set("poll", {
+    file: "messages/poll.message.json",
+    name: "poll",
+    design: MessageDesign.parse({
+      specVersion: 1,
+      kind: "classic",
+      content: "Vote",
+      components: [
+        {
+          type: "row",
+          components: [
+            { type: "button", label: "Yes", customId: "vote:yes" },
+            { type: "button", label: "Info", customId: "info" },
+          ],
+        },
+      ],
+    }),
+  });
+  const trigger = { id: "s", type: "core.trigger", position: { x: 0, y: 0 }, data: {} };
+  project.flows.push(
+    {
+      file: "events/vote.flow.json",
+      flow: {
+        specVersion: 1,
+        kind: "event",
+        event: "buttonClick",
+        customId: "vote:*",
+        nodes: [trigger],
+        edges: [],
+      },
+    },
+    {
+      file: "events/ready2.flow.json",
+      flow: {
+        specVersion: 1,
+        kind: "event",
+        event: "clientReady",
+        nodes: [
+          trigger,
+          {
+            id: "m",
+            type: "core.sendMessage",
+            position: { x: 0, y: 0 },
+            data: { channelId: "1", content: "", message: "nope" },
+          },
+        ],
+        edges: [{ id: "e", source: "s", sourceHandle: "next", target: "m" }],
+      },
+    },
+  );
+  const found = inspectProject(project, coreNodeMetas).map(
+    (p) => `${p.code}:${p.params?.customId ?? p.params?.name ?? ""}`,
+  );
+  assert.deepEqual(found.sort(), ["missing-message:nope", "unhandled-component:info"]);
 });

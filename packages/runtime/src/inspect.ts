@@ -1,8 +1,11 @@
-import type { NodeMeta } from "@makecord/plugin-sdk";
+import { MESSAGE_FIELD_FORMAT, type NodeMeta } from "@makecord/plugin-sdk";
 import {
   type EventFlow,
   type IntentName,
   isInteractionFlow,
+  type LayoutBlock,
+  type MessageDesign,
+  matchesCustomId,
   TRIGGER_NODE_TYPE,
 } from "@makecord/spec";
 import type { LoadedProject } from "./project.js";
@@ -47,6 +50,46 @@ export function isEmptyIssue(issue: {
   return issue.code === "too_small" && issue.minimum === 1 && issue.origin === "string";
 }
 
+function messageFields(meta: NodeMeta): string[] {
+  return Object.entries(meta.fields.shape)
+    .filter(([, field]) => {
+      const m = (field as { meta?: () => Record<string, unknown> | undefined }).meta?.();
+      return m?.format === MESSAGE_FIELD_FORMAT;
+    })
+    .map(([key]) => key);
+}
+
+type Interactive = { event: "buttonClick" | "selectMenu"; customId: string; label: string };
+
+function interactivesOf(design: MessageDesign): Interactive[] {
+  const out: Interactive[] = [];
+  const visit = (blocks: readonly LayoutBlock[]) => {
+    for (const b of blocks) {
+      if (b.type === "row") {
+        for (const c of b.components) {
+          if (c.type === "select")
+            out.push({ event: "selectMenu", customId: c.customId, label: c.customId });
+          else if (c.style !== "link" && c.customId)
+            out.push({ event: "buttonClick", customId: c.customId, label: c.label || c.customId });
+        }
+      } else if (b.type === "container") visit(b.components);
+      else if (
+        b.type === "section" &&
+        b.accessory.type === "button" &&
+        b.accessory.style !== "link" &&
+        b.accessory.customId
+      )
+        out.push({
+          event: "buttonClick",
+          customId: b.accessory.customId,
+          label: b.accessory.label || b.accessory.customId,
+        });
+    }
+  };
+  visit(design.components);
+  return out;
+}
+
 export function inspectProject(project: LoadedProject, metas: readonly NodeMeta[]): Problem[] {
   const byType = new Map(metas.map((m) => [m.type, m]));
   const problems: Problem[] = project.problems.map((p) => ({
@@ -55,6 +98,27 @@ export function inspectProject(project: LoadedProject, metas: readonly NodeMeta[
     message: p.message,
     code: "invalid-file",
   }));
+
+  const handlers = project.flows.flatMap(({ flow }) =>
+    flow.kind === "event" ? [{ event: flow.event, customId: flow.customId }] : [],
+  );
+  for (const { file, design } of project.messages.values()) {
+    for (const item of interactivesOf(design)) {
+      if (item.customId.includes("{{")) continue;
+      const handled = handlers.some(
+        (h) => h.event === item.event && matchesCustomId(h.customId, item.customId),
+      );
+      if (!handled) {
+        problems.push({
+          severity: "warning",
+          file,
+          code: "unhandled-component",
+          message: `Nothing runs when "${item.label}" is used. Add a ${item.event} flow with custom ID ${item.customId}`,
+          params: { label: item.label, customId: item.customId, event: item.event },
+        });
+      }
+    }
+  }
 
   for (const { file, flow } of project.flows) {
     const ids = new Set(flow.nodes.map((n) => n.id));
@@ -91,6 +155,19 @@ export function inspectProject(project: LoadedProject, metas: readonly NodeMeta[
           message: `"${meta.title}" can't be used in ${flow.kind} flows`,
           params: { type: node.type, kind: flow.kind },
         });
+      }
+      for (const key of messageFields(meta)) {
+        const name = String(node.data[key] ?? "").trim();
+        if (name && !project.messages.has(name)) {
+          problems.push({
+            severity: "error",
+            file,
+            nodeId: node.id,
+            code: "missing-message",
+            message: `Message design "${name}" doesn't exist in messages/`,
+            params: { type: node.type, name },
+          });
+        }
       }
       const res = meta.fields.safeParse(node.data);
       if (!res.success) {

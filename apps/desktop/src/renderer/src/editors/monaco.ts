@@ -1,4 +1,4 @@
-import { Flow, ProjectConfig } from "@makecord/spec";
+import { Flow, MessageDesign, ProjectConfig } from "@makecord/spec";
 import * as monaco from "monaco-editor";
 import EditorWorker from "monaco-editor/editor/editor.worker?worker";
 import JsonWorker from "monaco-editor/languages/features/json/json.worker?worker";
@@ -64,6 +64,11 @@ monaco.json.jsonDefaults.setDiagnosticsOptions({
       schema: schema(ProjectConfig),
     },
     { uri: "makecord://schemas/flow.json", fileMatch: ["**/*.flow.json"], schema: schema(Flow) },
+    {
+      uri: "makecord://schemas/message.json",
+      fileMatch: ["**/*.message.json"],
+      schema: schema(MessageDesign),
+    },
   ],
 });
 

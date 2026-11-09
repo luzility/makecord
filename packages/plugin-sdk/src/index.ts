@@ -1,4 +1,5 @@
-export type { KeyValueStore, LogLevel, NodeContext, StoredValue } from "./context.js";
+export type { BuiltMessage, KeyValueStore, LogLevel, NodeContext, StoredValue } from "./context.js";
+export { MESSAGE_FIELD_FORMAT } from "./fields.js";
 export {
   defineNode,
   defineNodeMeta,

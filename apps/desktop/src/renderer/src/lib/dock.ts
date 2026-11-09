@@ -26,7 +26,7 @@ export async function openFile(path: string, nodeId?: string) {
   dock.addPanel({
     id,
     component: "editor",
-    title: basename(path).replace(/\.flow\.json$/, ""),
+    title: basename(path).replace(/\.(flow|message)\.json$/, ""),
     params: { path },
     position: anchor
       ? { referenceGroup: anchor.group }
