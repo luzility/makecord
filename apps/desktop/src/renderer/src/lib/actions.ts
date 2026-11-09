@@ -1,0 +1,296 @@
+import {
+  FilePlus2,
+  FolderOpen,
+  KeyRound,
+  LayoutPanelLeft,
+  type LucideIcon,
+  Play,
+  Puzzle,
+  Redo2,
+  Search,
+  Settings,
+  Square,
+  Undo2,
+} from "lucide-react";
+import type { MessageKey } from "@/i18n/locale";
+import { LOCALES, type Locale } from "@/i18n/locale";
+import { api } from "./api";
+import { flushAll, focusToolWindow, resetLayout } from "./dock";
+import type { Shortcut } from "./shortcuts";
+import { cleanError, isFlowFile, useStore } from "./store";
+import { isRunning, startBot, stopBot } from "./useRun";
+
+export const DOCS_URL = "https://makecord.app/docs/";
+export const ISSUES_URL = "https://github.com/makecord/makecord/issues";
+
+export interface Action {
+  id: string;
+  label: MessageKey;
+  labelVars?: Record<string, string | MessageKey>;
+  shortcuts?: Shortcut[];
+  icon?: LucideIcon;
+  project?: boolean;
+  global?: boolean;
+  enabled?: () => boolean;
+  run: () => void | Promise<void>;
+}
+
+const st = () => useStore.getState();
+const activeFlow = () => {
+  const path = st().activePath;
+  return path && isFlowFile(path) ? path : null;
+};
+const report = (e: unknown) => st().set({ notice: { key: "actionFailed", detail: cleanError(e) } });
+
+export async function openProject(root?: string) {
+  try {
+    await flushAll();
+    const p = await api.project.open(root);
+    if (p) await st().setProject(p);
+  } catch (e) {
+    report(e);
+  }
+}
+
+export async function closeProject() {
+  try {
+    await flushAll();
+    await api.project.close();
+    await st().setProject(null);
+  } catch (e) {
+    report(e);
+  }
+}
+
+const languageActions: Action[] = LOCALES.map((l: Locale) => ({
+  id: `view.language.${l}`,
+  label: `languages.${l}` as MessageKey,
+  global: true,
+  enabled: () => st().locale !== l,
+  run: () => st().setLocale(l),
+}));
+
+export const actions: Action[] = [
+  {
+    id: "file.newProject",
+    label: "actions.newProject",
+    shortcuts: ["Mod+Shift+N"],
+    global: true,
+    run: () => st().set({ newProjectOpen: true }),
+  },
+  {
+    id: "file.open",
+    label: "actions.open",
+    shortcuts: ["Mod+O"],
+    icon: FolderOpen,
+    global: true,
+    run: () => openProject(),
+  },
+  {
+    id: "file.newFlow",
+    label: "project.newFlow",
+    shortcuts: ["Mod+N"],
+    icon: FilePlus2,
+    project: true,
+    global: true,
+    run: () => st().set({ newFlowOpen: true }),
+  },
+  {
+    id: "file.settings",
+    label: "actions.settings",
+    shortcuts: ["Mod+,"],
+    icon: Settings,
+    global: true,
+    run: () => st().set({ settingsPage: "appearance" }),
+  },
+  {
+    id: "file.plugins",
+    label: "actions.plugins",
+    icon: Puzzle,
+    project: true,
+    global: true,
+    run: () => st().set({ settingsPage: "plugins" }),
+  },
+  {
+    id: "file.close",
+    label: "actions.closeProject",
+    project: true,
+    global: true,
+    run: closeProject,
+  },
+  {
+    id: "file.quit",
+    label: "actions.quit",
+    shortcuts: ["Mod+Q"],
+    global: true,
+    run: () => api.app.quit(),
+  },
+  {
+    id: "edit.undo",
+    label: "actions.undo",
+    shortcuts: ["Mod+Z"],
+    icon: Undo2,
+    project: true,
+    enabled: () => {
+      const path = activeFlow();
+      return !!path && st().canUndo(path);
+    },
+    run: () => {
+      const path = activeFlow();
+      if (path) st().undo(path);
+    },
+  },
+  {
+    id: "edit.redo",
+    label: "actions.redo",
+    shortcuts: ["Mod+Shift+Z", "Mod+Y"],
+    icon: Redo2,
+    project: true,
+    enabled: () => {
+      const path = activeFlow();
+      return !!path && st().canRedo(path);
+    },
+    run: () => {
+      const path = activeFlow();
+      if (path) st().redo(path);
+    },
+  },
+  {
+    id: "view.search",
+    label: "toolbar.search",
+    shortcuts: ["Mod+K"],
+    icon: Search,
+    project: true,
+    global: true,
+    run: () => st().set({ searchOpen: true }),
+  },
+  {
+    id: "view.project",
+    label: "panels.project",
+    shortcuts: ["Alt+1"],
+    project: true,
+    global: true,
+    run: () => focusToolWindow("project"),
+  },
+  {
+    id: "view.properties",
+    label: "panels.properties",
+    shortcuts: ["Alt+2"],
+    project: true,
+    global: true,
+    run: () => focusToolWindow("properties"),
+  },
+  {
+    id: "view.run",
+    label: "panels.run",
+    shortcuts: ["Alt+4"],
+    project: true,
+    global: true,
+    run: () => focusToolWindow("run"),
+  },
+  {
+    id: "view.problems",
+    label: "panels.problems",
+    shortcuts: ["Alt+6"],
+    project: true,
+    global: true,
+    run: () => focusToolWindow("problems"),
+  },
+  {
+    id: "view.resetLayout",
+    label: "actions.resetLayout",
+    icon: LayoutPanelLeft,
+    project: true,
+    run: resetLayout,
+  },
+  ...languageActions,
+  {
+    id: "run.start",
+    label: "search.runBot",
+    shortcuts: ["Shift+F10"],
+    icon: Play,
+    project: true,
+    global: true,
+    enabled: () => !isRunning(st().status) && !st().runBusy,
+    run: startBot,
+  },
+  {
+    id: "run.stop",
+    label: "search.stopBot",
+    shortcuts: ["Mod+F2"],
+    icon: Square,
+    project: true,
+    global: true,
+    enabled: () => isRunning(st().status) && !st().runBusy,
+    run: stopBot,
+  },
+  {
+    id: "run.secrets",
+    label: "toolbar.secrets",
+    icon: KeyRound,
+    project: true,
+    global: true,
+    run: () => st().set({ secretsOpen: true }),
+  },
+  {
+    id: "help.docs",
+    label: "actions.docs",
+    shortcuts: ["F1"],
+    global: true,
+    run: () => api.app.openExternal(DOCS_URL),
+  },
+  {
+    id: "help.issue",
+    label: "actions.reportIssue",
+    global: true,
+    run: () => api.app.openExternal(ISSUES_URL),
+  },
+];
+
+export const actionById = new Map(actions.map((a) => [a.id, a]));
+
+export function isAvailable(a: Action, hasProject = !!st().project): boolean {
+  if (a.project && !hasProject) return false;
+  return a.enabled ? a.enabled() : true;
+}
+
+export function runAction(id: string) {
+  const a = actionById.get(id);
+  if (a && isAvailable(a)) void Promise.resolve(a.run()).catch(report);
+}
+
+export const MENU: { label: MessageKey; items: string[] }[] = [
+  {
+    label: "menu.file",
+    items: [
+      "file.newProject",
+      "file.open",
+      "-",
+      "file.newFlow",
+      "-",
+      "file.settings",
+      "file.plugins",
+      "-",
+      "file.close",
+      "file.quit",
+    ],
+  },
+  { label: "menu.edit", items: ["edit.undo", "edit.redo"] },
+  {
+    label: "menu.view",
+    items: [
+      "view.search",
+      "-",
+      "view.project",
+      "view.properties",
+      "view.run",
+      "view.problems",
+      "-",
+      "view.resetLayout",
+      "-",
+      ...languageActions.map((a) => a.id),
+    ],
+  },
+  { label: "menu.run", items: ["run.start", "run.stop", "-", "run.secrets"] },
+  { label: "menu.help", items: ["help.docs", "help.issue"] },
+];

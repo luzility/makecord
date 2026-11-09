@@ -1,0 +1,277 @@
+@import "tailwindcss";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/jetbrains-mono";
+@import "./fonts.css";
+@import "dockview-react/dist/styles/dockview.css";
+@import "@xyflow/react/dist/style.css";
+
+@theme static {
+  --color-chrome: #0f0f10;
+  --color-panel: #141415;
+  --color-raised: #1b1b1d;
+  --color-hover: #232325;
+  --color-line: rgb(237 237 237 / 0.09);
+  --color-line-strong: rgb(237 237 237 / 0.16);
+  --color-fg: #ededed;
+  --color-muted: #a1a1a6;
+  --color-faint: #85858b;
+  --color-signal: #f5a524;
+  --color-ok: #4cc38a;
+  --color-warn: #d9b54a;
+  --color-bad: #e5484d;
+  --color-cat-trigger: #4cc38a;
+  --color-cat-action: #6aa1ff;
+  --color-cat-logic: #c9a2ff;
+  --color-cat-data: #6fd0c4;
+
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, Menlo, Consolas, monospace;
+
+  --text-meta: 11px;
+  --text-meta--line-height: 16px;
+  --text-label: 12px;
+  --text-label--line-height: 16px;
+  --text-body: 13px;
+  --text-body--line-height: 20px;
+  --text-title: 14px;
+  --text-title--line-height: 20px;
+  --text-heading: 18px;
+  --text-heading--line-height: 24px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-chrome);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 20px;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  overflow: hidden;
+}
+
+.font-mono,
+code,
+kbd,
+textarea {
+  font-variant-ligatures: none;
+}
+
+@layer base {
+  input,
+  textarea,
+  select {
+    user-select: text;
+    font: inherit;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #2c2c2f;
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 8px;
+}
+
+@layer base {
+  :focus-visible {
+    outline: 1px solid rgb(237 237 237 / 0.5);
+    outline-offset: -1px;
+  }
+}
+
+.dockview-theme-dark.mk-dock {
+  --dv-group-view-background-color: var(--color-panel);
+  --dv-tabs-and-actions-container-background-color: var(--color-chrome);
+  --dv-tabs-and-actions-container-height: 32px;
+  --dv-tabs-and-actions-container-font-size: 12px;
+  --dv-activegroup-visiblepanel-tab-background-color: var(--color-panel);
+  --dv-activegroup-hiddenpanel-tab-background-color: var(--color-chrome);
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--color-panel);
+  --dv-inactivegroup-hiddenpanel-tab-background-color: var(--color-chrome);
+  --dv-tab-divider-color: transparent;
+  --dv-activegroup-visiblepanel-tab-color: var(--color-fg);
+  --dv-activegroup-hiddenpanel-tab-color: var(--color-faint);
+  --dv-inactivegroup-visiblepanel-tab-color: var(--color-muted);
+  --dv-inactivegroup-hiddenpanel-tab-color: var(--color-faint);
+  --dv-separator-border: var(--color-line);
+  --dv-sash-color: transparent;
+  --dv-active-sash-color: var(--color-line-strong);
+  --dv-drag-over-background-color: rgb(237 237 237 / 0.06);
+  --dv-icon-hover-background-color: var(--color-hover);
+}
+html[data-modal] .dv-sash {
+  pointer-events: none;
+}
+.mk-dock .dv-tab {
+  padding: 0 12px;
+}
+.mk-dock .dv-groupview.dv-active-group .dv-tab.dv-active-tab {
+  box-shadow: inset 0 -1px 0 var(--color-fg);
+}
+
+.react-flow {
+  --xy-background-color: var(--color-panel);
+  --xy-edge-stroke: #3d3d42;
+  --xy-edge-stroke-width: 1.5;
+  --xy-edge-stroke-selected: var(--color-fg);
+  --xy-connectionline-stroke: var(--color-muted);
+  --xy-handle-background-color: var(--color-panel);
+  --xy-handle-border-color: #5c5c62;
+  --xy-controls-button-background-color: var(--color-raised);
+  --xy-controls-button-background-color-hover: var(--color-hover);
+  --xy-controls-button-color: var(--color-muted);
+  --xy-controls-button-color-hover: var(--color-fg);
+  --xy-controls-button-border-color: var(--color-line);
+  --xy-attribution-background-color: transparent;
+}
+.react-flow__controls {
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: none;
+}
+.react-flow__handle {
+  width: 10px;
+  height: 10px;
+  border-width: 1.5px;
+}
+.react-flow__edge.mk-live .react-flow__edge-path {
+  stroke: var(--color-signal);
+  stroke-width: 2;
+}
+
+@layer components {
+  .titlebar {
+    -webkit-app-region: drag;
+    app-region: drag;
+    height: 40px;
+    padding-left: calc(env(titlebar-area-x, 0px) + 8px);
+    padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 8px);
+  }
+  .titlebar[data-platform="darwin"] {
+    padding-left: 80px;
+  }
+  .titlebar :is(button, a, input, select, [role="button"]),
+  html[data-modal] .titlebar {
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+  }
+}
+
+.mk-prose {
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 24px;
+  user-select: text;
+}
+.mk-prose > * + * {
+  margin-top: 12px;
+}
+.mk-prose :is(h1, h2, h3, h4) {
+  color: var(--color-fg);
+  font-weight: 500;
+  line-height: 1.25;
+}
+.mk-prose h1 {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+.mk-prose h2 {
+  font-size: 18px;
+  margin-top: 28px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-line);
+}
+.mk-prose h3 {
+  font-size: 15px;
+  margin-top: 20px;
+}
+.mk-prose a {
+  color: var(--color-fg);
+  text-decoration: underline;
+  text-decoration-color: var(--color-faint);
+  text-underline-offset: 3px;
+}
+.mk-prose a:hover {
+  text-decoration-color: currentColor;
+}
+.mk-prose strong {
+  color: var(--color-fg);
+  font-weight: 600;
+}
+.mk-prose :is(ul, ol) {
+  padding-left: 20px;
+}
+.mk-prose ul {
+  list-style: disc;
+}
+.mk-prose ol {
+  list-style: decimal;
+}
+.mk-prose li + li {
+  margin-top: 4px;
+}
+.mk-prose code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-variant-ligatures: none;
+  color: var(--color-fg);
+  background: var(--color-raised);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+.mk-prose pre {
+  background: var(--color-chrome);
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  padding: 12px 16px;
+  overflow-x: auto;
+}
+.mk-prose pre code {
+  background: none;
+  padding: 0;
+  font-size: 12.5px;
+  line-height: 20px;
+}
+.mk-prose blockquote {
+  border-left: 2px solid var(--color-line-strong);
+  padding-left: 12px;
+  color: var(--color-faint);
+}
+.mk-prose table {
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.mk-prose :is(th, td) {
+  border-bottom: 1px solid var(--color-line);
+  padding: 6px 12px 6px 0;
+  text-align: left;
+}
+.mk-prose th {
+  color: var(--color-fg);
+  font-weight: 500;
+}
+.mk-prose hr {
+  border: 0;
+  border-top: 1px solid var(--color-line);
+}
+.mk-prose img {
+  max-width: 100%;
+}

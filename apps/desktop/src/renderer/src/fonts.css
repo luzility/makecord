@@ -1,0 +1,48 @@
+@font-face {
+  font-family: "Rondel";
+  src: url("./assets/fonts/Rondel/Rondel.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Beacon";
+  src: url("./assets/fonts/Beacon/Beacon.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cove";
+  src: url("./assets/fonts/Cove/Cove.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Aurelia";
+  src: url("./assets/fonts/Aurelia/Aurelia.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Halden";
+  src: url("./assets/fonts/Halden/Halden.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Alder";
+  src: url("./assets/fonts/Alder/Alder.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Tessera";
+  src: url("./assets/fonts/Tessera/Tessera.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Mallow";
+  src: url("./assets/fonts/Mallow/Mallow.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
