@@ -1,0 +1,33 @@
+---
+title: Introduction
+description: What Makecord is and how its pieces fit together.
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+Makecord is an open source IDE for building Discord bots. You wire commands and events together as visual flows, run the bot on your own machine while you edit, and copy the same folder to a server when it's ready.
+
+There's no account and no hosted service. Your bot runs wherever you run it.
+
+## How it fits together
+
+<CardGrid>
+  <Card title="The IDE">
+    A desktop app with a flow editor, a Run panel, a Problems panel and secret storage. It starts your bot in a separate process and reloads flows the moment you save.
+  </Card>
+  <Card title="The project">
+    A plain folder: `makecord.json` plus one `*.flow.json` file per command or event. Version it with git like any other code.
+  </Card>
+  <Card title="The runtime">
+    `@makecord/runtime`, a standalone npm package that reads the project and runs the bot with discord.js. The IDE uses it, and so does your server.
+  </Card>
+  <Card title="Plugins">
+    npm packages that add blocks to the editor. The built-in blocks are a plugin too.
+  </Card>
+</CardGrid>
+
+## Where to go next
+
+- New to Makecord? Start with [Installation](/docs/installation/) and then [Your first bot](/docs/first-bot/).
+- Want to understand the files? Read [Projects](/docs/projects/) and [Flows](/docs/flows/).
+- Ready to go live? Follow [Self-hosting](/docs/self-hosting/).

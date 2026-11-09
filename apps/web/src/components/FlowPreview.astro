@@ -1,0 +1,153 @@
+---
+import type { Dict } from "../i18n/en";
+import Logo from "./Logo.astro";
+
+interface Props {
+  p: Dict["preview"];
+}
+const { p } = Astro.props;
+
+const DUR = "4s";
+const OFF = "#353a48";
+const ON = "#f5a524";
+const at = { start: 0.02, condition: 0.14, reply: 0.32 };
+const led = (t: number) => ({
+  values: `${OFF};${OFF};${ON};${ON};${OFF};${OFF}`,
+  keyTimes: `0;${t};${t + 0.02};0.72;0.8;1`,
+});
+const wire = (t: number) => ({
+  values: `${OFF};${OFF};${ON};${ON};${OFF};${OFF}`,
+  keyTimes: `0;${t};${t + 0.02};0.72;0.8;1`,
+});
+
+const nodes = [
+  { id: "start", x: 16, y: 136, title: p.start, body: "/greet", mono: true, color: "var(--color-cat-trigger)", lit: at.start },
+  { id: "condition", x: 222, y: 136, title: p.condition, body: "{{options.user}}", mono: true, color: "var(--color-cat-logic)", lit: at.condition, ports: true },
+  { id: "replyA", x: 452, y: 40, title: p.reply, body: p.replyOther, color: "var(--color-cat-action)" },
+  { id: "replyB", x: 452, y: 248, title: p.reply, body: p.replySelf, color: "var(--color-cat-action)", lit: at.reply },
+];
+const W = 152;
+---
+
+<div class="relative min-w-0 sm:pb-11">
+  <figure
+    aria-label={p.label}
+    class="overflow-hidden rounded-2xl border border-line bg-panel shadow-2xl shadow-black/50"
+  >
+    <div class="flex h-10 items-center justify-between border-b border-line px-4 text-[12px]">
+      <div class="flex items-center gap-2">
+        <Logo size={16} />
+        <span class="font-mono text-muted">commands/</span><span class="-ml-2 font-mono text-fg">greet</span>
+      </div>
+      <span class="flex items-center gap-2 text-muted">
+        <span class="size-2 rounded-full bg-signal shadow-[0_0_0_2px_rgb(245_165_36/0.18)]"></span>
+        {p.running}
+      </span>
+    </div>
+
+    <svg class="mk-flow hidden w-full sm:block" viewBox="0 0 620 360" role="img" aria-label={p.label}>
+      <defs>
+        <pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse">
+          <circle cx="1" cy="1" r="1" fill="#1f2430"></circle>
+        </pattern>
+      </defs>
+      <rect width="620" height="360" fill="url(#dots)"></rect>
+
+      <path id="w1" d="M168 172 H222" fill="none" stroke={OFF} stroke-width="1.5">
+        <animate attributeName="stroke" dur={DUR} repeatCount="indefinite" {...wire(at.start + 0.06)}></animate>
+      </path>
+      <path id="w2" d="M374 182 C414 182 412 76 452 76" fill="none" stroke={OFF} stroke-width="1.5"></path>
+      <path id="w3" d="M374 200 C414 200 412 284 452 284" fill="none" stroke={OFF} stroke-width="1.5">
+        <animate attributeName="stroke" dur={DUR} repeatCount="indefinite" {...wire(at.reply - 0.02)}></animate>
+      </path>
+
+      {
+        nodes.map((n) => (
+          <g transform={`translate(${n.x} ${n.y})`}>
+            <rect width={W} height={n.ports ? 84 : 72} rx="9" fill="#1a1e28" stroke="rgb(238 240 245 / 0.1)" />
+            <line x1="0" x2={W} y1="28" y2="28" stroke="rgb(238 240 245 / 0.08)" />
+            <circle cx="14" cy="14" r="3.5" fill={n.color} />
+            <text x="26" y="18" class="fill-fg font-sans text-[11px] font-medium">{n.title}</text>
+            <circle cx={W - 14} cy="14" r="3.5" fill={OFF}>
+              {n.lit !== undefined && <animate attributeName="fill" dur={DUR} repeatCount="indefinite" {...led(n.lit)} />}
+            </circle>
+            <text x="12" y="50" class:list={["text-[10.5px]", n.mono ? "fill-fg font-mono" : "fill-muted font-sans"]}>
+              {[n.body].flat().map((line, i) => <tspan x="12" dy={i === 0 ? 0 : 14}>{line}</tspan>)}
+            </text>
+            {n.id !== "start" && <circle cx="0" cy={n.ports ? 36 : 36} r="4" fill="#11141c" stroke="#5a6070" stroke-width="1.5" />}
+            {!n.ports && n.id === "start" && <circle cx={W} cy="36" r="4" fill="#11141c" stroke="#5a6070" stroke-width="1.5" />}
+            {n.ports && (
+              <>
+                <text x={W - 12} y="50" text-anchor="end" class="fill-faint font-mono text-[10px]">{p.yes}</text>
+                <text x={W - 12} y="68" text-anchor="end" class="fill-faint font-mono text-[10px]">{p.no}</text>
+                <circle cx={W} cy="46" r="4" fill="#11141c" stroke="#5a6070" stroke-width="1.5" />
+                <circle cx={W} cy="64" r="4" fill="#11141c" stroke="#5a6070" stroke-width="1.5" />
+              </>
+            )}
+          </g>
+        ))
+      }
+
+      <circle class="mk-signal" r="3.5" fill={ON}>
+        <animateMotion dur={DUR} repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes={`0;${at.start + 0.02};${at.condition};1`} calcMode="linear">
+          <mpath href="#w1"></mpath>
+        </animateMotion>
+        <animate attributeName="opacity" dur={DUR} repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes={`0;${at.start + 0.02};${at.start + 0.03};${at.condition};${at.condition + 0.01};1`}></animate>
+      </circle>
+      <circle class="mk-signal" r="3.5" fill={ON}>
+        <animateMotion dur={DUR} repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes={`0;${at.condition + 0.04};${at.reply};1`} calcMode="linear">
+          <mpath href="#w3"></mpath>
+        </animateMotion>
+        <animate attributeName="opacity" dur={DUR} repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes={`0;${at.condition + 0.04};${at.condition + 0.05};${at.reply};${at.reply + 0.01};1`}></animate>
+      </circle>
+    </svg>
+
+    <ol class="flex flex-col gap-3 p-4 sm:hidden">
+      {
+        [nodes[0], nodes[1], nodes[3]].map((n, i) => (
+          <li class="relative flex items-center gap-3 rounded-lg border border-line bg-raised px-3 py-2">
+            <span class="size-2 shrink-0 rounded-full" style={`background:${n?.color}`} />
+            <span class="shrink-0 text-[13px] font-medium whitespace-nowrap">{n?.title}</span>
+            <span class:list={["ml-auto min-w-0 truncate text-[12px]", n?.mono ? "font-mono text-fg" : "text-muted"]}>{[n?.body].flat()[0]}</span>
+            <span class="size-2 shrink-0 rounded-full bg-signal" />
+            {i < 2 && <span class="absolute top-full left-[19px] h-3 w-px bg-signal/60" />}
+          </li>
+        ))
+      }
+    </ol>
+
+    <div class="border-t border-line px-4 py-3 font-mono text-[11px] leading-5 text-faint sm:text-[12px]">
+      <p class="flex gap-4"><span>19:42:07</span><span class="text-fg">{p.online}</span></p>
+      <p class="flex gap-4"><span>19:42:31</span><span>commands/greet · {p.done}</span></p>
+    </div>
+  </figure>
+
+  <div
+    class="relative mt-3 rounded-xl border border-line-strong bg-raised p-4 shadow-xl shadow-black/50 sm:absolute sm:right-[-16px] sm:bottom-[-44px] sm:mt-0 sm:w-[288px] lg:right-[-24px]"
+  >
+    <p class="mb-2 flex items-center gap-2 pl-10 text-[12px] text-faint">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M6 4v6a4 4 0 0 0 4 4h8m-4-4 4 4-4 4"></path></svg>
+      <span><span class="text-muted">Mira</span> {p.used} <span class="font-mono text-muted">/greet</span></span>
+    </p>
+    <div class="flex gap-3">
+      <Logo size={32} />
+      <div class="min-w-0">
+        <p class="flex items-baseline gap-2 text-[13px]">
+          <span class="font-medium">Bramble</span>
+          <span class="rounded border border-line-strong px-1 font-mono text-[11px] text-faint">APP</span>
+          <span class="text-[11px] text-faint">{p.today}</span>
+        </p>
+        <p class="mt-1 text-[14px] text-fg">{p.message}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    for (const svg of document.querySelectorAll<SVGSVGElement>("svg.mk-flow")) {
+      svg.setCurrentTime(1.6);
+      svg.pauseAnimations();
+    }
+  }
+</script>

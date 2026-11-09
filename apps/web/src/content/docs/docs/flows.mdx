@@ -1,0 +1,74 @@
+---
+title: Flows
+description: How commands and events are built from blocks, ports and connections.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+A flow is what the bot does when something happens. Each flow is one file, and it's either a **command flow** (a slash command) or an **event flow** (something that happens on Discord).
+
+## Blocks, ports and connections
+
+Every flow starts at exactly one **Start** block. When the command or event fires, the runtime begins there and follows the connections:
+
+1. It runs the current block.
+2. The block picks an output port. Most blocks have a single `next` port. **Condition** has `true` and `false`.
+3. The runtime follows the connection leaving that port to the next block.
+4. The flow ends when a port has no connection.
+
+Each port carries one connection. Connecting a port again replaces the old connection, and the Problems panel warns about files where a port has more than one.
+
+<Aside type="caution">
+  A flow stops after 500 steps. This protects your bot from a loop you didn't mean to build.
+</Aside>
+
+## Command flows
+
+A command flow defines a slash command: its name, description and options. Pick the Start block, or click empty space on the canvas, and edit them in the Properties panel.
+
+- Names are lowercase, without spaces, up to 32 characters.
+- Up to 25 options, each with a type: `string`, `integer`, `number`, `boolean`, `user`, `channel` or `role`.
+- Read an option's value in the flow as `{{options.name}}`. For `user`, `channel` and `role` options this is the ID.
+
+The bot registers its commands when it starts and again whenever the set of commands changes.
+
+## Event flows
+
+An event flow runs when Discord sends the bot an event. Supported events:
+
+| Event | When it runs | Needs intent |
+| --- | --- | --- |
+| `clientReady` | Once, when the bot comes online | — |
+| `guildMemberAdd` | A member joins a server | `GuildMembers` |
+| `guildMemberRemove` | A member leaves a server | `GuildMembers` |
+| `messageCreate` | Someone sends a message (messages from bots are ignored) | `GuildMessages` |
+
+`GuildMembers` is a privileged intent: turn on **Server Members Intent** under **Bot** in the Developer Portal as well. To read the text of messages you also need `MessageContent`, which is privileged too.
+
+## Live reload
+
+While the bot runs from the IDE, the runtime watches your flow files. When you save one, flows reload immediately and slash commands are re-registered if anything about them changed. Changes to `makecord.json` need a restart.
+
+## The file format
+
+You rarely need to edit flow files by hand, but they're meant to be readable:
+
+```json title="commands/ping.flow.json"
+{
+  "specVersion": 1,
+  "kind": "command",
+  "command": { "name": "ping", "description": "Shows the bot's latency", "options": [] },
+  "nodes": [
+    { "id": "start", "type": "core.trigger", "position": { "x": 0, "y": 0 }, "data": {} },
+    {
+      "id": "reply",
+      "type": "core.reply",
+      "position": { "x": 320, "y": 0 },
+      "data": { "content": "Pong · {{client.ping}} ms", "ephemeral": false }
+    }
+  ],
+  "edges": [{ "id": "e1", "source": "start", "sourceHandle": "next", "target": "reply" }]
+}
+```
+
+`type` names the block (see the [Blocks reference](/docs/blocks/)), `data` holds its settings and `sourceHandle` is the output port a connection leaves from.

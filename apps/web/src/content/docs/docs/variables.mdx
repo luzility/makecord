@@ -1,0 +1,38 @@
+---
+title: Variables
+description: The values you can put into messages and block settings with {{double braces}}.
+---
+
+Any text setting can contain variables in double braces, like `Hey {{user.displayName}}`. The runtime fills them in right before the block runs. A variable that doesn't exist becomes empty text.
+
+## Slash commands
+
+| Variable | Value |
+| --- | --- |
+| `{{user.id}}` | ID of the person who used the command |
+| `{{user.username}}` | Their username |
+| `{{user.displayName}}` | The name shown in Discord |
+| `{{user.mention}}` | A mention, like `<@123…>` |
+| `{{user.avatar}}` | URL of their avatar |
+| `{{member.nickname}}` | Their nickname in this server, if any |
+| `{{member.joinedAt}}` | When they joined, as an ISO date |
+| `{{guild.id}}`, `{{guild.name}}`, `{{guild.memberCount}}` | The server |
+| `{{channel.id}}`, `{{channel.name}}` | The channel the command was used in |
+| `{{options.<name>}}` | The value of an option. IDs for users, channels and roles |
+| `{{client.ping}}` | The bot's gateway latency in milliseconds |
+| `{{client.tag}}`, `{{client.id}}` | The bot's own tag and ID |
+| `{{vars.<name>}}` | A value stored earlier with **Set Variable** |
+
+## Events
+
+| Event | Variables |
+| --- | --- |
+| `clientReady` | `client.*` |
+| `guildMemberAdd`, `guildMemberRemove` | `user.*`, `member.*`, `guild.*`, `client.*` |
+| `messageCreate` | `user.*` (the author), `guild.*`, `channel.id`, `message.id`, `message.content`, `message.url`, `client.*` |
+
+`vars.*` is available in every flow.
+
+## Flow variables
+
+**Set Variable** stores a value for the rest of the current run, readable as `{{vars.name}}`. Variables don't carry over between runs. Every command or event starts with an empty `vars`.

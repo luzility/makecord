@@ -1,0 +1,20 @@
+---
+title: Problems
+description: What each entry in the Problems panel means and how to fix it.
+---
+
+The Problems panel checks your project every time a file changes, before the bot runs. Errors stop a flow from working. Warnings point at something that probably isn't what you meant. The runtime prints the same checks when it starts.
+
+Click a problem to open the flow and select the block.
+
+| Code | Level | What it means | How to fix it |
+| --- | --- | --- | --- |
+| `invalid-file` | Error | A flow file isn't valid JSON, doesn't match the flow format, defines a command name twice, or doesn't have exactly one Start block. | Fix the file. The message says what's wrong. |
+| `invalid-project` | Error | `makecord.json` is missing or invalid. | Fix the field named in the message. |
+| `unknown-node` | Error | A block's type isn't provided by any loaded plugin. | Install the plugin and add it to `plugins`, or delete the block. |
+| `wrong-context` | Error | A block is used where it can't work, like **Reply** in an event flow. | Use a different block, such as **Send Message**. |
+| `invalid-field` | Error | A block setting is missing or out of range. | Select the block and fill in the setting. |
+| `dangling-edge` | Error | A connection points to a block that no longer exists. | Delete the connection. |
+| `multiple-edges` | Warning | More than one connection leaves the same port. Only the first runs. | Keep one connection per port. |
+| `unreachable` | Warning | A block isn't connected to Start, so it never runs. | Connect it, or delete it. |
+| `missing-intent` | Warning | An event flow needs an intent that isn't in `makecord.json`. | Use the quick fix on the problem, which adds the intent for you. |

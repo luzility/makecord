@@ -1,0 +1,124 @@
+---
+title: Writing plugins
+description: Add your own blocks with the plugin SDK.
+---
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+A plugin is an npm package that adds blocks. The built-in blocks are a plugin too, so yours work the same way.
+
+Plugin blocks show up in the IDE's palette, get a settings form and are checked by the Problems panel, just like the built-in ones. The IDE loads plugins in a separate process, so plugin code never runs inside the editor itself.
+
+## A block has two halves
+
+- **Metadata** (`defineNodeMeta`): its type, title, category, output ports and settings. The IDE builds the settings form from it. Keep it free of discord.js and Node APIs so the editor can load it safely.
+- **The run function** (`defineNode`): what the block does. It only runs inside the bot.
+
+## Example: a dice block
+
+```ts title="src/index.ts"
+import { defineNode, defineNodeMeta, definePlugin } from "@makecord/plugin-sdk";
+import { z } from "zod";
+
+const roll = defineNodeMeta({
+  type: "dice.roll",
+  title: "Roll Dice",
+  description: "Rolls a die and stores the result in {{vars.roll}}.",
+  category: "data",
+  fields: z.object({
+    sides: z.coerce.number().int().min(2).default(6).meta({ title: "Sides" }),
+  }),
+  locales: {
+    tr: { title: "Zar At", fields: { sides: { title: "Yüz sayısı" } } },
+  },
+});
+
+export default definePlugin({
+  id: "makecord-plugin-dice",
+  version: "1.0.0",
+  engines: { makecord: "^0.1.0" },
+  nodes: [
+    defineNode(roll, (ctx, { sides }) => {
+      ctx.vars.set("roll", 1 + Math.floor(Math.random() * sides));
+    }),
+  ],
+});
+```
+
+A setting can hold a variable like `{{options.sides}}`, which is filled in as text, so use `z.coerce.number()` for numbers.
+
+## Rules
+
+- **Namespaced types.** A block's `type` starts with the plugin name without `makecord-plugin-` and without an npm scope. `makecord-plugin-dice` gets `dice.*`. `definePlugin` throws if a type doesn't match. Never change a type after release, because flows refer to it.
+- **Ports.** Return the name of the output port to follow, or nothing to follow `next`. Declare extra ports with `outputs: ["true", "false"]`.
+- **Context.** `defineNodeMeta` accepts `contexts: ["command"]` for blocks that only make sense in slash commands, like replying.
+- **Compatibility.** `engines.makecord` is the runtime range your plugin supports.
+- **Translations.** `title`, `description` and field titles are the English base. Add other languages under `locales`.
+
+## What a block can use
+
+The first argument of the run function is the context:
+
+| Property | What it is |
+| --- | --- |
+| `ctx.client` | The logged-in discord.js `Client` |
+| `ctx.interaction` | The slash command interaction, in command flows |
+| `ctx.eventArgs` | The raw event arguments, in event flows |
+| `ctx.scope` | The values behind `{{…}}` variables |
+| `ctx.vars` | The flow's variables, a `Map` |
+| `ctx.secret(name)` | A secret's value, if the plugin asked for it |
+| `ctx.log(level, message)` | Writes to the Run panel or the server console |
+
+Throwing an error stops the flow and reports it, with the block, in the Run panel.
+
+## Secrets
+
+Ask for the secrets you need in `permissions`:
+
+```ts
+definePlugin({
+  id: "makecord-plugin-weather",
+  permissions: ["secrets:WEATHER_API_KEY"],
+  // …
+});
+```
+
+`ctx.secret("WEATHER_API_KEY")` returns the value. Anything not listed returns `undefined`, and `DISCORD_TOKEN` is never available to plugins.
+
+## Publishing to the marketplace
+
+The marketplace in **Settings → Plugins** lists npm packages with the `makecord-plugin` keyword. Add it to your `package.json` and publish:
+
+```json title="package.json"
+{
+  "name": "makecord-plugin-dice",
+  "type": "module",
+  "keywords": ["makecord-plugin"],
+  "exports": { ".": "./dist/index.js" }
+}
+```
+
+Export your plugin as the package's default export, and keep a plain `default` (or `require`) condition in `exports` so the runtime can resolve it.
+
+## Trying a plugin while you write it
+
+In **Settings → Plugins**, choose **Install from folder…** and pick your plugin's folder. The IDE installs it into the open project and loads its blocks. After you change the plugin's code, install it again to reload it.
+
+## Using a plugin in a project
+
+From the IDE, open **Settings → Plugins** (or **File → Plugins…**) and press **Install**. That runs `npm install` in the project and adds the plugin to `makecord.json`.
+
+By hand, it's the same two steps:
+
+<Steps>
+
+1. Install it in the project: `npm install makecord-plugin-dice`.
+2. Add it to `makecord.json`: `"plugins": ["makecord-plugin-dice"]`.
+
+</Steps>
+
+If a plugin can't be loaded, the Problems panel says why.
+
+<Aside type="caution">
+  `@makecord/runtime` isn't published to npm yet, so `npm install` in a project fails until the first release. This also affects installing plugins from the IDE.
+</Aside>

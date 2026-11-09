@@ -1,0 +1,44 @@
+---
+title: Installation
+description: Get the Makecord IDE running on your computer.
+---
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note">
+  Makecord is in early development and there are no installers yet. For now you run the IDE from source. This takes a few minutes and works on Linux, Windows and macOS.
+</Aside>
+
+## Requirements
+
+- [Node.js](https://nodejs.org) 22.12 or newer
+- [pnpm](https://pnpm.io) 12
+- git
+
+## Run from source
+
+<Steps>
+
+1. Clone the repository and install dependencies:
+
+   ```sh
+   git clone https://github.com/makecord/makecord.git
+   cd makecord
+   pnpm install
+   ```
+
+2. Start the IDE:
+
+   ```sh
+   pnpm dev:desktop
+   ```
+
+   The first start builds the internal packages, so it takes a little longer.
+
+3. The welcome screen opens. Continue with [Your first bot](/docs/first-bot/).
+
+</Steps>
+
+## Language
+
+The IDE is in English by default. Switch to Turkish from the welcome screen, or press <kbd>Ctrl</kbd> <kbd>K</kbd> and search for "language".

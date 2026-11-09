@@ -1,0 +1,113 @@
+@import "./fonts.css";
+@import "@fontsource-variable/jetbrains-mono";
+
+:root {
+  --sl-font: "Beacon", ui-sans-serif, system-ui, sans-serif;
+  --sl-font-mono: "JetBrains Mono Variable", ui-monospace, Menlo, Consolas, monospace;
+  --sl-text-h1: 2.25rem;
+  --sl-text-h2: 1.5rem;
+  --sl-text-h3: 1.1875rem;
+  --sl-line-height-headings: 1.2;
+  --sl-content-width: 46rem;
+}
+
+:root,
+::backdrop {
+  --sl-color-accent-low: #1a1e28;
+  --sl-color-accent: #a3a9b8;
+  --sl-color-accent-high: #eef0f5;
+  --sl-color-white: #eef0f5;
+  --sl-color-gray-1: #dfe2ea;
+  --sl-color-gray-2: #a3a9b8;
+  --sl-color-gray-3: #7a8296;
+  --sl-color-gray-4: #4a5162;
+  --sl-color-gray-5: #232836;
+  --sl-color-gray-6: #11141c;
+  --sl-color-black: #0b0d14;
+  --sl-color-hairline: rgb(238 240 245 / 0.08);
+  --sl-color-hairline-light: rgb(238 240 245 / 0.1);
+  --sl-color-hairline-shade: rgb(0 0 0 / 0.4);
+  --sl-color-bg-nav: #0b0d14;
+  --sl-color-bg-sidebar: #0b0d14;
+  --sl-color-text-accent: #eef0f5;
+}
+
+:root[data-theme="light"],
+[data-theme="light"] ::backdrop {
+  --sl-color-accent-low: #eceff4;
+  --sl-color-accent: #4b5565;
+  --sl-color-accent-high: #111827;
+  --sl-color-white: #111827;
+  --sl-color-gray-1: #1f2937;
+  --sl-color-gray-2: #4b5565;
+  --sl-color-gray-3: #6b7487;
+  --sl-color-gray-4: #c4c9d4;
+  --sl-color-gray-5: #e3e6ec;
+  --sl-color-gray-6: #f5f7fa;
+  --sl-color-gray-7: #fafbfc;
+  --sl-color-black: #ffffff;
+  --sl-color-hairline: rgb(17 24 39 / 0.08);
+  --sl-color-hairline-light: rgb(17 24 39 / 0.06);
+  --sl-color-bg-nav: #ffffff;
+  --sl-color-bg-sidebar: #ffffff;
+  --sl-color-text-accent: #111827;
+}
+
+.sl-markdown-content :is(h1, h2, h3, h4) {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+h1#_top {
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.site-title {
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+.sl-markdown-content a {
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--sl-color-gray-3);
+}
+.sl-markdown-content a:hover {
+  text-decoration-color: currentColor;
+}
+
+.sidebar-content a[aria-current="page"],
+.sidebar-content a[aria-current="page"]:hover,
+.sidebar-content a[aria-current="page"]:focus {
+  background-color: var(--sl-color-accent-low);
+  color: var(--sl-color-white);
+  font-weight: 500;
+  box-shadow: inset 0 0 0 1px var(--sl-color-hairline-light);
+}
+.sidebar-content .large {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--sl-color-white);
+}
+
+.sl-markdown-content code:not(:where(pre code)) {
+  border-radius: 6px;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.875em;
+  background-color: var(--sl-color-gray-5);
+}
+pre,
+code {
+  font-variant-ligatures: none;
+}
+
+.sl-markdown-content table {
+  font-size: 0.875rem;
+}
+.sl-markdown-content :is(th, td) {
+  vertical-align: top;
+}
+
+.site-title img {
+  height: 1.75rem;
+  width: auto;
+}

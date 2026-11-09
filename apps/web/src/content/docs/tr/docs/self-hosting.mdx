@@ -1,0 +1,86 @@
+---
+title: Sunucuda çalıştırma
+description: Botunu bir VPS'te, Docker ile ya da Docker'sız, kesintisiz çalıştır.
+---
+
+import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
+
+IDE botunu sadece açıkken çalıştırır. Botu sürekli çevrimiçi tutmak için projeyi bir sunucuya kopyala. Sunucuda IDE ile aynı motor (`@makecord/runtime`) çalıştığı için bot aynı şekilde davranır.
+
+Proje olduğu gibi yayına hazır: `package.json`, `Dockerfile` ve `docker-compose.yml` zaten içinde.
+
+<Aside type="caution" title="Henüz yayınlanmadı">
+  `@makecord/runtime` henüz npm'de değil, bu yüzden ilk sürüme kadar sunucuda `npm install` başarısız olur. Bu sayfa, yayınlandıktan sonra kurulumun nasıl işleyeceğini anlatıyor.
+</Aside>
+
+## Yayına almadan önce
+
+- Bot her sunucuda çalışacaksa `makecord.json`'dan `devGuildId`'yi kaldır. Global komutların Discord'da görünmesi biraz sürebilir.
+- Botun ihtiyaç duyduğu her secret'ın `.env.example`'da listelendiğinden emin ol.
+
+## Yayına al
+
+<Tabs syncKey="deploy">
+  <TabItem label="Node.js">
+    <Steps>
+
+    1. Proje klasörünü sunucuya kopyala, örneğin `git clone` veya `scp` ile. Sunucuda Node.js 22.12 veya daha yenisi kurulu olmalı.
+
+    2. Örnekten `.env` oluştur ve değerleri gir:
+
+       ```sh
+       cp .env.example .env
+       nano .env
+       ```
+
+    3. Kur ve başlat:
+
+       ```sh
+       npm install
+       npm start
+       ```
+
+    </Steps>
+
+    `npm start` terminali kapatınca durur. Botu çalışır tutmak ve yeniden başlatmadan sonra otomatik açmak için bir process yöneticisi kullan, örneğin [pm2](https://pm2.keymetrics.io): `pm2 start npm --name botum -- start`.
+
+  </TabItem>
+  <TabItem label="Docker">
+    <Steps>
+
+    1. Proje klasörünü sunucuya kopyala.
+
+    2. Örnekten `.env` oluştur ve değerleri gir:
+
+       ```sh
+       cp .env.example .env
+       ```
+
+    3. Derle ve arka planda başlat:
+
+       ```sh
+       docker compose up -d
+       ```
+
+    </Steps>
+
+    Compose dosyası, sen durdurmadıkça botu yeniden başlatır. Log'ları `docker compose logs -f` ile izleyebilirsin.
+
+  </TabItem>
+</Tabs>
+
+Sunucuda runtime, IDE ile konuşmak yerine okunabilir log'lar yazar:
+
+```txt
+19:42:07 INFO  ● ready — Botum#4821 is online · 3 servers
+19:42:08 INFO  Registered 2 commands (global): greet, ping
+```
+
+## Güncelleme
+
+- **Akışların:** Değişen `*.flow.json` dosyalarını sunucuya kopyala ve botu yeniden başlat.
+- **Motor:** Yeni sürüm çıktığında, örneğin bir Discord API değişikliğinden sonra, `npm update @makecord/runtime` çalıştır (veya Docker imajını yeniden derle).
+
+<Aside type="tip">
+  Projeyi bir git reposunda tut. Sunucuyu güncellemek o zaman bir `git pull` ve yeniden başlatmadan ibaret olur.
+</Aside>

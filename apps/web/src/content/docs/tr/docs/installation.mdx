@@ -1,0 +1,44 @@
+---
+title: Kurulum
+description: Makecord IDE'yi bilgisayarında çalıştır.
+---
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note">
+  Makecord erken geliştirme aşamasında ve henüz kurulum dosyası yok. Şimdilik IDE'yi kaynak koddan çalıştırıyorsun. Birkaç dakika sürer ve Linux, Windows ve macOS'ta çalışır.
+</Aside>
+
+## Gereksinimler
+
+- [Node.js](https://nodejs.org) 22.12 veya daha yenisi
+- [pnpm](https://pnpm.io) 12
+- git
+
+## Kaynak koddan çalıştırma
+
+<Steps>
+
+1. Repoyu klonla ve bağımlılıkları kur:
+
+   ```sh
+   git clone https://github.com/makecord/makecord.git
+   cd makecord
+   pnpm install
+   ```
+
+2. IDE'yi başlat:
+
+   ```sh
+   pnpm dev:desktop
+   ```
+
+   İlk açılışta iç paketler derlendiği için biraz daha uzun sürer.
+
+3. Karşılama ekranı açılır. [İlk botun](/tr/docs/first-bot/) ile devam et.
+
+</Steps>
+
+## Dil
+
+IDE varsayılan olarak İngilizce. Karşılama ekranından Türkçe'ye geçebilir ya da <kbd>Ctrl</kbd> <kbd>K</kbd> ile açılan aramada "dil" yazabilirsin.

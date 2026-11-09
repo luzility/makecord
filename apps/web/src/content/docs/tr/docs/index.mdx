@@ -1,0 +1,33 @@
+---
+title: Giriş
+description: Makecord nedir ve parçaları nasıl bir araya gelir.
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+Makecord, Discord botları kurmak için açık kaynak bir IDE. Komutları ve event'leri görsel akışlarla birbirine bağlarsın, düzenlerken botu kendi bilgisayarında çalıştırırsın, hazır olunca da aynı klasörü bir sunucuya kopyalarsın.
+
+Hesap ya da barındırma hizmeti yok. Botun, onu nerede çalıştırırsan orada çalışır.
+
+## Parçalar
+
+<CardGrid>
+  <Card title="IDE">
+    Akış editörü, Run paneli, Sorunlar paneli ve secret saklama alanı olan bir masaüstü uygulaması. Botu ayrı bir process'te başlatır, kaydettiğin anda akışları yeniden yükler.
+  </Card>
+  <Card title="Proje">
+    Sıradan bir klasör: `makecord.json` ve her komut ya da event için bir `*.flow.json` dosyası. Diğer kodların gibi git ile versiyonlayabilirsin.
+  </Card>
+  <Card title="Runtime">
+    `@makecord/runtime`, projeyi okuyup botu discord.js ile çalıştıran bağımsız bir npm paketi. IDE de, sunucun da bunu kullanır.
+  </Card>
+  <Card title="Plugin'ler">
+    Editöre blok ekleyen npm paketleri. Yerleşik bloklar da bir plugin.
+  </Card>
+</CardGrid>
+
+## Buradan nereye
+
+- Makecord'a yeni misin? [Kurulum](/tr/docs/installation/) ile başla, sonra [İlk botun](/tr/docs/first-bot/) sayfasına geç.
+- Dosyaları anlamak mı istiyorsun? [Projeler](/tr/docs/projects/) ve [Akışlar](/tr/docs/flows/) sayfalarını oku.
+- Yayına almaya hazır mısın? [Sunucuda çalıştırma](/tr/docs/self-hosting/) rehberini izle.

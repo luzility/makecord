@@ -1,0 +1,86 @@
+---
+title: Self-hosting
+description: Run your bot around the clock on a VPS, with or without Docker.
+---
+
+import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
+
+The IDE runs your bot only while it's open. To keep the bot online, copy the project to a server. The server runs the same engine as the IDE, `@makecord/runtime`, so the bot behaves the same way.
+
+A project is ready to deploy as it is: it already has a `package.json`, a `Dockerfile` and a `docker-compose.yml`.
+
+<Aside type="caution" title="Not published yet">
+  `@makecord/runtime` isn't on npm yet, so `npm install` on a server will fail until the first release. This page describes how deployment works once it is.
+</Aside>
+
+## Before you deploy
+
+- Remove `devGuildId` from `makecord.json` if the bot should work in every server. Global commands can take a while to show up in Discord.
+- Make sure every secret the bot needs is listed in `.env.example`.
+
+## Deploy
+
+<Tabs syncKey="deploy">
+  <TabItem label="Node.js">
+    <Steps>
+
+    1. Copy the project folder to the server, for example with `git clone` or `scp`. Node.js 22.12 or newer must be installed.
+
+    2. Create `.env` from the example and fill in the values:
+
+       ```sh
+       cp .env.example .env
+       nano .env
+       ```
+
+    3. Install and start:
+
+       ```sh
+       npm install
+       npm start
+       ```
+
+    </Steps>
+
+    `npm start` stops when you close the terminal. Use a process manager to keep it running and restart it after a reboot, for example [pm2](https://pm2.keymetrics.io): `pm2 start npm --name my-bot -- start`.
+
+  </TabItem>
+  <TabItem label="Docker">
+    <Steps>
+
+    1. Copy the project folder to the server.
+
+    2. Create `.env` from the example and fill in the values:
+
+       ```sh
+       cp .env.example .env
+       ```
+
+    3. Build and start in the background:
+
+       ```sh
+       docker compose up -d
+       ```
+
+    </Steps>
+
+    The compose file restarts the bot unless you stop it. Follow the logs with `docker compose logs -f`.
+
+  </TabItem>
+</Tabs>
+
+On a server the runtime prints readable logs instead of talking to the IDE:
+
+```txt
+19:42:07 INFO  ● ready — My bot#4821 is online · 3 servers
+19:42:08 INFO  Registered 2 commands (global): greet, ping
+```
+
+## Updating
+
+- **Your flows:** copy the changed `*.flow.json` files to the server and restart the bot.
+- **The engine:** run `npm update @makecord/runtime` (or rebuild the Docker image) when a new version comes out, for example after a Discord API change.
+
+<Aside type="tip">
+  Keep the project in a git repository. Updating the server is then `git pull` and a restart.
+</Aside>

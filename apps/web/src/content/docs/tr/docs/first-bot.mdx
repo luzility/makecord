@@ -1,0 +1,63 @@
+---
+title: İlk botun
+description: Bir Discord uygulaması oluştur, token'ını ekle ve ilk slash komutuna yanıt ver.
+---
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Bu sayfanın sonunda botun bir test sunucusunda çevrimiçi olacak ve `/ping` komutuna yanıt verecek.
+
+## Discord uygulamasını oluştur
+
+<Steps>
+
+1. [Discord Developer Portal](https://discord.com/developers/applications)'ı aç ve **New Application**'a tıkla.
+
+2. **Bot** bölümüne git ve **Reset Token**'a bas. Token'ı kopyala, sayfayı açık tut. Token'a şifre gibi davran: Ona sahip olan herkes botunu kontrol eder.
+
+3. **OAuth2 → URL Generator** bölümünde `bot` ve `applications.commands` kapsamlarını işaretle, oluşan adresi açıp botu yönettiğin bir sunucuya davet et.
+
+</Steps>
+
+## Projeyi oluştur
+
+<Steps>
+
+1. Makecord'da **Yeni proje**'yi seç, bota bir ad ver ve bir klasör seç. Proje iki komutla (`/ping` ve `/greet`) ve bir `ready` event'iyle başlar.
+
+2. Başlarken sekmesindeki **Secrets'ı aç**'a bas, token'ı `DISCORD_TOKEN` alanına yapıştır ve kaydet. Token sistem anahtar zincirinde şifrelenir. Proje klasörüne asla yazılmaz ve IDE'de tekrar görüntülenemez.
+
+3. `makecord.json`'ı aç ve test sunucunun ID'sini `devGuildId` olarak ekle. ID'yi bulmak için Discord ayarlarından Geliştirici Modu'nu aç, sonra sunucuya sağ tıklayıp **Sunucu ID'sini Kopyala**'yı seç.
+
+   ```json title="makecord.json" ins={4}
+   {
+     "specVersion": 1,
+     "name": "Botum",
+     "devGuildId": "123456789012345678",
+     "intents": ["Guilds"]
+   }
+   ```
+
+   `devGuildId` ayarlıyken slash komutları sadece o sunucuya kaydedilir ve anında görünür. Ayarlı değilken tüm sunuculara kaydedilir, bu durumda komutların Discord istemcilerine ulaşması biraz sürebilir.
+
+</Steps>
+
+## Çalıştır
+
+Araç çubuğundaki **Çalıştır**'a bas. Run paneli botun çevrimiçi olduğunu gösterir:
+
+```txt
+19:42:07  ● Çalışıyor · Botum#4821 is online · 1 server
+19:42:08  test sunucusu için 2 komut kaydedildi  /greet  /ping
+```
+
+Sunucunda `/ping` yaz. Bot gecikmesiyle yanıt verir, editörde de çalıştırdığı bloklar bir an için yanar.
+
+<Aside type="tip">
+  Bot çalışırken `ping` içindeki yanıt metnini değiştir. Dosya kaydedildiği anda runtime akışı yeniden yükler, bir sonraki `/ping` yeni metni kullanır. Yeniden başlatman gerekmez.
+</Aside>
+
+## Sonraki adımlar
+
+- Akışların nasıl çalıştığını [Akışlar](/tr/docs/flows/) sayfasında, mesajlarda hangi değerleri kullanabileceğini [Değişkenler](/tr/docs/variables/) sayfasında öğren.
+- Tüm blokları [Blok referansı](/tr/docs/blocks/)'nda incele.

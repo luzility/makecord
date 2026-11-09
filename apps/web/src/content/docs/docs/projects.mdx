@@ -1,0 +1,39 @@
+---
+title: Projects
+description: The files in a Makecord project and what each one is for.
+---
+
+A Makecord project is a plain folder. Nothing lives in a database, so you can version it with git, review changes and copy it anywhere.
+
+```txt
+my-bot/
+├── makecord.json          # name, intents, plugins, secret names, cache limits
+├── commands/
+│   ├── ping.flow.json     # one file per slash command
+│   └── greet.flow.json
+├── events/
+│   └── ready.flow.json    # one file per event flow
+├── package.json           # "start": "makecord start ."
+├── Dockerfile
+├── docker-compose.yml
+├── .env.example           # DISCORD_TOKEN= (no value)
+├── .gitignore
+└── .makecord/             # IDE state: open tabs, layout (gitignored)
+```
+
+Flow files can live in any folder. The runtime loads every `*.flow.json` in the project except inside `node_modules` and hidden folders. `commands/` and `events/` are only a convention.
+
+## makecord.json
+
+The project's settings. Every field is listed in the [project config reference](/docs/project-config/). The ones you'll touch most:
+
+- `intents` decides which events Discord sends the bot. Some events need an intent, and the Problems panel tells you which one is missing.
+- `devGuildId` registers commands to one server while you develop.
+- `plugins` lists extra block packages to load.
+- `secrets` names the secrets the bot expects. Values never go in this file.
+
+Changes to `makecord.json` take effect the next time you press Run.
+
+## When a file is broken
+
+A flow file with invalid JSON or an unknown shape doesn't take the bot down. The runtime skips that file, reports it in the Run panel and the Problems panel, and runs everything else.

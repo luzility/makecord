@@ -1,0 +1,11 @@
+---
+import { ProjectConfig } from "@makecord/spec";
+import ConfigTable from "./ConfigTable.astro";
+import { labels } from "./labels";
+import { rowsOf } from "./schema";
+
+const lang = Astro.currentLocale === "tr" ? "tr" : "en";
+const rows = rowsOf(ProjectConfig).filter((r) => r.name !== "$schema");
+---
+
+<ConfigTable rows={rows} labels={labels[lang]} />

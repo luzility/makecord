@@ -1,0 +1,29 @@
+---
+import "../styles.css";
+interface Props {
+  title: string;
+  description: string;
+  lang: string;
+}
+const { title, description, lang } = Astro.props;
+const site = Astro.site ?? new URL("https://makecord.app");
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate" hreflang="en" href={new URL("/", site)} />
+    <link rel="alternate" hreflang="tr" href={new URL("/tr/", site)} />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+  </head>
+  <body class="min-h-screen">
+    <slot />
+  </body>
+</html>

@@ -1,0 +1,50 @@
+@import "tailwindcss";
+@import "./styles/fonts.css";
+@import "@fontsource-variable/jetbrains-mono";
+
+@theme static {
+  --color-ink: #0b0d14;
+  --color-panel: #11141c;
+  --color-raised: #1a1e28;
+  --color-line: rgb(238 240 245 / 0.08);
+  --color-line-strong: rgb(238 240 245 / 0.14);
+  --color-fg: #eef0f5;
+  --color-muted: #a3a9b8;
+  --color-faint: #7a8296;
+  --color-signal: #f5a524;
+  --color-ok: #4cc38a;
+  --color-cat-trigger: #4cc38a;
+  --color-cat-action: #6aa1ff;
+  --color-cat-logic: #c9a2ff;
+  --font-sans: "Beacon", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, Menlo, Consolas, monospace;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  html {
+    background: var(--color-ink);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
+  pre,
+  code {
+    font-variant-ligatures: none;
+  }
+  :focus-visible {
+    outline: 2px solid rgb(238 240 245 / 0.6);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .mk-signal {
+    display: none;
+  }
+}

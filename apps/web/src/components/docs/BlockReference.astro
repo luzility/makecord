@@ -1,0 +1,81 @@
+---
+import { coreNodeMetas } from "@makecord/plugin-core/meta";
+import type { NodeMeta } from "@makecord/plugin-sdk";
+import ConfigTable from "./ConfigTable.astro";
+import { labels } from "./labels";
+import { rowsOf } from "./schema";
+
+const lang = Astro.currentLocale === "tr" ? "tr" : "en";
+const l = labels[lang];
+const categories = ["trigger", "action", "logic", "data"] as const;
+
+function text(meta: NodeMeta) {
+  const loc = meta.locales?.[lang];
+  return {
+    title: loc?.title ?? meta.title,
+    description: loc?.description ?? meta.description,
+    output: (p: string) => loc?.outputs?.[p] ?? p,
+    rows: rowsOf(meta.fields).map((r) => ({
+      ...r,
+      description: loc?.fields?.[r.name]?.description ?? r.description ?? loc?.fields?.[r.name]?.title,
+    })),
+  };
+}
+const usable = (m: NodeMeta) =>
+  !m.contexts ? l.anywhere : m.contexts.includes("command") && !m.contexts.includes("event") ? l.commandOnly : l.eventOnly;
+---
+
+{
+  categories.map((cat) => {
+    const metas = coreNodeMetas.filter((m) => m.category === cat);
+    return (
+      <>
+        <h2 id={cat}>{l[cat]}</h2>
+        {metas.map((m) => {
+          const t = text(m);
+          return (
+            <section class="mk-block">
+              <h3 id={m.type.replace(".", "-")}>
+                <span class="mk-dot" style={`background: var(--mk-cat-${m.category})`} />
+                {t.title}
+              </h3>
+              <p>{t.description}</p>
+              <p class="mk-meta">
+                <code>{m.type}</code>
+                {` · ${usable(m)} · ${l.outputs}: ${m.outputs.map((o) => t.output(o)).join(", ")}`}
+              </p>
+              {t.rows.length ? <ConfigTable rows={t.rows} labels={l} /> : <p class="mk-muted">{l.noFields}</p>}
+            </section>
+          );
+        })}
+      </>
+    );
+  })
+}
+
+<style>
+  :global(:root) {
+    --mk-cat-trigger: #4cc38a;
+    --mk-cat-action: #6aa1ff;
+    --mk-cat-logic: #c9a2ff;
+    --mk-cat-data: #6fd0c4;
+  }
+  .mk-block h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .mk-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+  .mk-meta {
+    font-size: 0.875rem;
+    color: var(--sl-color-gray-3);
+  }
+  .mk-muted {
+    color: var(--sl-color-gray-3);
+  }
+</style>

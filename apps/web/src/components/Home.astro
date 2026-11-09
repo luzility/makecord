@@ -1,0 +1,126 @@
+---
+import { dictionaries, type Lang } from "../i18n";
+import Base from "../layouts/Base.astro";
+import { links } from "../links";
+import FlowPreview from "./FlowPreview.astro";
+import Logo from "./Logo.astro";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const d = dictionaries[lang];
+const home = lang === "en" ? "/" : `/${lang}/`;
+
+const btn = "inline-flex items-center justify-center rounded-[10px] font-medium transition-[background-color,transform] duration-150 ease-out active:scale-[0.98]";
+const primary = `${btn} bg-fg text-ink shadow-[inset_0_1px_0_rgb(255_255_255/0.5)] hover:bg-white`;
+const secondary = `${btn} border border-line-strong bg-raised text-fg hover:bg-[#222735]`;
+---
+
+<Base title={d.meta.title} description={d.meta.description} lang={lang}>
+  <header class="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 lg:px-8">
+    <a href={home} class="flex items-center gap-2 text-[16px] font-medium">
+      <Logo size={24} />
+      Makecord
+    </a>
+    <nav class="flex items-center gap-6 text-[14px] text-muted">
+      <a href="#features" class="hidden transition-colors duration-150 hover:text-fg md:inline">{d.nav.features}</a>
+      <a href="#self-host" class="hidden transition-colors duration-150 hover:text-fg md:inline">{d.nav.selfHost}</a>
+      <a href="#plugins" class="hidden transition-colors duration-150 hover:text-fg md:inline">{d.nav.plugins}</a>
+      <a href={d.nav.docsHref} class="transition-colors duration-150 hover:text-fg">{d.nav.docs}</a>
+      <a href={d.nav.switchHref} hreflang={lang === "en" ? "tr" : "en"} class="transition-colors duration-150 hover:text-fg">{d.nav.switchTo}</a>
+      <a href={links.releases} class={`${primary} h-9 px-4 text-[14px]`}>{d.nav.download}</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="mx-auto grid min-h-[calc(100svh-64px)] max-w-6xl grid-cols-1 items-center gap-12 px-6 py-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:gap-16 lg:px-8">
+      <div>
+        <h1 class="text-[40px] leading-[1.06] font-medium tracking-[-0.02em] text-balance sm:text-[56px] sm:leading-[1.04] sm:tracking-[-0.03em]">
+          {d.hero.title}
+        </h1>
+        <p class="mt-6 max-w-[34rem] text-[18px] leading-[28px] text-muted">{d.hero.body}</p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href={links.releases} class={`${primary} h-12 px-5 text-[15px]`}>{d.hero.primary}</a>
+          <a href={links.github} class={`${secondary} h-12 px-5 text-[15px]`}>{d.hero.secondary}</a>
+        </div>
+      </div>
+      <FlowPreview p={d.preview} />
+    </section>
+
+    <section id="features" class="mx-auto grid max-w-6xl gap-12 px-6 py-24 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16 lg:px-8 lg:py-32">
+      <div class="lg:sticky lg:top-24 lg:self-start">
+        <h2 class="text-[32px] leading-[1.15] font-medium tracking-[-0.01em]">{d.features.title}</h2>
+        <p class="mt-4 max-w-[30rem] text-[16px] leading-[26px] text-muted">{d.features.body}</p>
+      </div>
+      <ol>
+        {
+          d.features.items.map((f, i) => (
+            <li class="grid grid-cols-[40px_1fr] gap-x-4 border-t border-line py-8 last:border-b">
+              <span class="font-mono text-[13px] leading-6 text-faint tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+              <div>
+                <h3 class="text-[17px] leading-6 font-medium">{f.title}</h3>
+                <p class="mt-2 text-[15px] leading-[24px] text-muted">{f.body}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <section id="self-host" class="border-y border-line bg-panel">
+      <div class="mx-auto grid max-w-6xl items-center gap-12 px-6 py-24 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-32">
+        <div>
+          <h2 class="text-[32px] leading-[1.15] font-medium tracking-[-0.01em]">{d.selfHost.title}</h2>
+          <p class="mt-4 text-[16px] leading-[26px] text-muted">{d.selfHost.body}</p>
+          <p class="mt-4 text-[16px] leading-[26px] text-muted">{d.selfHost.body2}</p>
+        </div>
+        <pre class="overflow-x-auto rounded-2xl border border-line bg-ink p-6 font-mono text-[13px] leading-[22px]"><code><span class="text-faint">{d.selfHost.comment1}</span>
+cp .env.example .env   <span class="text-faint">{d.selfHost.comment2}</span>
+npm install
+npm start
+
+<span class="text-faint">{d.selfHost.comment3}</span>
+docker compose up -d
+
+<span class="text-signal">●</span> <span class="text-fg">{d.selfHost.online}</span>
+<span class="text-muted">{d.selfHost.registered}</span></code></pre>
+      </div>
+    </section>
+
+    <section id="plugins" class="mx-auto grid max-w-6xl items-center gap-12 px-6 py-24 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-32">
+      <pre class="order-2 overflow-x-auto rounded-2xl border border-line bg-panel p-6 font-mono text-[12.5px] leading-[22px] text-muted lg:order-1"><code><span class="text-faint">import</span> {"{"} defineNode, defineNodeMeta, definePlugin {"}"}
+  <span class="text-faint">from</span> <span class="text-fg">"@makecord/plugin-sdk"</span>;
+<span class="text-faint">import</span> {"{"} z {"}"} <span class="text-faint">from</span> <span class="text-fg">"zod"</span>;
+
+<span class="text-faint">const</span> roll = defineNodeMeta({"{"}
+  type: <span class="text-fg">"dice.roll"</span>, title: <span class="text-fg">"Roll Dice"</span>, category: <span class="text-fg">"data"</span>,
+  fields: z.object({"{"} sides: z.number().default(<span class="text-signal">6</span>) {"}"}),
+{"}"});
+
+<span class="text-faint">export default</span> definePlugin({"{"}
+  id: <span class="text-fg">"makecord-plugin-dice"</span>, version: <span class="text-fg">"1.0.0"</span>,
+  engines: {"{"} makecord: <span class="text-fg">"^0.1.0"</span> {"}"},
+  nodes: [defineNode(roll, (ctx, {"{"} sides {"}"}) =&gt;
+    ctx.vars.set(<span class="text-fg">"roll"</span>, 1 + Math.floor(Math.random() * sides)))],
+{"}"});</code></pre>
+      <div class="order-1 lg:order-2">
+        <h2 class="text-[32px] leading-[1.15] font-medium tracking-[-0.01em]">{d.plugins.title}</h2>
+        <p class="mt-4 text-[16px] leading-[26px] text-muted">{d.plugins.body}</p>
+        <p class="mt-4 text-[16px] leading-[26px] text-muted">{d.plugins.body2}</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-line">
+    <div class="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-8 text-[13px] text-faint sm:flex-row sm:items-center sm:justify-between lg:px-8">
+      <span class="flex items-center gap-2">
+        <Logo size={18} />
+        <span class="text-muted">Makecord</span>
+        <span>· {d.footer.openSource}</span>
+        <span>· <a href={d.nav.docsHref} class="transition-colors duration-150 hover:text-fg">{d.footer.docs}</a></span>
+      </span>
+      <span>{d.footer.trademark}</span>
+    </div>
+  </footer>
+</Base>

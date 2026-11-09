@@ -1,0 +1,24 @@
+---
+title: CLI
+description: The makecord command that runs a project outside the IDE.
+---
+
+The runtime package ships a `makecord` command. Projects call it from their `start` script, and you can run it yourself.
+
+```sh
+makecord start [project-dir] [--watch]
+```
+
+| Argument | Meaning |
+| --- | --- |
+| `project-dir` | The project folder. Defaults to the current folder. |
+| `--watch` | Reload flows when a `*.flow.json` file changes. The IDE uses this. |
+| `-h`, `--help` | Print usage. |
+
+## Environment
+
+Secrets come from environment variables. If the project folder has a `.env` file, it's loaded first.
+
+## Logs and exit codes
+
+In a terminal the CLI prints timestamped, colored logs. It exits with code `1` if the bot can't start, for example when `DISCORD_TOKEN` is missing or Discord rejects the token. `Ctrl+C` or `SIGTERM` disconnect the bot cleanly before exiting.

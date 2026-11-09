@@ -1,0 +1,25 @@
+---
+title: Project config
+description: Every field in makecord.json.
+---
+
+import ProjectConfigReference from "../../../components/docs/ProjectConfigReference.astro";
+
+`makecord.json` sits at the root of every project. This table is generated from the schema the runtime validates against.
+
+<ProjectConfigReference />
+
+## Example
+
+```json title="makecord.json"
+{
+  "specVersion": 1,
+  "name": "My bot",
+  "runtime": "^0.1.0",
+  "intents": ["Guilds", "GuildMembers"],
+  "devGuildId": "123456789012345678",
+  "plugins": [],
+  "secrets": ["DISCORD_TOKEN"],
+  "cache": { "messages": 50, "members": 200, "presences": 0, "reactions": 0, "sweepIntervalSeconds": 3600 }
+}
+```
