@@ -64,6 +64,7 @@ export function createReporter(): {
             `Registered ${msg.names.length} commands (${msg.scope}): ${msg.names.join(", ")}`,
           );
         case "gateway":
+        case "debug":
           return;
       }
     },

@@ -23,8 +23,12 @@ export async function executeFlow(opts: {
   base: ExecutionBase;
   env: NodeJS.ProcessEnv;
   emit: Emit;
+  beforeNode?: (
+    nodeId: string,
+    state: { vars: Map<string, unknown>; scope: unknown },
+  ) => Promise<void>;
 }): Promise<void> {
-  const { file, flow, registry, base, env, emit } = opts;
+  const { file, flow, registry, base, env, emit, beforeNode } = opts;
   const started = performance.now();
   const nodes = new Map(flow.nodes.map((n) => [n.id, n]));
   const vars = new Map<string, unknown>();
@@ -85,6 +89,7 @@ export async function executeFlow(opts: {
     emit({ type: "flow", phase: "node", flow: file, nodeId: node.id });
     let port: string | undefined;
     try {
+      if (beforeNode) await beforeNode(node.id, { vars, scope });
       port = (await entry.node.run(ctx, parsed.data)) ?? "next";
     } catch (e) {
       emit({

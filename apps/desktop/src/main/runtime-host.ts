@@ -1,5 +1,5 @@
 import { createRequire } from "node:module";
-import type { RuntimeMessage } from "@makecord/runtime/protocol";
+import type { HostMessage, RuntimeMessage } from "@makecord/runtime/protocol";
 import { type UtilityProcess, utilityProcess } from "electron";
 import { decryptSecrets } from "./secrets";
 import { readSettings } from "./settings";
@@ -68,6 +68,7 @@ async function launch(root: string, send: Send): Promise<void> {
     execArgv: [`--max-old-space-size=${(await readSettings()).botMemoryMB}`],
   });
   child = proc;
+  if (breakpoints) proc.postMessage(breakpoints);
 
   let lastStatus: string | undefined;
   const log = (level: "info" | "error") => (chunk: Buffer) => {
@@ -91,6 +92,14 @@ async function launch(root: string, send: Send): Promise<void> {
         : status({ status: "stopped" }),
     );
   });
+}
+
+let breakpoints: HostMessage | null = null;
+
+export function sendToBot(msg: HostMessage) {
+  if (msg.type !== "breakpoints" && msg.type !== "resume") return;
+  if (msg.type === "breakpoints") breakpoints = msg;
+  child?.postMessage(msg);
 }
 
 export async function stopBot(): Promise<void> {

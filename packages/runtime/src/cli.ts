@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { startBot } from "./bot.js";
+import { createDebugger } from "./debugger.js";
 import { createReporter } from "./reporter.js";
 
 const HELP = `makecord — runs Makecord projects
@@ -39,15 +40,18 @@ async function main() {
     process.exit(code);
   };
 
+  const debug = values.watch ? createDebugger(emit) : undefined;
   onHostMessage((m) => {
     if (m.type === "stop") void shutdown();
     if (m.type === "reload") void bot?.reload();
+    if (m.type === "breakpoints") debug?.setBreakpoints(m.breakpoints);
+    if (m.type === "resume") debug?.resume(m.runId, m.mode);
   });
   process.on("SIGINT", () => void shutdown());
   process.on("SIGTERM", () => void shutdown());
 
   try {
-    bot = await startBot({ projectDir, env: process.env, emit, watch: values.watch });
+    bot = await startBot({ projectDir, env: process.env, emit, watch: values.watch, debug });
   } catch (e) {
     emit({
       type: "status",

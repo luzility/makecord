@@ -1,5 +1,5 @@
-import { Ban, Play, Square } from "lucide-react";
-import { type ReactNode, useEffect, useRef } from "react";
+import { Ban, Play, Search, Square, X } from "lucide-react";
+import { type ReactNode, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Led } from "@/components/Logo";
 import { cn, IconButton } from "@/components/ui";
 import { useT } from "@/i18n";
@@ -87,10 +87,6 @@ function Line({ e }: { e: LogEntry }) {
         </span>
       );
       break;
-    case "gateway":
-      tone = "faint";
-      content = <span>{e.summary}</span>;
-      break;
   }
   return (
     <div
@@ -109,6 +105,31 @@ function Line({ e }: { e: LogEntry }) {
   );
 }
 
+type Level = "error" | "warn" | "info" | "debug";
+const LEVELS: Level[] = ["error", "warn", "info", "debug"];
+
+function levelOf(e: LogEntry): Level {
+  if (e.type === "log") return e.level;
+  if (e.type === "flow") return e.phase === "error" ? "error" : "debug";
+  if (e.type === "status") return e.status === "error" ? "error" : "info";
+  return "info";
+}
+
+function textOf(e: LogEntry): string {
+  switch (e.type) {
+    case "log":
+      return `${e.source ?? ""} ${e.message}`;
+    case "status":
+      return `${e.status} ${e.detail ?? ""}`;
+    case "flow":
+      return `${e.flow} ${e.nodeId ?? ""} ${e.error ?? ""}`;
+    case "commands":
+      return e.names.join(" ");
+    default:
+      return "";
+  }
+}
+
 export function RunPanel() {
   const { t } = useT();
   const logs = useStore((s) => s.logs);
@@ -116,7 +137,19 @@ export function RunPanel() {
   const { running, busy, start, stop } = useRunActions();
   const scroller = useRef<HTMLDivElement>(null);
   const stick = useRef(true);
-  const visible = logs.length > VISIBLE ? logs.slice(-VISIBLE) : logs;
+  const [query, setQuery] = useState("");
+  const [levels, setLevels] = useState<ReadonlySet<Level>>(new Set(["error", "warn", "info"]));
+  const q = useDeferredValue(query.trim().toLowerCase());
+  const filtered = useMemo(
+    () => logs.filter((e) => levels.has(levelOf(e)) && (!q || textOf(e).toLowerCase().includes(q))),
+    [logs, levels, q],
+  );
+  const visible = filtered.length > VISIBLE ? filtered.slice(-VISIBLE) : filtered;
+  const counts = useMemo(() => {
+    const c: Record<Level, number> = { error: 0, warn: 0, info: 0, debug: 0 };
+    for (const e of logs) c[levelOf(e)]++;
+    return c;
+  }, [logs]);
 
   useEffect(() => {
     const el = scroller.current;
@@ -139,18 +172,77 @@ export function RunPanel() {
           <Ban size={16} strokeWidth={1.5} />
         </IconButton>
       </div>
-      <div
-        ref={scroller}
-        onScroll={(e) => {
-          const el = e.currentTarget;
-          stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 24;
-        }}
-        className="flex-1 overflow-y-auto py-2 font-mono text-label leading-5 select-text"
-      >
-        {visible.length === 0 && <p className="px-3 text-faint">{t("run.empty")}</p>}
-        {visible.map((e) => (
-          <Line key={e.id} e={e} />
-        ))}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex h-8 shrink-0 items-center gap-2 border-b border-line px-2">
+          <div className="flex h-6 w-56 items-center gap-1.5 rounded-md border border-line bg-chrome px-2 focus-within:border-fg/40">
+            <Search size={12} strokeWidth={1.5} className="shrink-0 text-faint" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t("run.search")}
+              className="min-w-0 flex-1 bg-transparent text-label outline-none placeholder:text-faint focus-visible:outline-none"
+            />
+            {query && (
+              <button type="button" aria-label={t("common.clear")} onClick={() => setQuery("")}>
+                <X size={12} strokeWidth={1.5} className="text-faint hover:text-fg" />
+              </button>
+            )}
+          </div>
+          <fieldset aria-label={t("run.levels")} className="m-0 flex gap-0.5 border-0 p-0">
+            {LEVELS.map((l) => (
+              <button
+                key={l}
+                type="button"
+                aria-pressed={levels.has(l)}
+                onClick={() => {
+                  const next = new Set(levels);
+                  if (next.has(l)) next.delete(l);
+                  else next.add(l);
+                  setLevels(next);
+                }}
+                className={cn(
+                  "flex h-6 items-center gap-1 rounded px-2 text-label transition-colors duration-150",
+                  levels.has(l) ? "bg-hover text-fg" : "text-faint hover:text-fg",
+                )}
+              >
+                {t(`run.level.${l}`)}
+                <span
+                  className={cn(
+                    "font-mono text-meta tabular-nums",
+                    l === "error" && counts.error
+                      ? "text-bad"
+                      : l === "warn" && counts.warn
+                        ? "text-warn"
+                        : "text-faint",
+                  )}
+                >
+                  {counts[l]}
+                </span>
+              </button>
+            ))}
+          </fieldset>
+          {logs.length > 0 && filtered.length !== logs.length && (
+            <span className="ml-auto text-meta text-faint">
+              {t("run.shown", { shown: filtered.length, total: logs.length })}
+            </span>
+          )}
+        </div>
+        <div
+          ref={scroller}
+          onScroll={(e) => {
+            const el = e.currentTarget;
+            stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 24;
+          }}
+          className="flex-1 overflow-y-auto py-2 font-mono text-label leading-5 select-text"
+        >
+          {logs.length === 0 && <p className="px-3 text-faint">{t("run.empty")}</p>}
+          {logs.length > 0 && visible.length === 0 && (
+            <p className="px-3 text-faint">{t("run.noMatch")}</p>
+          )}
+          {visible.map((e) => (
+            <Line key={e.id} e={e} />
+          ))}
+        </div>
       </div>
     </div>
   );

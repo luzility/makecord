@@ -72,6 +72,9 @@ function Canvas({ path, flow }: { path: string; flow: Flow }) {
   const selection = useStore((s) => s.selection);
   const problems = useStore((s) => s.problems);
   const executed = useStore((s) => s.executed);
+  const breakpoints = useStore((s) => s.breakpoints[path]);
+  const pausedRuns = useStore((s) => s.paused);
+  const toggleBreakpoint = useStore((s) => s.toggleBreakpoint);
   const { t, locale } = useT();
   const catalog = useNodes();
   const snapToGrid = useStore((s) => s.settings.snapToGrid);
@@ -151,6 +154,11 @@ function Canvas({ path, flow }: { path: string; flow: Flow }) {
           triggerLabel: label,
           problem: problem && { severity: problem.severity, message: problemText(problem, locale) },
           live: liveAt(n.id) !== undefined,
+          breakpoint: breakpoints?.includes(n.id) ?? false,
+          paused: pausedRuns.some((p) => p.flow === path && p.nodeId === n.id),
+          breakpointLabel: t("debug.toggleBreakpoint"),
+          pausedLabel: t("debug.paused"),
+          onToggleBreakpoint: () => toggleBreakpoint(path, n.id),
         },
       };
     });
@@ -183,7 +191,21 @@ function Canvas({ path, flow }: { path: string; flow: Flow }) {
       }),
     );
     return [...blocks, ...notes];
-  }, [flow, problems, selectedIds, path, liveAt, locale, t, catalog, updateFlow, freshNote]);
+  }, [
+    flow,
+    problems,
+    selectedIds,
+    path,
+    liveAt,
+    locale,
+    t,
+    catalog,
+    updateFlow,
+    freshNote,
+    breakpoints,
+    pausedRuns,
+    toggleBreakpoint,
+  ]);
 
   const [nodes, setNodes] = useState(derived);
   useEffect(() => {
@@ -470,6 +492,13 @@ function Canvas({ path, flow }: { path: string; flow: Flow }) {
             keys: k("Mod+D"),
             disabled: !ids.length,
             onSelect: () => duplicate(ids),
+          },
+          {
+            kind: "item",
+            label: t("debug.toggleBreakpoint"),
+            keys: k("Mod+F8"),
+            disabled: targetIds.length !== 1 || !!targetIds[0]?.startsWith("note-"),
+            onSelect: () => targetIds[0] && toggleBreakpoint(path, targetIds[0]),
           },
           { kind: "separator" },
           {

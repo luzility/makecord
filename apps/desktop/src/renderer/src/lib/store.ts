@@ -31,6 +31,26 @@ export interface Notice {
 
 export type LogEntry = RuntimeMessage & { id: number };
 
+export interface PausedRun {
+  runId: string;
+  flow: string;
+  nodeId: string;
+  vars: unknown;
+  scope: unknown;
+  time: number;
+}
+
+export interface GatewayEntry {
+  id: number;
+  time: number;
+  event: string;
+  summary: string;
+  handled?: boolean;
+}
+
+const MAX_GATEWAY = 1000;
+const BREAKPOINTS_FILE = ".makecord/breakpoints.json";
+
 export type SettingsPage = "appearance" | "editor" | "run" | "keymap" | "project" | "plugins";
 
 const MAX_LOGS = 5000;
@@ -49,6 +69,15 @@ interface State {
   runBusy: boolean;
   notice: Notice | null;
   logs: LogEntry[];
+  gateway: GatewayEntry[];
+  breakpoints: Record<string, string[]>;
+  paused: PausedRun[];
+  activeRun: string | null;
+  toggleBreakpoint(path: string, nodeId: string): void;
+  clearBreakpoints(): void;
+  resumeRun(runId: string, mode: "continue" | "step" | "stop"): void;
+  syncBreakpoints(): void;
+  clearGateway(): void;
   executed: Record<string, number>;
   secretsOpen: boolean;
   inviteOpen: boolean;
@@ -221,6 +250,10 @@ export const useStore = create<State>((set, get) => {
     problems: [],
     status: "idle",
     logs: [],
+    gateway: [],
+    breakpoints: {},
+    paused: [],
+    activeRun: null,
     executed: {},
     secretsOpen: false,
     inviteOpen: false,
@@ -268,6 +301,10 @@ export const useStore = create<State>((set, get) => {
         selection: null,
         problems: [],
         logs: [],
+        gateway: [],
+        breakpoints: {},
+        paused: [],
+        activeRun: null,
         status: "idle",
         statusDetail: undefined,
         statusCode: undefined,
@@ -279,6 +316,12 @@ export const useStore = create<State>((set, get) => {
         activePath: null,
       });
       if (project) {
+        try {
+          const raw = await api.fs.readOptional(BREAKPOINTS_FILE);
+          const parsed = raw ? (JSON.parse(raw) as Record<string, string[]>) : {};
+          if (get().project?.root === project.root) set({ breakpoints: parsed });
+        } catch {}
+        get().syncBreakpoints();
         await Promise.all([get().refreshTree(), get().refreshProblems(), get().refreshCatalog()]);
       }
     },
@@ -392,9 +435,88 @@ export const useStore = create<State>((set, get) => {
       set({ selection });
     },
 
+    toggleBreakpoint(path, nodeId) {
+      const current = get().breakpoints[path] ?? [];
+      const next = current.includes(nodeId)
+        ? current.filter((id) => id !== nodeId)
+        : [...current, nodeId];
+      const breakpoints = { ...get().breakpoints, [path]: next };
+      if (!next.length) delete breakpoints[path];
+      set({ breakpoints });
+      get().syncBreakpoints();
+      void api.fs
+        .write(BREAKPOINTS_FILE, `${JSON.stringify(breakpoints, null, 2)}\n`)
+        .catch(() => {});
+    },
+
+    clearBreakpoints() {
+      set({ breakpoints: {} });
+      get().syncBreakpoints();
+      void api.fs.write(BREAKPOINTS_FILE, "{}\n").catch(() => {});
+    },
+
+    syncBreakpoints() {
+      void api.runtime
+        .debug({ type: "breakpoints", breakpoints: get().breakpoints })
+        .catch(() => {});
+    },
+
+    resumeRun(runId, mode) {
+      void api.runtime.debug({ type: "resume", runId, mode }).catch(() => {});
+    },
+
+    clearGateway() {
+      set({ gateway: [] });
+    },
+
     pushRuntime(msg) {
+      if (msg.type === "gateway") {
+        set((s) => {
+          const gateway =
+            s.gateway.length >= MAX_GATEWAY ? s.gateway.slice(-MAX_GATEWAY + 1) : s.gateway.slice();
+          gateway.push({
+            id: ++logId,
+            time: msg.time,
+            event: msg.event,
+            summary: msg.summary,
+            handled: msg.handled,
+          });
+          return { gateway };
+        });
+        return;
+      }
+      if (msg.type === "debug") {
+        set((s) => {
+          if (msg.phase === "resumed") {
+            const paused = s.paused.filter((p) => p.runId !== msg.runId);
+            return {
+              paused,
+              activeRun: s.activeRun === msg.runId ? (paused[0]?.runId ?? null) : s.activeRun,
+            };
+          }
+          const run: PausedRun = {
+            runId: msg.runId,
+            flow: msg.flow,
+            nodeId: msg.nodeId,
+            vars: msg.vars,
+            scope: msg.scope,
+            time: msg.time,
+          };
+          return {
+            paused: [...s.paused.filter((p) => p.runId !== msg.runId), run],
+            activeRun: msg.runId,
+          };
+        });
+        return;
+      }
+      if (msg.type === "status" && msg.status === "starting")
+        queueMicrotask(() => get().syncBreakpoints());
       set((s) => {
         const patch: Partial<State> = {};
+        if (msg.type === "status" && (msg.status === "stopped" || msg.status === "error")) {
+          patch.paused = [];
+          patch.activeRun = null;
+        }
         if (msg.type === "status") {
           patch.status = msg.status;
           patch.statusDetail = msg.detail;

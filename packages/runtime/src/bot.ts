@@ -24,7 +24,9 @@ import {
   Partials,
   PermissionFlagsBits,
 } from "discord.js";
+import type { Debugger } from "./debugger.js";
 import { executeFlow } from "./executor.js";
+import { watchGateway } from "./gateway.js";
 import { inspectProject } from "./inspect.js";
 import { loadPlugins, type NodeRegistry } from "./plugins.js";
 import { type LoadedFlow, type LoadedProject, loadProject } from "./project.js";
@@ -102,6 +104,7 @@ export interface StartOptions {
   env: NodeJS.ProcessEnv;
   emit: Emit;
   watch?: boolean;
+  debug?: Debugger;
 }
 
 export interface RunningBot {
@@ -189,19 +192,48 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
     });
   };
 
+  let runCounter = 0;
   const run = (
     file: string,
     flow: CommandFlow | EventFlow,
     base: Omit<Parameters<typeof executeFlow>[0]["base"], "store" | "messages">,
-  ) =>
-    executeFlow({
+  ) => {
+    const runId = `r${++runCounter}`;
+    const debug = opts.debug;
+    const i = base.interaction;
+    const beforeNode = debug
+      ? (nodeId: string, state: { vars: Map<string, unknown>; scope: unknown }) =>
+          debug.before({
+            file,
+            runId,
+            nodeId,
+            vars: state.vars,
+            scope: state.scope,
+            beforePause: async () => {
+              if (!i || i.deferred || i.replied) return;
+              await i.deferReply();
+              emit({
+                type: "log",
+                level: "info",
+                message:
+                  "Paused in the debugger, so the reply was deferred to keep Discord from timing out",
+                source: `${file}#${nodeId}`,
+              });
+            },
+          })
+      : undefined;
+    return executeFlow({
       file,
       flow,
       registry,
       base: { ...base, store, messages: designsOf(project) },
       env,
       emit,
-    }).catch((e: Error) => emit({ type: "flow", phase: "error", flow: file, error: e.message }));
+      beforeNode,
+    })
+      .catch((e: Error) => emit({ type: "flow", phase: "error", flow: file, error: e.message }))
+      .finally(() => debug?.finished(runId));
+  };
 
   const eventFlows = (event: EventFlow["event"]) =>
     project.flows.filter(
@@ -213,7 +245,6 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
     event: "buttonClick" | "selectMenu" | "modalSubmit",
     i: ButtonInteraction | AnySelectMenuInteraction | ModalSubmitInteraction,
   ) => {
-    emit({ type: "gateway", event, summary: `${event} ${i.customId} — ${i.user.username}` });
     const matching = eventFlows(event).filter((f) => matchesCustomId(f.flow.customId, i.customId));
     if (!matching.length) {
       emit({
@@ -236,11 +267,6 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
 
   client.on(Events.InteractionCreate, (i) => {
     if (i.isChatInputCommand()) {
-      emit({
-        type: "gateway",
-        event: "interactionCreate",
-        summary: `/${i.commandName} — ${i.user.username}`,
-      });
       const entry = commands.get(i.commandName);
       if (!entry) return;
       void run(entry.file, entry.flow, {
@@ -273,7 +299,6 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
         if (user.bot) return;
         if (reaction.partial) await reaction.fetch().catch(() => {});
       }
-      emit({ type: "gateway", event, summary: event });
       if (!client.isReady()) return;
       for (const { file, flow } of eventFlows(event)) {
         void run(file, flow, { client, eventArgs: args, scope: eventScope(client, event, args) });
@@ -298,7 +323,7 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
       const schedule = flow.schedule;
       if (!schedule) continue;
       const fire = () => {
-        emit({ type: "gateway", event: "schedule", summary: `schedule ${file}` });
+        emit({ type: "log", level: "debug", message: "Schedule fired", source: file });
         if (client.isReady())
           void run(file, flow, {
             client,
@@ -399,6 +424,30 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
       );
   };
 
+  const RAW_EVENTS: Record<string, EventFlow["event"]> = {
+    READY: "clientReady",
+    GUILD_MEMBER_ADD: "guildMemberAdd",
+    GUILD_MEMBER_REMOVE: "guildMemberRemove",
+    MESSAGE_CREATE: "messageCreate",
+    MESSAGE_UPDATE: "messageUpdate",
+    MESSAGE_DELETE: "messageDelete",
+    MESSAGE_REACTION_ADD: "messageReactionAdd",
+  };
+  const isHandled = (t: string, d: Record<string, any>) => {
+    if (t === "INTERACTION_CREATE") {
+      const id = String(d.data?.custom_id ?? "");
+      const byId = (event: EventFlow["event"]) =>
+        eventFlows(event).some((f) => matchesCustomId(f.flow.customId, id));
+      if (d.type === 2) return commands.has(d.data?.name);
+      if (d.type === 3) return byId(d.data?.component_type === 2 ? "buttonClick" : "selectMenu");
+      if (d.type === 5) return byId("modalSubmit");
+      return false;
+    }
+    const event = RAW_EVENTS[t];
+    return event ? eventFlows(event).length > 0 : false;
+  };
+  const unwatchGateway = opts.watch ? watchGateway(client, emit, isHandled) : undefined;
+
   let watcher: ReturnType<typeof watch> | undefined;
   if (opts.watch) {
     let timer: NodeJS.Timeout | undefined;
@@ -428,6 +477,8 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
     reload,
     async stop() {
       emit({ type: "status", status: "stopping" });
+      opts.debug?.resumeAll("stop");
+      unwatchGateway?.();
       watcher?.close();
       for (const t of scheduleTimers) clearTimeout(t);
       await client.destroy();

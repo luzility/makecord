@@ -25,6 +25,7 @@ import { readSettings, writeSettings } from "./settings";
 
 const RUNTIME_VERSION_FALLBACK = "0.1.0";
 
+import type { HostMessage } from "@makecord/runtime/protocol";
 import {
   closeProject,
   createProject,
@@ -39,7 +40,7 @@ import {
   requireProject,
   writeProjectFile,
 } from "./project";
-import { botPid, startBot, stopBot } from "./runtime-host";
+import { botPid, sendToBot, startBot, stopBot } from "./runtime-host";
 import {
   decryptSecrets,
   listSecretNames,
@@ -290,6 +291,7 @@ function registerIpc() {
     startBot(requireProject().root, (msg) => send("runtime:message", msg)),
   );
   handle("runtime:stop", () => stopBot());
+  handle("runtime:debug", (msg: HostMessage) => sendToBot(msg));
 
   handle("app:metrics", async (): Promise<Metrics> => {
     const pid = botPid();

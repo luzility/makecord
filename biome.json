@@ -42,7 +42,9 @@
       "includes": [
         "packages/plugin-sdk/src/plugin.ts",
         "packages/runtime/src/plugins.ts",
-        "packages/runtime/src/executor.test.ts"
+        "packages/runtime/src/executor.test.ts",
+        "packages/runtime/src/gateway.ts",
+        "packages/runtime/src/bot.ts"
       ],
       "linter": {
         "rules": {
@@ -74,7 +76,8 @@
         "apps/desktop/src/renderer/src/editors/FlowEditor.tsx",
         "apps/desktop/src/renderer/src/components/ProjectMenu.tsx",
         "apps/desktop/src/renderer/src/editors/MonacoEditor.tsx",
-        "apps/desktop/src/renderer/src/panels/RunPanel.tsx"
+        "apps/desktop/src/renderer/src/panels/RunPanel.tsx",
+        "apps/desktop/src/renderer/src/panels/EventsPanel.tsx"
       ],
       "linter": {
         "rules": {

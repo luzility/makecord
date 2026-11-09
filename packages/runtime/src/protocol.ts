@@ -20,7 +20,22 @@ export type RuntimeMessage =
       durationMs?: number;
       error?: string;
     }
-  | { type: "gateway"; time: number; event: string; summary: string }
+  | { type: "gateway"; time: number; event: string; summary: string; handled?: boolean }
+  | {
+      type: "debug";
+      time: number;
+      phase: "paused";
+      runId: string;
+      flow: string;
+      nodeId: string;
+      vars: unknown;
+      scope: unknown;
+    }
+  | { type: "debug"; time: number; phase: "resumed"; runId: string }
   | { type: "commands"; time: number; scope: "guild" | "global"; names: string[] };
 
-export type HostMessage = { type: "stop" } | { type: "reload" };
+export type HostMessage =
+  | { type: "stop" }
+  | { type: "reload" }
+  | { type: "breakpoints"; breakpoints: Record<string, string[]> }
+  | { type: "resume"; runId: string; mode: "continue" | "step" | "stop" };

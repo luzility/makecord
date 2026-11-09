@@ -1,0 +1,41 @@
+---
+title: Debugging
+description: Pause flows at breakpoints, step through blocks, inspect variables and watch what Discord sends the bot.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+Makecord has a debugger for flows. It works while the bot runs from the IDE.
+
+## Breakpoints
+
+Hover a block and click the dot to the left of it, or select the block and press **Ctrl+F8** (**⌘F8** on macOS). A red dot marks the breakpoint. Breakpoints are saved in `.makecord/breakpoints.json`, so they stay between sessions and aren't committed.
+
+When a run reaches a breakpoint it stops **before** that block runs. The block gets a red outline, the flow opens, and the **Debug** panel shows:
+
+- `vars`, the flow variables set so far.
+- The event data: `user`, `guild`, `channel`, `options`, `message`, `customId` and the rest of the [variables](/docs/variables/) for that flow.
+
+Then choose what happens next:
+
+| Action | Shortcut | What it does |
+| --- | --- | --- |
+| Resume | **F9** | Runs until the next breakpoint or the end of the flow |
+| Step | **F8** | Runs this block and pauses before the next one |
+| Stop | | Ends this run. The rest of the flow doesn't run |
+
+Other runs keep going while one is paused. If several runs are paused, pick one in the Debug panel.
+
+<Aside>
+  Discord gives a command or button 3 seconds for an answer. When a run that has to answer pauses, Makecord defers the reply first, so Discord shows "thinking…" instead of failing. **Reply** then edits that message as usual.
+</Aside>
+
+## Gateway Events
+
+The **Gateway Events** panel lists every event Discord sends the bot, as it arrives: messages, interactions, members joining, reactions and so on. A green dot marks the events a flow runs for, and **Only events a flow handles** hides the rest. Use it to check that an event reaches the bot at all, for example when an intent is missing.
+
+Presence and typing updates are left out. If Discord sends more than 40 events a second, the panel skips the extra ones and says how many it skipped.
+
+## The Run log
+
+The **Run** panel shows logs, errors and flow results. Type in the search box to filter, and use **Errors**, **Warnings**, **Info** and **Debug** to choose which levels to show. Each count shows how many entries of that level the log holds. Click a file name in the log to open the block it points to.

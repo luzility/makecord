@@ -45,8 +45,43 @@ export function closeFile(path: string) {
   dock?.getPanel(`editor:${path}`)?.api.close();
 }
 
+const LATE_TOOLS: Record<string, string> = { debug: "debug", events: "events" };
+
+export function ensureToolWindows(api: DockviewApi) {
+  const anchor = api.getPanel("run") ?? api.getPanel("problems");
+  if (!anchor) return;
+  for (const id of Object.keys(LATE_TOOLS)) {
+    if (api.getPanel(id)) continue;
+    api.addPanel({
+      id,
+      component: LATE_TOOLS[id]!,
+      tabComponent: "tool",
+      title: "",
+      position: { referencePanel: anchor.id, direction: "within" },
+      inactive: true,
+    });
+  }
+}
+
 export function focusToolWindow(id: string) {
-  dock?.getPanel(id)?.api.setActive();
+  if (!dock) return;
+  const existing = dock.getPanel(id);
+  if (existing) {
+    existing.api.setActive();
+    return;
+  }
+  const component = LATE_TOOLS[id];
+  if (!component) return;
+  const anchor = dock.getPanel("run") ?? dock.getPanel("problems");
+  dock.addPanel({
+    id,
+    component,
+    tabComponent: "tool",
+    title: translate(useStore.getState().locale, TOOL_TITLES[id as keyof typeof TOOL_TITLES]),
+    position: anchor
+      ? { referencePanel: anchor.id, direction: "within" }
+      : { referencePanel: EDITOR_GROUP_ANCHOR, direction: "below" },
+  });
 }
 
 export interface LayoutSaver {
@@ -68,6 +103,8 @@ const TOOL_TITLES = {
   properties: "panels.properties",
   run: "panels.run",
   problems: "panels.problems",
+  debug: "panels.debug",
+  events: "panels.events",
 } as const;
 
 export function retitle(dock: DockviewApi) {
@@ -113,6 +150,17 @@ export function defaultLayout(dock: DockviewApi) {
     position: { referencePanel: "run", direction: "within" },
     inactive: true,
   });
+  for (const id of ["debug", "events"]) {
+    dock.addPanel({
+      id,
+      component: id,
+      tabComponent: "tool",
+      title: "",
+      position: { referencePanel: "run", direction: "within" },
+      inactive: true,
+    });
+  }
+  dock.getPanel("run")?.api.setActive();
   dock.getPanel(EDITOR_GROUP_ANCHOR)?.api.setActive();
 }
 

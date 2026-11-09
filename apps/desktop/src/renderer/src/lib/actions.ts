@@ -198,6 +198,57 @@ export const actions: Action[] = [
     run: () => focusToolWindow("problems"),
   },
   {
+    id: "view.debug",
+    label: "panels.debug",
+    shortcuts: ["Alt+5"],
+    project: true,
+    global: true,
+    run: () => focusToolWindow("debug"),
+  },
+  {
+    id: "view.events",
+    label: "panels.events",
+    shortcuts: ["Alt+7"],
+    project: true,
+    global: true,
+    run: () => focusToolWindow("events"),
+  },
+  {
+    id: "debug.toggleBreakpoint",
+    label: "debug.toggleBreakpoint",
+    shortcuts: ["Mod+F8"],
+    project: true,
+    enabled: () => st().selection !== null,
+    run: () => {
+      const sel = st().selection;
+      if (sel) st().toggleBreakpoint(sel.path, sel.nodeId);
+    },
+  },
+  {
+    id: "debug.resume",
+    label: "debug.resume",
+    shortcuts: ["F9"],
+    project: true,
+    global: true,
+    enabled: () => st().paused.length > 0,
+    run: () => {
+      const run = st().paused.find((p) => p.runId === st().activeRun) ?? st().paused[0];
+      if (run) st().resumeRun(run.runId, "continue");
+    },
+  },
+  {
+    id: "debug.step",
+    label: "debug.step",
+    shortcuts: ["F8"],
+    project: true,
+    global: true,
+    enabled: () => st().paused.length > 0,
+    run: () => {
+      const run = st().paused.find((p) => p.runId === st().activeRun) ?? st().paused[0];
+      if (run) st().resumeRun(run.runId, "step");
+    },
+  },
+  {
     id: "view.resetLayout",
     label: "actions.resetLayout",
     icon: LayoutPanelLeft,
@@ -294,12 +345,27 @@ export const MENU: { label: MessageKey; items: string[] }[] = [
       "view.properties",
       "view.run",
       "view.problems",
+      "view.debug",
+      "view.events",
       "-",
       "view.resetLayout",
       "-",
       ...languageActions.map((a) => a.id),
     ],
   },
-  { label: "menu.run", items: ["run.start", "run.stop", "-", "run.secrets", "run.invite"] },
+  {
+    label: "menu.run",
+    items: [
+      "run.start",
+      "run.stop",
+      "-",
+      "debug.resume",
+      "debug.step",
+      "debug.toggleBreakpoint",
+      "-",
+      "run.secrets",
+      "run.invite",
+    ],
+  },
   { label: "menu.help", items: ["help.docs", "help.issue"] },
 ];

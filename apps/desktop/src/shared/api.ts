@@ -1,6 +1,6 @@
 import type { Problem } from "@makecord/runtime/inspect";
 import type { Catalog } from "@makecord/runtime/language-service";
-import type { RuntimeMessage, RuntimeStatus } from "@makecord/runtime/protocol";
+import type { HostMessage, RuntimeMessage, RuntimeStatus } from "@makecord/runtime/protocol";
 
 export type { NodeDescriptor } from "@makecord/runtime/describe";
 export type { Catalog, Problem, RuntimeMessage, RuntimeStatus };
@@ -85,6 +85,7 @@ export interface MakecordApi {
   runtime: {
     start(): Promise<void>;
     stop(): Promise<void>;
+    debug(msg: HostMessage): Promise<void>;
     onMessage(cb: (msg: RuntimeMessage) => void): () => void;
   };
   app: {

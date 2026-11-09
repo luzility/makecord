@@ -12,14 +12,18 @@ import { api } from "@/lib/api";
 import {
   defaultLayout,
   EDITOR_GROUP_ANCHOR,
+  ensureToolWindows,
   focusToolWindow,
   type LayoutSaver,
+  openFile,
   retitle,
   setDockApi,
   setLayoutSaver,
 } from "@/lib/dock";
 import { useStore } from "@/lib/store";
+import { DebugPanel } from "@/panels/DebugPanel";
 import { EditorPanel } from "@/panels/EditorPanel";
+import { EventsPanel } from "@/panels/EventsPanel";
 import { ProblemsPanel } from "@/panels/ProblemsPanel";
 import { ProjectPanel } from "@/panels/ProjectPanel";
 import { PropertiesPanel } from "@/panels/PropertiesPanel";
@@ -37,6 +41,8 @@ const components: Record<string, React.FunctionComponent<IDockviewPanelProps>> =
   properties: PropertiesPanel,
   run: RunPanel,
   problems: ProblemsPanel,
+  debug: DebugPanel,
+  events: EventsPanel,
   start: StartPanel,
   editor: EditorPanel as React.FunctionComponent<IDockviewPanelProps>,
 };
@@ -54,7 +60,9 @@ async function restoreLayout(dock: DockviewApi): Promise<boolean> {
     const text = await api.fs.readOptional(WORKSPACE_FILE);
     if (!text) return false;
     dock.fromJSON(JSON.parse(text));
-    return ["project", "properties", "run", "problems"].every((id) => dock.getPanel(id));
+    const ok = ["project", "properties", "run", "problems"].every((id) => dock.getPanel(id));
+    if (ok) ensureToolWindows(dock);
+    return ok;
   } catch {
     return false;
   }
@@ -117,6 +125,12 @@ export function Workbench() {
     const offStatus = useStore.subscribe((s, prev) => {
       if (s.status === "starting" && prev.status !== "starting" && s.settings.openRunOnStart) {
         focusToolWindow("run");
+      }
+      const run = s.paused.find((p) => p.runId === s.activeRun);
+      const before = prev.paused.find((p) => p.runId === prev.activeRun);
+      if (run && (run.runId !== before?.runId || run.nodeId !== before?.nodeId)) {
+        focusToolWindow("debug");
+        void openFile(run.flow, run.nodeId);
       }
     });
 

@@ -58,6 +58,7 @@ const api: MakecordApi = {
   runtime: {
     start: invoke("runtime:start"),
     stop: invoke("runtime:stop"),
+    debug: invoke("runtime:debug"),
     onMessage: subscribe("runtime:message"),
   } as MakecordApi["runtime"],
   app: {
