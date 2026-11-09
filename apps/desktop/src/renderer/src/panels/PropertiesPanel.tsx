@@ -1,12 +1,21 @@
-import { CommandOptionType, type Flow, FlowEventName } from "@makecord/spec";
+import {
+  CommandOptionType,
+  type Flow,
+  FlowEventName,
+  INTERACTION_EVENTS,
+  PermissionName,
+  type Schedule,
+} from "@makecord/spec";
 import { Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { Button, Empty, Field, IconButton, Input, selectCls } from "@/components/ui";
 import { useT } from "@/i18n";
 import { descriptorOf, fieldsOf, type NodeDescriptor, nodeText, useNodes } from "@/lib/nodes";
 import { problemText } from "@/lib/problems";
 import { useStore } from "@/lib/store";
 
-const VARIABLES = [
+const BASE_VARIABLES = ["vars.<name>", "client.ping"];
+const USER_VARIABLES = [
   "user.id",
   "user.username",
   "user.displayName",
@@ -14,10 +23,27 @@ const VARIABLES = [
   "guild.name",
   "guild.memberCount",
   "channel.id",
-  "options.<name>",
-  "vars.<name>",
-  "client.ping",
 ];
+const EVENT_VARIABLES: Record<FlowEventName, string[]> = {
+  clientReady: [],
+  guildMemberAdd: USER_VARIABLES,
+  guildMemberRemove: USER_VARIABLES,
+  messageCreate: [...USER_VARIABLES, "message.id", "message.content"],
+  messageUpdate: [...USER_VARIABLES, "message.id", "message.content", "before.content"],
+  messageDelete: ["message.id", "message.content", "channel.id", "guild.name"],
+  messageReactionAdd: [...USER_VARIABLES, "message.id", "emoji.name", "emoji.text"],
+  buttonClick: [...USER_VARIABLES, "customId", "message.id"],
+  selectMenu: [...USER_VARIABLES, "customId", "value", "values", "message.id"],
+  modalSubmit: [...USER_VARIABLES, "customId", "fields.<id>"],
+  schedule: ["now.date", "now.time", "now.weekday", "now.iso"],
+};
+
+function variablesOf(flow: Flow | undefined) {
+  if (!flow) return BASE_VARIABLES;
+  const own =
+    flow.kind === "command" ? [...USER_VARIABLES, "options.<name>"] : EVENT_VARIABLES[flow.event];
+  return [...own, ...BASE_VARIABLES];
+}
 
 function NodeForm({
   path,
@@ -33,6 +59,7 @@ function NodeForm({
   const { t, locale } = useT();
   const updateFlow = useStore((s) => s.updateFlow);
   const allProblems = useStore((s) => s.problems);
+  const flow = useStore((s) => s.docs[path]?.flow);
   const problems = allProblems.filter((p) => p.file === path && p.nodeId === nodeId);
   const text = nodeText(meta, locale);
   const setField = (key: string, value: unknown) =>
@@ -121,7 +148,7 @@ function NodeForm({
           {t("properties.variables")}
         </summary>
         <ul className="mt-2 flex flex-col gap-1 font-mono text-meta text-muted">
-          {VARIABLES.map((v) => (
+          {variablesOf(flow).map((v) => (
             <li key={v}>{`{{${v}}}`}</li>
           ))}
         </ul>
@@ -167,6 +194,25 @@ function FlowSettings({ path, flow }: { path: string; flow: Flow }) {
             ))}
           </select>
         </Field>
+        {INTERACTION_EVENTS.includes(flow.event) && (
+          <Field label={t("properties.customId")} hint={t("properties.customIdHint")}>
+            <Input
+              className="font-mono"
+              maxLength={100}
+              value={flow.customId ?? ""}
+              placeholder="vote:*"
+              onChange={(e) => {
+                const customId = e.target.value;
+                updateFlow(
+                  path,
+                  (f) => (f.kind === "event" ? { ...f, customId: customId || undefined } : f),
+                  "event:customId",
+                );
+              }}
+            />
+          </Field>
+        )}
+        {flow.event === "schedule" && <ScheduleField path={path} schedule={flow.schedule} />}
       </div>
     );
   }
@@ -263,10 +309,123 @@ function FlowSettings({ path, flow }: { path: string; flow: Flow }) {
               />
               {t("properties.required")}
             </label>
+            {(o.type === "string" || o.type === "integer" || o.type === "number") && (
+              <Field label={t("properties.choices")} hint={t("properties.choicesHint")}>
+                <ChoicesInput value={o.choices} onChange={(choices) => setOption(i, { choices })} />
+              </Field>
+            )}
           </div>
         ))}
       </div>
+      <Field label={t("properties.permissions")} hint={t("properties.permissionsHint")}>
+        <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+          {PermissionName.options.map((perm) => (
+            <label key={perm} className="flex min-w-0 items-center gap-2 text-label text-muted">
+              <input
+                type="checkbox"
+                className="accent-fg"
+                checked={cmd.permissions?.includes(perm) ?? false}
+                onChange={(e) => {
+                  const next = e.target.checked
+                    ? [...(cmd.permissions ?? []), perm]
+                    : (cmd.permissions ?? []).filter((p) => p !== perm);
+                  setCmd({ permissions: next.length ? next : undefined });
+                }}
+              />
+              <span className="truncate">{t(`permissions.${perm}`)}</span>
+            </label>
+          ))}
+        </div>
+      </Field>
     </div>
+  );
+}
+
+type Choice = { name: string; value: string };
+
+const choicesToText = (choices: Choice[] | undefined) =>
+  (choices ?? []).map((c) => (c.name === c.value ? c.name : `${c.name} = ${c.value}`)).join("\n");
+
+function parseChoices(text: string): Choice[] | undefined {
+  const list = text
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .slice(0, 25)
+    .map((l) => {
+      const at = l.lastIndexOf("=");
+      const name = (at > 0 ? l.slice(0, at) : l).trim().slice(0, 100);
+      const value = (at > 0 ? l.slice(at + 1) : l).trim().slice(0, 100);
+      return { name, value: value || name };
+    })
+    .filter((c) => c.name);
+  return list.length ? list : undefined;
+}
+
+function ChoicesInput({
+  value,
+  onChange,
+}: {
+  value: Choice[] | undefined;
+  onChange: (c: Choice[] | undefined) => void;
+}) {
+  const [text, setText] = useState(() => choicesToText(value));
+  return (
+    <textarea
+      rows={3}
+      value={text}
+      placeholder={"Red\nGreen = green"}
+      onChange={(e) => {
+        setText(e.target.value);
+        onChange(parseChoices(e.target.value));
+      }}
+      className="w-full resize-y rounded-md border border-line bg-chrome p-2 font-mono text-label focus:border-fg/40 focus:outline-none focus-visible:outline-none placeholder:text-faint"
+    />
+  );
+}
+
+function ScheduleField({ path, schedule }: { path: string; schedule: Schedule | undefined }) {
+  const { t } = useT();
+  const updateFlow = useStore((s) => s.updateFlow);
+  const mode = schedule && "dailyAt" in schedule ? "daily" : "every";
+  const setSchedule = (next: Schedule) =>
+    updateFlow(path, (f) => (f.kind === "event" ? { ...f, schedule: next } : f), "event:schedule");
+  return (
+    <Field label={t("properties.schedule")} hint={t("properties.scheduleHint")}>
+      <div className="flex gap-2">
+        <select
+          className={`${selectCls} w-36`}
+          value={mode}
+          onChange={(e) =>
+            setSchedule(e.target.value === "daily" ? { dailyAt: "09:00" } : { everyMinutes: 60 })
+          }
+        >
+          <option value="every">{t("properties.scheduleEvery")}</option>
+          <option value="daily">{t("properties.scheduleDaily")}</option>
+        </select>
+        {schedule && "dailyAt" in schedule ? (
+          <Input
+            type="time"
+            value={schedule.dailyAt}
+            onChange={(e) => e.target.value && setSchedule({ dailyAt: e.target.value })}
+          />
+        ) : (
+          <div className="flex flex-1 items-center gap-2">
+            <Input
+              type="number"
+              min={1}
+              max={10080}
+              value={schedule?.everyMinutes ?? ""}
+              onChange={(e) => {
+                const n = Math.round(Number(e.target.value));
+                if (n >= 1 && n <= 10080) setSchedule({ everyMinutes: n });
+              }}
+            />
+            <span className="shrink-0 text-label text-faint">{t("properties.minutes")}</span>
+          </div>
+        )}
+      </div>
+    </Field>
   );
 }
 

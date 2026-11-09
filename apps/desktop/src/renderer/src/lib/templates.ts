@@ -1,4 +1,9 @@
-import type { CommandFlow, EventFlow, FlowEventName } from "@makecord/spec";
+import {
+  type CommandFlow,
+  type EventFlow,
+  type FlowEventName,
+  INTERACTION_EVENTS,
+} from "@makecord/spec";
 
 export function newCommandFlow(name: string, description: string, reply: string): CommandFlow {
   return {
@@ -18,11 +23,13 @@ export function newCommandFlow(name: string, description: string, reply: string)
   };
 }
 
-export function newEventFlow(event: FlowEventName): EventFlow {
+export function newEventFlow(event: FlowEventName, customId?: string): EventFlow {
   return {
     specVersion: 1,
     kind: "event",
     event,
+    ...(INTERACTION_EVENTS.includes(event) && customId ? { customId } : {}),
+    ...(event === "schedule" ? { schedule: { everyMinutes: 60 } } : {}),
     nodes: [{ id: "start", type: "core.trigger", position: { x: 0, y: 0 }, data: {} }],
     edges: [],
   };

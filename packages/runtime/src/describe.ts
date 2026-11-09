@@ -8,6 +8,7 @@ export interface NodeDescriptor {
   category: NodeCategory;
   outputs: string[];
   contexts?: FlowKind[];
+  needsInteraction?: boolean;
   locales?: Record<string, NodeLocale>;
   fields: Record<string, unknown>;
   plugin: string;
@@ -21,6 +22,7 @@ export function describeNode(meta: NodeMeta, plugin: string): NodeDescriptor {
     category: meta.category,
     outputs: [...meta.outputs],
     contexts: meta.contexts ? [...meta.contexts] : undefined,
+    needsInteraction: meta.needsInteraction,
     locales: meta.locales ? { ...meta.locales } : undefined,
     fields: z.toJSONSchema(meta.fields, { io: "input", unrepresentable: "any" }) as Record<
       string,

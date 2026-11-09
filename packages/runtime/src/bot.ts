@@ -1,26 +1,33 @@
 import { watch } from "node:fs";
-import type {
-  CacheConfig,
-  CommandFlow,
-  CommandOptionType,
-  EventFlow,
-  ProjectConfig,
+import {
+  type CacheConfig,
+  type CommandFlow,
+  type CommandOptionType,
+  type EventFlow,
+  matchesCustomId,
+  type ProjectConfig,
 } from "@makecord/spec";
 import {
+  type AnySelectMenuInteraction,
   type ApplicationCommandOptionData,
   ApplicationCommandOptionType,
+  type ButtonInteraction,
   type ChatInputApplicationCommandData,
   Client,
   Events,
   GatewayIntentBits,
+  type ModalSubmitInteraction,
   Options,
+  Partials,
+  PermissionFlagsBits,
 } from "discord.js";
 import { executeFlow } from "./executor.js";
 import { inspectProject } from "./inspect.js";
 import { loadPlugins, type NodeRegistry } from "./plugins.js";
 import { type LoadedFlow, type LoadedProject, loadProject } from "./project.js";
 import type { Emit } from "./reporter.js";
-import { commandScope, eventScope } from "./scope.js";
+import { commandScope, eventScope, interactionScope } from "./scope.js";
+import { openStore } from "./store.js";
 
 const OPTION_TYPES: Record<CommandOptionType, ApplicationCommandOptionType> = {
   string: ApplicationCommandOptionType.String,
@@ -45,10 +52,16 @@ function makeCache(c: CacheConfig) {
   });
 }
 
+const CHOICE_TYPES = new Set<CommandOptionType>(["string", "integer", "number"]);
+
 function toCommandData(flow: CommandFlow): ChatInputApplicationCommandData {
+  const { permissions } = flow.command;
   return {
     name: flow.command.name,
     description: flow.command.description,
+    defaultMemberPermissions: permissions?.length
+      ? permissions.reduce((bits, p) => bits | PermissionFlagsBits[p], 0n)
+      : undefined,
     options: flow.command.options.map(
       (o) =>
         ({
@@ -56,9 +69,25 @@ function toCommandData(flow: CommandFlow): ChatInputApplicationCommandData {
           description: o.description,
           type: OPTION_TYPES[o.type],
           required: o.required,
+          choices:
+            o.choices?.length && CHOICE_TYPES.has(o.type)
+              ? o.choices.map((c) => ({
+                  name: c.name,
+                  value: o.type === "string" ? c.value : Number(c.value),
+                }))
+              : undefined,
         }) as ApplicationCommandOptionData,
     ),
   };
+}
+
+function msUntil(time: string): number {
+  const [h, m] = time.split(":").map(Number) as [number, number];
+  const now = new Date();
+  const next = new Date(now);
+  next.setHours(h, m, 0, 0);
+  if (next <= now) next.setDate(next.getDate() + 1);
+  return next.getTime() - now.getTime();
 }
 
 function codedError(code: string, message: string): Error & { code: string } {
@@ -109,8 +138,11 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
   };
   reportProblems();
 
+  const store = openStore(projectDir);
+
   const client = new Client({
     intents: config.intents.map((i) => GatewayIntentBits[i]),
+    partials: [Partials.Message, Partials.Channel, Partials.Reaction, Partials.User],
     makeCache: makeCache(config.cache),
     sweepers: config.cache.sweepIntervalSeconds
       ? {
@@ -148,45 +180,129 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
   const run = (
     file: string,
     flow: CommandFlow | EventFlow,
-    base: Parameters<typeof executeFlow>[0]["base"],
+    base: Omit<Parameters<typeof executeFlow>[0]["base"], "store">,
   ) =>
-    executeFlow({ file, flow, registry, base, env, emit }).catch((e: Error) =>
+    executeFlow({ file, flow, registry, base: { ...base, store }, env, emit }).catch((e: Error) =>
       emit({ type: "flow", phase: "error", flow: file, error: e.message }),
     );
 
+  const eventFlows = (event: EventFlow["event"]) =>
+    project.flows.filter(
+      (f): f is LoadedFlow & { flow: EventFlow } =>
+        f.flow.kind === "event" && f.flow.event === event,
+    );
+
+  const runInteraction = (
+    event: "buttonClick" | "selectMenu" | "modalSubmit",
+    i: ButtonInteraction | AnySelectMenuInteraction | ModalSubmitInteraction,
+  ) => {
+    emit({ type: "gateway", event, summary: `${event} ${i.customId} — ${i.user.username}` });
+    const matching = eventFlows(event).filter((f) => matchesCustomId(f.flow.customId, i.customId));
+    if (!matching.length) {
+      emit({
+        type: "log",
+        level: "warn",
+        message: `No ${event} flow handles "${i.customId}"`,
+        source: "interactions",
+      });
+      return;
+    }
+    for (const { file, flow } of matching) {
+      void run(file, flow, {
+        client: i.client,
+        interaction: i,
+        eventArgs: [i],
+        scope: interactionScope(i),
+      });
+    }
+  };
+
   client.on(Events.InteractionCreate, (i) => {
-    if (!i.isChatInputCommand()) return;
-    emit({
-      type: "gateway",
-      event: "interactionCreate",
-      summary: `/${i.commandName} — ${i.user.username}`,
-    });
-    const entry = commands.get(i.commandName);
-    if (!entry) return;
-    void run(entry.file, entry.flow, {
-      client: i.client,
-      interaction: i,
-      eventArgs: [i],
-      scope: commandScope(i),
-    });
+    if (i.isChatInputCommand()) {
+      emit({
+        type: "gateway",
+        event: "interactionCreate",
+        summary: `/${i.commandName} — ${i.user.username}`,
+      });
+      const entry = commands.get(i.commandName);
+      if (!entry) return;
+      void run(entry.file, entry.flow, {
+        client: i.client,
+        interaction: i,
+        eventArgs: [i],
+        scope: commandScope(i),
+      });
+    } else if (i.isButton()) runInteraction("buttonClick", i);
+    else if (i.isAnySelectMenu()) runInteraction("selectMenu", i);
+    else if (i.isModalSubmit()) runInteraction("modalSubmit", i);
   });
+
+  const fromBot = (value: unknown) =>
+    (value as { author?: { bot?: boolean } | null })?.author?.bot === true;
 
   const dispatch =
     (event: EventFlow["event"]) =>
-    (...args: unknown[]) => {
-      if (event === "messageCreate" && (args[0] as { author?: { bot?: boolean } }).author?.bot)
+    async (...args: unknown[]) => {
+      if (
+        (event === "messageCreate" || event === "messageUpdate") &&
+        fromBot(args[event === "messageUpdate" ? 1 : 0])
+      )
         return;
+      if (event === "messageReactionAdd") {
+        const [reaction, user] = args as [
+          { partial: boolean; fetch(): Promise<unknown> },
+          { bot?: boolean },
+        ];
+        if (user.bot) return;
+        if (reaction.partial) await reaction.fetch().catch(() => {});
+      }
       emit({ type: "gateway", event, summary: event });
       if (!client.isReady()) return;
-      for (const { file, flow } of project.flows) {
-        if (flow.kind === "event" && flow.event === event) {
-          void run(file, flow, { client, eventArgs: args, scope: eventScope(client, event, args) });
-        }
+      for (const { file, flow } of eventFlows(event)) {
+        void run(file, flow, { client, eventArgs: args, scope: eventScope(client, event, args) });
       }
     };
-  for (const event of ["guildMemberAdd", "guildMemberRemove", "messageCreate"] as const) {
-    client.on(event, dispatch(event));
+  for (const event of [
+    "guildMemberAdd",
+    "guildMemberRemove",
+    "messageCreate",
+    "messageUpdate",
+    "messageDelete",
+    "messageReactionAdd",
+  ] as const) {
+    client.on(event, (...args: unknown[]) => void dispatch(event)(...args));
   }
+
+  let scheduleTimers: NodeJS.Timeout[] = [];
+  const setupSchedules = () => {
+    for (const t of scheduleTimers) clearTimeout(t);
+    scheduleTimers = [];
+    for (const { file, flow } of eventFlows("schedule")) {
+      const schedule = flow.schedule;
+      if (!schedule) continue;
+      const fire = () => {
+        emit({ type: "gateway", event: "schedule", summary: `schedule ${file}` });
+        if (client.isReady())
+          void run(file, flow, {
+            client,
+            eventArgs: [],
+            scope: eventScope(client, "schedule", []),
+          });
+      };
+      if ("everyMinutes" in schedule) {
+        scheduleTimers.push(setInterval(fire, schedule.everyMinutes * 60_000));
+      } else {
+        const arm = () => {
+          const t = setTimeout(() => {
+            fire();
+            arm();
+          }, msUntil(schedule.dailyAt));
+          scheduleTimers.push(t);
+        };
+        arm();
+      }
+    }
+  };
 
   client.once(Events.ClientReady, async (c) => {
     emit({
@@ -205,7 +321,8 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
         source: "commands",
       });
     }
-    dispatch("clientReady")(c);
+    void dispatch("clientReady")(c);
+    setupSchedules();
   });
 
   client.on(Events.Error, (e) =>
@@ -224,6 +341,7 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
     }
     commands = commandFlows();
     reportProblems();
+    if (client.isReady()) setupSchedules();
     emit({
       type: "log",
       level: "info",
@@ -259,7 +377,9 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
     async stop() {
       emit({ type: "status", status: "stopping" });
       watcher?.close();
+      for (const t of scheduleTimers) clearTimeout(t);
       await client.destroy();
+      store.flush();
       emit({ type: "status", status: "stopped" });
     },
   };

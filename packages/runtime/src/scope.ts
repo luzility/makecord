@@ -4,7 +4,13 @@ import type {
   Guild,
   GuildMember,
   Message,
+  MessageComponentInteraction,
+  MessageReaction,
+  ModalSubmitInteraction,
   PartialGuildMember,
+  PartialMessage,
+  PartialMessageReaction,
+  PartialUser,
   User,
 } from "discord.js";
 
@@ -27,6 +33,38 @@ const member = (m: GuildMember | PartialGuildMember) => ({
 });
 
 const client = (c: Client<true>) => ({ ping: c.ws.ping, tag: c.user.tag, id: c.user.id });
+
+const message = (msg: Message | PartialMessage) => ({
+  id: msg.id,
+  content: msg.content ?? "",
+  url: msg.url,
+});
+
+const channelOf = (ch: { id: string; name?: string | null } | null | undefined) =>
+  ch ? { id: ch.id, name: ch.name ?? undefined } : undefined;
+
+export function interactionScope(
+  i: MessageComponentInteraction | ModalSubmitInteraction,
+): Record<string, unknown> {
+  const values = i.isAnySelectMenu() ? [...i.values] : [];
+  const fields = i.isModalSubmit()
+    ? Object.fromEntries(
+        i.fields.fields.map((f) => [f.customId, "value" in f ? String(f.value) : ""]),
+      )
+    : {};
+  return {
+    client: client(i.client),
+    user: user(i.user),
+    guild: i.guild ? guild(i.guild) : undefined,
+    channel: i.channel ? channelOf(i.channel as { id: string; name?: string | null }) : undefined,
+    member: i.member && "joinedAt" in i.member ? member(i.member) : undefined,
+    message: i.message ? message(i.message) : undefined,
+    customId: i.customId,
+    values,
+    value: values[0] ?? "",
+    fields,
+  };
+}
 
 export function commandScope(i: ChatInputCommandInteraction): Record<string, unknown> {
   const options = Object.fromEntries(
@@ -64,6 +102,58 @@ export function eventScope(
         guild: msg.guild ? guild(msg.guild) : undefined,
         channel: { id: msg.channelId },
         message: { id: msg.id, content: msg.content, url: msg.url },
+      };
+    }
+    case "messageUpdate": {
+      const [before, after] = args as [Message | PartialMessage, Message | PartialMessage];
+      return {
+        ...base,
+        user: after.author ? user(after.author) : undefined,
+        guild: after.guild ? guild(after.guild) : undefined,
+        channel: { id: after.channelId },
+        message: message(after),
+        before: { content: before.content ?? "" },
+      };
+    }
+    case "messageDelete": {
+      const msg = args[0] as Message | PartialMessage;
+      return {
+        ...base,
+        user: msg.author ? user(msg.author) : undefined,
+        guild: msg.guild ? guild(msg.guild) : undefined,
+        channel: { id: msg.channelId },
+        message: message(msg),
+      };
+    }
+    case "messageReactionAdd": {
+      const [reaction, by] = args as [MessageReaction | PartialMessageReaction, User | PartialUser];
+      const msg = reaction.message;
+      return {
+        ...base,
+        user:
+          "username" in by && by.username !== null
+            ? user(by as User)
+            : { id: by.id, mention: `<@${by.id}>` },
+        guild: msg.guild ? guild(msg.guild) : undefined,
+        channel: { id: msg.channelId },
+        message: message(msg),
+        emoji: {
+          name: reaction.emoji.name ?? "",
+          id: reaction.emoji.id ?? "",
+          text: reaction.emoji.toString(),
+        },
+      };
+    }
+    case "schedule": {
+      const now = new Date();
+      return {
+        ...base,
+        now: {
+          iso: now.toISOString(),
+          date: now.toISOString().slice(0, 10),
+          time: now.toTimeString().slice(0, 5),
+          weekday: now.getDay(),
+        },
       };
     }
     default:

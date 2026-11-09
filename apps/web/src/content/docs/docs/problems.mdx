@@ -12,9 +12,11 @@ Click a problem to open the flow and select the block.
 | `invalid-file` | Error | A flow file isn't valid JSON, doesn't match the flow format, defines a command name twice, or doesn't have exactly one Start block. | Fix the file. The message says what's wrong. |
 | `invalid-project` | Error | `makecord.json` is missing or invalid. | Fix the field named in the message. |
 | `unknown-node` | Error | A block's type isn't provided by any loaded plugin. | Install the plugin and add it to `plugins`, or delete the block. |
-| `wrong-context` | Error | A block is used where it can't work, like **Reply** in an event flow. | Use a different block, such as **Send Message**. |
+| `wrong-context` | Error | A block is used in a kind of flow it doesn't support. | Use a different block. |
+| `needs-interaction` | Error | A block that answers someone, like **Reply** or **Show Form**, is in a flow nobody can be answered in, such as a member joining. | Use **Send Message** or **Send DM** instead. |
+| `missing-schedule` | Error | A schedule flow doesn't say when it runs. | Pick the flow's Start block and set the time in Properties. |
 | `invalid-field` | Error | A block setting is missing or out of range. | Select the block and fill in the setting. |
 | `dangling-edge` | Error | A connection points to a block that no longer exists. | Delete the connection. |
 | `multiple-edges` | Warning | More than one connection leaves the same port. Only the first runs. | Keep one connection per port. |
 | `unreachable` | Warning | A block isn't connected to Start, so it never runs. | Connect it, or delete it. |
-| `missing-intent` | Warning | An event flow needs an intent that isn't in `makecord.json`. | Use the quick fix on the problem, which adds the intent for you. |
+| `missing-intent` | Warning | An event flow needs an intent that isn't in `makecord.json`, or reads `{{message.content}}` without `MessageContent`. | Use the quick fix on the problem, which adds the intent for you. |

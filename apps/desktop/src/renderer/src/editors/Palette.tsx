@@ -1,4 +1,4 @@
-import type { Flow } from "@makecord/spec";
+import { type Flow, isInteractionFlow } from "@makecord/spec";
 import { useState } from "react";
 import { Input } from "@/components/ui";
 import { useT } from "@/i18n";
@@ -6,19 +6,15 @@ import { type NodeDescriptor, nodeText, useNodes } from "@/lib/nodes";
 
 export const DRAG_MIME = "application/x-makecord-node";
 
-export function Palette({
-  kind,
-  onAdd,
-}: {
-  kind: Flow["kind"];
-  onAdd: (meta: NodeDescriptor) => void;
-}) {
+export function Palette({ flow, onAdd }: { flow: Flow; onAdd: (meta: NodeDescriptor) => void }) {
   const { t, locale } = useT();
   const [q, setQ] = useState("");
   const nodeMetas = useNodes();
   const query = q.toLocaleLowerCase(locale);
+  const interactive = isInteractionFlow(flow);
   const available = nodeMetas.filter((m) => {
-    if (m.category === "trigger" || (m.contexts && !m.contexts.includes(kind))) return false;
+    if (m.category === "trigger" || (m.contexts && !m.contexts.includes(flow.kind))) return false;
+    if (m.needsInteraction && !interactive) return false;
     const text = nodeText(m, locale);
     return (
       !q || `${text.title} ${text.description ?? ""}`.toLocaleLowerCase(locale).includes(query)

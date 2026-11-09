@@ -9,6 +9,7 @@ my-bot/
 ├── makecord.json           # ad, intent'ler, plugin'ler, secret adları, cache limitleri
 ├── commands/*.flow.json    # slash komutları (görsel akış)
 ├── events/*.flow.json      # gateway event'leri
+├── data/store.json         # kalıcı anahtar/değer verisi (store blokları). gitignore'da
 ├── package.json            # "start": "makecord start ."  → @makecord/runtime
 ├── Dockerfile, docker-compose.yml, .env.example
 └── .makecord/              # IDE durumu (açık sekmeler, layout). gitignore'da
@@ -20,8 +21,12 @@ VPS'e taşımak için: `cp .env.example .env && npm install && npm start` ya da 
 
 `@makecord/runtime`, IDE'de ve sunucuda **aynı** motordur. Bu yüzden IDE'de görülen davranış sunucuda da aynıdır.
 
-- **Interpreter:** Akış JSON'u, `core.trigger` node'undan başlayarak edge'ler takip edilerek çalıştırılır. Her node bir çıkış portu döndürür (`next`, `true`/`false`, …). Sonsuz döngüye karşı 500 adım sınırı vardır.
+- **Interpreter:** Akış JSON'u, `core.trigger` node'undan başlayarak edge'ler takip edilerek çalıştırılır. Her node bir çıkış portu döndürür (`next`, `true`/`false`, …). Sonsuz döngüye karşı 2000 adım sınırı vardır. `core.repeat` sayacını `vars` içinde node id'siyle tutar.
 - **Şablonlar:** `{{user.displayName}}` gibi değerler node verisi doğrulanmadan önce çözülür.
+- **Kalıcı veri:** `src/store.ts`, `data/store.json` dosyasını belleğe alır. Yazmalar 500 ms debounce ile geçici dosyaya yazılıp `rename` ile atomik olarak değiştirilir, bot dururken `flush()` edilir. Plugin'ler buna `ctx.store` (`get/set/delete/increment/keys`) üzerinden erişir. Değerler sadece string/number/boolean'dır.
+- **Etkileşimler:** Buton, seçim menüsü ve modal gönderimleri `buttonClick` / `selectMenu` / `modalSubmit` event akışlarına `customId` ile yönlendirilir (`vote:*` önek eşleşmesi, boş = hepsi). Komutlar ve bu üç event "etkileşimli akış"tır (`isInteractionFlow`). `needsInteraction` işaretli bloklar (Reply, Defer Reply, Show Form) sadece bunlarda kullanılabilir. Inspection bunu `needs-interaction` olarak raporlar, palet de bu blokları gizler.
+- **Zamanlama:** `schedule` akışları `everyMinutes` için `setInterval`, `dailyAt` için kendini yeniden kuran `setTimeout` ile çalışır. Bot kapalıyken kaçan çalışmalar telafi edilmez.
+- **Komutlar:** Seçeneklerde en fazla 25 `choices`, komutta `permissions` (`defaultMemberPermissions` olarak gönderilir).
 - **Hata izolasyonu:** Bozuk bir flow dosyası botu düşürmez, problem olarak raporlanır.
 - **Hot reload:** `--watch` ile `*.flow.json` değişince akışlar yeniden yüklenir. Komut seti değiştiyse slash komutları yeniden kaydedilir (imza karşılaştırılarak, gereksiz API çağrısı yapılmaz).
 - **Transport:** Electron `utilityProcess` içinde `parentPort`, `fork` ile başlatılınca `process.send`, tek başına çalışırken okunabilir stdout kullanılır (`src/reporter.ts`). Mesaj tipleri `@makecord/runtime/protocol`'de tanımlıdır.

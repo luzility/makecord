@@ -30,9 +30,24 @@ Any text setting can contain variables in double braces, like `Hey {{user.displa
 | `clientReady` | `client.*` |
 | `guildMemberAdd`, `guildMemberRemove` | `user.*`, `member.*`, `guild.*`, `client.*` |
 | `messageCreate` | `user.*` (the author), `guild.*`, `channel.id`, `message.id`, `message.content`, `message.url`, `client.*` |
+| `messageUpdate` | Same as `messageCreate`, plus `before.content`, the text before the edit |
+| `messageDelete` | `guild.*`, `channel.id`, `message.id`, `message.content` (empty if the message wasn't cached), `client.*` |
+| `messageReactionAdd` | `user.*` (who reacted), `guild.*`, `channel.id`, `message.*`, `emoji.name`, `emoji.id`, `emoji.text`, `client.*` |
+| `buttonClick` | `user.*`, `member.*`, `guild.*`, `channel.*`, `customId`, `message.id`, `client.*` |
+| `selectMenu` | Same as `buttonClick`, plus `value` (the first pick) and `values` (all picks) |
+| `modalSubmit` | Same as `buttonClick`, plus `fields.<id>`, the text typed into each field of the form |
+| `schedule` | `now.date` (`2026-11-09`), `now.time` (`09:00`), `now.weekday` (0 is Sunday), `now.iso`, `client.*` |
 
 `vars.*` is available in every flow.
 
 ## Flow variables
 
 **Set Variable** stores a value for the rest of the current run, readable as `{{vars.name}}`. Variables don't carry over between runs. Every command or event starts with an empty `vars`.
+
+Blocks that compute something, like **Math**, **Random Number**, **Text**, **HTTP Request** and **Read Value**, write their result into a variable you name. **HTTP Request** also sets `{{vars.<name>Status}}` to the status code, and parses JSON so you can read `{{vars.data.title}}`.
+
+## Stored data
+
+`vars` disappear when a run ends. To keep something, such as a counter, a user's points or a setting, use the store blocks: **Save Value**, **Read Value**, **Increase Value** and **Delete Value**. They read and write `data/store.json` in the project folder, which survives restarts. Put the user in the key to keep a value per person, like `points:{{user.id}}`.
+
+Back up `data/` when you move the bot to a server. It's in `.gitignore`, so it isn't committed by default.

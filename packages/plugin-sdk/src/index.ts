@@ -1,4 +1,4 @@
-export type { LogLevel, NodeContext } from "./context.js";
+export type { KeyValueStore, LogLevel, NodeContext, StoredValue } from "./context.js";
 export {
   defineNode,
   defineNodeMeta,

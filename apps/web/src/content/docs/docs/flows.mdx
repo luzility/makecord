@@ -19,7 +19,7 @@ Every flow starts at exactly one **Start** block. When the command or event fire
 Each port carries one connection. Connecting a port again replaces the old connection, and the Problems panel warns about files where a port has more than one.
 
 <Aside type="caution">
-  A flow stops after 500 steps. This protects your bot from a loop you didn't mean to build.
+  A flow stops after 2000 steps. This protects your bot from a loop you didn't mean to build.
 </Aside>
 
 ## Command flows
@@ -29,6 +29,8 @@ A command flow defines a slash command: its name, description and options. Pick 
 - Names are lowercase, without spaces, up to 32 characters.
 - Up to 25 options, each with a type: `string`, `integer`, `number`, `boolean`, `user`, `channel` or `role`.
 - Read an option's value in the flow as `{{options.name}}`. For `user`, `channel` and `role` options this is the ID.
+- `string`, `integer` and `number` options can have up to 25 **choices**. Discord then shows a list instead of a text box. Write one per line, or `Label = value` to store something other than the label.
+- **Who can use it** hides the command from members who lack the ticked permissions. Server admins can override this in **Server Settings › Integrations**.
 
 The bot registers its commands when it starts and again whenever the set of commands changes.
 
@@ -42,8 +44,25 @@ An event flow runs when Discord sends the bot an event. Supported events:
 | `guildMemberAdd` | A member joins a server | `GuildMembers` |
 | `guildMemberRemove` | A member leaves a server | `GuildMembers` |
 | `messageCreate` | Someone sends a message (messages from bots are ignored) | `GuildMessages` |
+| `messageUpdate` | Someone edits a message | `GuildMessages` |
+| `messageDelete` | A message is deleted | `GuildMessages` |
+| `messageReactionAdd` | Someone adds a reaction | `GuildMessageReactions` |
+| `buttonClick` | Someone clicks one of the bot's buttons | — |
+| `selectMenu` | Someone picks from one of the bot's menus | — |
+| `modalSubmit` | Someone submits a form opened with **Show Form** | — |
+| `schedule` | Every N minutes, or every day at a set time | — |
 
 `GuildMembers` is a privileged intent: turn on **Server Members Intent** under **Bot** in the Developer Portal as well. To read the text of messages you also need `MessageContent`, which is privileged too.
+
+### Buttons, menus and forms
+
+Buttons, menus and forms carry a **custom ID** that you choose. Set the same ID on the event flow and it runs only for that component. End the ID with `*` to match everything that starts with it: `vote:*` catches `vote:yes` and `vote:no`, and `{{customId}}` tells you which one it was. Leave it empty to catch them all.
+
+These flows can answer the person with **Reply**, **Defer Reply** and, for buttons and menus, **Show Form**. Discord expects an answer within 3 seconds, so put **Defer Reply** first when the flow does something slow. **Wait** does this for you when it waits longer than 2 seconds.
+
+### Schedules
+
+A schedule flow runs every N minutes (1 to 10080) or every day at `HH:MM`, using the clock of the machine the bot runs on. It runs only while the bot is online, and a run that was missed while the bot was offline doesn't catch up later.
 
 ## Live reload
 

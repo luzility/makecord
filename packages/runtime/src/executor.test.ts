@@ -7,6 +7,21 @@ import { loadPlugins } from "./plugins.js";
 import { loadProject } from "./project.js";
 import type { Emit } from "./reporter.js";
 
+function memoryStore() {
+  const data = new Map<string, string | number | boolean>();
+  return {
+    get: (k: string) => data.get(k),
+    set: (k: string, v: string | number | boolean) => void data.set(k, v),
+    delete: (k: string) => data.delete(k),
+    increment: (k: string, by: number) => {
+      const next = Number(data.get(k) ?? 0) + by;
+      data.set(k, next);
+      return next;
+    },
+    keys: () => [...data.keys()],
+  };
+}
+
 const starter = join(dirname(fileURLToPath(import.meta.url)), "../../templates/starter");
 
 function fakeInteraction() {
@@ -32,7 +47,13 @@ async function run(flowFile: string, scope: Record<string, unknown>) {
     file: entry.file,
     flow: entry.flow,
     registry,
-    base: { client: {} as any, interaction: interaction as any, eventArgs: [], scope },
+    base: {
+      client: {} as any,
+      interaction: interaction as any,
+      eventArgs: [],
+      scope,
+      store: memoryStore(),
+    },
     env: {},
     emit: (e) => events.push(e),
   });
@@ -72,7 +93,7 @@ test("errors are reported with the failing node", async () => {
     file: "ping",
     flow,
     registry,
-    base: { client: {} as any, eventArgs: [], scope: {} },
+    base: { client: {} as any, eventArgs: [], scope: {}, store: memoryStore() },
     env: {},
     emit: (e) => events.push(e),
   });
@@ -101,7 +122,109 @@ test("inspection flags wrong context and missing intents", async () => {
   const codes = inspectProject(project, coreNodeMetas)
     .map((p) => p.code)
     .sort();
-  assert.deepEqual(codes, ["missing-intent", "wrong-context"]);
+  assert.deepEqual(codes, ["missing-intent", "needs-interaction"]);
+});
+
+test("interaction events may reply, schedule flows need a time", async () => {
+  const { inspectProject } = await import("./inspect.js");
+  const { coreNodeMetas } = await import("@makecord/plugin-core/meta");
+  const project = await loadProject(starter);
+  const nodes = [
+    { id: "s", type: "core.trigger", position: { x: 0, y: 0 }, data: {} },
+    { id: "r", type: "core.reply", position: { x: 0, y: 0 }, data: { content: "hi" } },
+  ];
+  const edges = [{ id: "e", source: "s", sourceHandle: "next", target: "r" }];
+  project.flows.push(
+    {
+      file: "events/button.flow.json",
+      flow: {
+        specVersion: 1,
+        kind: "event",
+        event: "buttonClick",
+        customId: "vote:*",
+        nodes,
+        edges,
+      },
+    },
+    {
+      file: "events/tick.flow.json",
+      flow: { specVersion: 1, kind: "event", event: "schedule", nodes: [nodes[0]!], edges: [] },
+    },
+  );
+  const codes = inspectProject(project, coreNodeMetas).map((p) => `${p.file}:${p.code}`);
+  assert.deepEqual(codes, ["events/tick.flow.json:missing-schedule"]);
+});
+
+function flowOf(
+  nodes: { id: string; type: string; data?: Record<string, unknown> }[],
+  edges: [string, string, string?][],
+) {
+  return {
+    specVersion: 1 as const,
+    kind: "event" as const,
+    event: "clientReady" as const,
+    nodes: nodes.map((n) => ({ ...n, position: { x: 0, y: 0 }, data: n.data ?? {} })),
+    edges: edges.map(([source, target, sourceHandle = "next"], i) => ({
+      id: `e${i}`,
+      source,
+      target,
+      sourceHandle,
+    })),
+  };
+}
+
+test("data blocks: repeat, math, store and text", async () => {
+  const { registry } = await loadPlugins(starter, []);
+  const store = memoryStore();
+  const logs: string[] = [];
+  const flow = flowOf(
+    [
+      { id: "s", type: "core.trigger" },
+      { id: "loop", type: "core.repeat", data: { times: "3", indexVariable: "i" } },
+      {
+        id: "inc",
+        type: "core.storeIncrement",
+        data: { key: "count", by: "{{vars.i}}", variable: "total" },
+      },
+      {
+        id: "sq",
+        type: "core.math",
+        data: { operator: "power", left: "{{vars.total}}", right: "2", variable: "sq" },
+      },
+      {
+        id: "up",
+        type: "core.text",
+        data: { operation: "uppercase", input: "done", variable: "word" },
+      },
+      {
+        id: "log",
+        type: "core.log",
+        data: { level: "info", message: "{{vars.word}} {{vars.total}} {{vars.sq}}" },
+      },
+    ],
+    [
+      ["s", "loop"],
+      ["loop", "inc", "loop"],
+      ["inc", "loop"],
+      ["loop", "sq", "done"],
+      ["sq", "up"],
+      ["up", "log"],
+    ],
+  );
+  const events: Parameters<Emit>[0][] = [];
+  await executeFlow({
+    file: "t",
+    flow,
+    registry,
+    base: { client: {} as any, eventArgs: [], scope: {}, store },
+    env: {},
+    emit: (e) => {
+      events.push(e);
+      if (e.type === "log") logs.push(e.message);
+    },
+  });
+  assert.equal(store.get("count"), 6);
+  assert.ok(logs.includes("DONE 6 36"), JSON.stringify(events));
 });
 
 test("an empty required field is reported as empty, with the field name", async () => {

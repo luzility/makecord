@@ -6,6 +6,8 @@ import { descriptorOf, fieldsOf, nodeTitle } from "./nodes";
 const KEYS: Record<string, MessageKey> = {
   "unknown-node": "problems.unknownNode",
   "wrong-context": "problems.wrongContext",
+  "needs-interaction": "problems.needsInteraction",
+  "missing-schedule": "problems.missingSchedule",
   "invalid-field": "problems.invalidField",
   "dangling-edge": "problems.danglingEdge",
   "multiple-edges": "problems.multipleEdges",
@@ -26,6 +28,7 @@ export function problemText(p: Problem, locale: Locale): string {
     if (field) vars.field = field.title;
     if (p.params.empty) key = "problems.fieldEmpty";
   }
+  if (p.params.event) vars.event = translate(locale, `events.${p.params.event}` as MessageKey);
   if (p.params.kind)
     vars.kind = translate(
       locale,

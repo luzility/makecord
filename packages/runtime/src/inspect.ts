@@ -1,5 +1,10 @@
 import type { NodeMeta } from "@makecord/plugin-sdk";
-import { type EventFlow, type IntentName, TRIGGER_NODE_TYPE } from "@makecord/spec";
+import {
+  type EventFlow,
+  type IntentName,
+  isInteractionFlow,
+  TRIGGER_NODE_TYPE,
+} from "@makecord/spec";
 import type { LoadedProject } from "./project.js";
 
 export type Severity = "error" | "warning";
@@ -19,7 +24,20 @@ export const EVENT_INTENTS: Record<EventFlow["event"], IntentName[]> = {
   guildMemberAdd: ["GuildMembers"],
   guildMemberRemove: ["GuildMembers"],
   messageCreate: ["GuildMessages"],
+  messageUpdate: ["GuildMessages"],
+  messageDelete: ["GuildMessages"],
+  messageReactionAdd: ["GuildMessageReactions"],
+  buttonClick: [],
+  selectMenu: [],
+  modalSubmit: [],
+  schedule: [],
 };
+
+const READS_CONTENT = new Set<EventFlow["event"]>([
+  "messageCreate",
+  "messageUpdate",
+  "messageDelete",
+]);
 
 export function isEmptyIssue(issue: {
   code: string;
@@ -53,6 +71,16 @@ export function inspectProject(project: LoadedProject, metas: readonly NodeMeta[
           params: { type: node.type },
         });
         continue;
+      }
+      if (meta.needsInteraction && !isInteractionFlow(flow)) {
+        problems.push({
+          severity: "error",
+          file,
+          nodeId: node.id,
+          code: "needs-interaction",
+          message: `"${meta.title}" needs a command, button, menu or form to answer`,
+          params: { type: node.type },
+        });
       }
       if (meta.contexts && !meta.contexts.includes(flow.kind)) {
         problems.push({
@@ -134,6 +162,32 @@ export function inspectProject(project: LoadedProject, metas: readonly NodeMeta[
           });
         }
       }
+    }
+
+    if (flow.kind === "event" && flow.event === "schedule" && !flow.schedule) {
+      problems.push({
+        severity: "error",
+        file,
+        code: "missing-schedule",
+        params: {},
+        message: "A schedule flow needs a time: every N minutes, or daily at HH:MM",
+      });
+    }
+
+    if (
+      flow.kind === "event" &&
+      READS_CONTENT.has(flow.event) &&
+      !project.config.intents.includes("MessageContent") &&
+      JSON.stringify(flow.nodes.map((n) => n.data)).includes("message.content")
+    ) {
+      problems.push({
+        severity: "warning",
+        file,
+        code: "missing-intent",
+        message: `Reading {{message.content}} needs the MessageContent intent`,
+        params: { event: flow.event, intent: "MessageContent" },
+        fix: { kind: "addIntent", intent: "MessageContent" },
+      });
     }
 
     if (flow.kind === "event") {

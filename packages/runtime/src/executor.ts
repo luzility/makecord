@@ -5,9 +5,9 @@ import type { NodeRegistry } from "./plugins.js";
 import type { Emit } from "./reporter.js";
 import { renderData } from "./templates.js";
 
-const MAX_STEPS = 500;
+const MAX_STEPS = 2000;
 
-export type ExecutionBase = Omit<NodeContext, "secret" | "log" | "vars" | "scope"> & {
+export type ExecutionBase = Omit<NodeContext, "secret" | "log" | "vars" | "scope" | "nodeId"> & {
   scope: Record<string, unknown>;
 };
 
@@ -47,6 +47,7 @@ export async function executeFlow(opts: {
       ...base,
       scope,
       vars,
+      nodeId: node.id,
       secret: (name) =>
         plugin.permissions?.includes(`secrets:${name}`) && name !== "DISCORD_TOKEN"
           ? env[name]

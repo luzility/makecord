@@ -242,7 +242,7 @@ function Canvas({ path, flow }: { path: string; flow: Flow }) {
 
   return (
     <div className="flex h-full">
-      <Palette kind={flow.kind} onAdd={addAtCenter} />
+      <Palette flow={flow} onAdd={addAtCenter} />
       <div
         ref={wrapper}
         className="relative flex-1"
