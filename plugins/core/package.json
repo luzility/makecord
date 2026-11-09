@@ -1,0 +1,36 @@
+{
+  "name": "@makecord/plugin-core",
+  "version": "0.1.0",
+  "description": "Built-in Makecord nodes: triggers, messages, logic, variables",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./meta": {
+      "types": "./dist/meta.d.ts",
+      "default": "./dist/meta.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@makecord/plugin-sdk": "workspace:*",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@makecord/config": "workspace:*",
+    "discord.js": "14.28.1"
+  },
+  "peerDependencies": {
+    "discord.js": "^14.20.0"
+  }
+}

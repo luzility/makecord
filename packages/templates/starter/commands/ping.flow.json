@@ -1,0 +1,15 @@
+{
+  "specVersion": 1,
+  "kind": "command",
+  "command": { "name": "ping", "description": "Shows the bot's latency", "options": [] },
+  "nodes": [
+    { "id": "start", "type": "core.trigger", "position": { "x": 0, "y": 0 }, "data": {} },
+    {
+      "id": "reply",
+      "type": "core.reply",
+      "position": { "x": 320, "y": 0 },
+      "data": { "content": "Pong · {{client.ping}} ms", "ephemeral": false }
+    }
+  ],
+  "edges": [{ "id": "e1", "source": "start", "sourceHandle": "next", "target": "reply" }]
+}

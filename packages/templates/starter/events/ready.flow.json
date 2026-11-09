@@ -1,0 +1,15 @@
+{
+  "specVersion": 1,
+  "kind": "event",
+  "event": "clientReady",
+  "nodes": [
+    { "id": "start", "type": "core.trigger", "position": { "x": 0, "y": 0 }, "data": {} },
+    {
+      "id": "log",
+      "type": "core.log",
+      "position": { "x": 320, "y": 0 },
+      "data": { "level": "info", "message": "{{client.tag}} is ready" }
+    }
+  ],
+  "edges": [{ "id": "e1", "source": "start", "sourceHandle": "next", "target": "log" }]
+}

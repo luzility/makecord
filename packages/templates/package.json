@@ -1,0 +1,9 @@
+{
+  "name": "@makecord/templates",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Project templates used by the IDE's New Project wizard",
+  "files": [
+    "starter"
+  ]
+}

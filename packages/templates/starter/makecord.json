@@ -1,0 +1,15 @@
+{
+  "specVersion": 1,
+  "name": "{{name}}",
+  "runtime": "^0.1.0",
+  "intents": ["Guilds"],
+  "plugins": [],
+  "secrets": ["DISCORD_TOKEN"],
+  "cache": {
+    "messages": 50,
+    "members": 200,
+    "presences": 0,
+    "reactions": 0,
+    "sweepIntervalSeconds": 3600
+  }
+}

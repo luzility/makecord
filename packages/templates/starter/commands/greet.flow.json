@@ -1,0 +1,37 @@
+{
+  "specVersion": 1,
+  "kind": "command",
+  "command": {
+    "name": "greet",
+    "description": "Say hi to someone",
+    "options": [
+      { "name": "user", "description": "Who to greet", "type": "user", "required": false }
+    ]
+  },
+  "nodes": [
+    { "id": "start", "type": "core.trigger", "position": { "x": 0, "y": 80 }, "data": {} },
+    {
+      "id": "check",
+      "type": "core.condition",
+      "position": { "x": 300, "y": 80 },
+      "data": { "left": "{{options.user}}", "operator": "notEquals", "right": "" }
+    },
+    {
+      "id": "someone",
+      "type": "core.reply",
+      "position": { "x": 620, "y": 0 },
+      "data": { "content": "<@{{options.user}}>, {{user.displayName}} says hi", "ephemeral": false }
+    },
+    {
+      "id": "self",
+      "type": "core.reply",
+      "position": { "x": 620, "y": 180 },
+      "data": { "content": "Hey {{user.displayName}}, welcome to the server", "ephemeral": true }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "start", "sourceHandle": "next", "target": "check" },
+    { "id": "e2", "source": "check", "sourceHandle": "true", "target": "someone" },
+    { "id": "e3", "source": "check", "sourceHandle": "false", "target": "self" }
+  ]
+}

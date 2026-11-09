@@ -1,0 +1,12 @@
+{
+  "name": "{{slug}}",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "makecord start .",
+    "dev": "makecord start . --watch"
+  },
+  "dependencies": {
+    "@makecord/runtime": "^0.1.0"
+  }
+}
