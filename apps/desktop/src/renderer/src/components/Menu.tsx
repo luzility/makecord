@@ -25,18 +25,59 @@ export type MenuEntry =
 
 const focusable = (e: MenuEntry) => (e.kind === "item" && !e.disabled) || e.kind === "submenu";
 
+function Submenu({
+  prefer,
+  children,
+}: {
+  prefer: "left" | "right";
+  children: (side: "left" | "right") => ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [place, setPlace] = useState<{ side: "left" | "right"; shift: number } | null>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const parent = el?.parentElement?.getBoundingClientRect();
+    if (!el || !parent) return;
+    const width = el.getBoundingClientRect().width;
+    const fitsRight = parent.right + width <= window.innerWidth - 4;
+    const fitsLeft = parent.left - width >= 4;
+    const side =
+      prefer === "left"
+        ? fitsLeft || !fitsRight
+          ? "left"
+          : "right"
+        : fitsRight || !fitsLeft
+          ? "right"
+          : "left";
+    const bottom = el.getBoundingClientRect().bottom;
+    setPlace({ side, shift: Math.min(0, window.innerHeight - 4 - bottom) });
+  }, [prefer]);
+  const side = place?.side ?? prefer;
+  return (
+    <div
+      ref={ref}
+      className={cn("absolute z-10", side === "left" ? "right-full pr-1" : "left-full pl-1")}
+      style={{ top: -5 + (place?.shift ?? 0), visibility: place ? "visible" : "hidden" }}
+    >
+      {children(side)}
+    </div>
+  );
+}
+
 function MenuList({
   items,
   onClose,
   onBack,
   className,
   autoFocus = true,
+  side = "right",
 }: {
   items: MenuEntry[];
   onClose: () => void;
   onBack?: () => void;
   className?: string;
   autoFocus?: boolean;
+  side?: "left" | "right";
 }) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const [openSub, setOpenSub] = useState<number | null>(null);
@@ -115,16 +156,24 @@ function MenuList({
                 <ChevronRight size={12} strokeWidth={1.5} className="text-faint" />
               </button>
               {openSub === i && (
-                <div className="absolute top-[-5px] left-full pl-1">
-                  <MenuList
-                    items={entry.items}
-                    onClose={onClose}
-                    onBack={() => {
-                      setOpenSub(null);
-                      refs.current[i]?.focus();
-                    }}
-                  />
-                </div>
+                <Submenu prefer={side}>
+                  {(resolved) => (
+                    <MenuList
+                      side={resolved}
+                      items={entry.items}
+                      onClose={onClose}
+                      className={
+                        entry.items.some((x) => x.kind === "submenu")
+                          ? undefined
+                          : "max-h-[70vh] overflow-x-hidden overflow-y-auto"
+                      }
+                      onBack={() => {
+                        setOpenSub(null);
+                        refs.current[i]?.focus();
+                      }}
+                    />
+                  )}
+                </Submenu>
               )}
             </div>
           );

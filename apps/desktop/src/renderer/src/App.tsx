@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { NewProjectDialog } from "./components/NewProjectDialog";
 import { SettingsDialog } from "./components/SettingsDialog";
+import { TextContextMenu } from "./components/TextContextMenu";
 import { TooltipLayer } from "./components/TooltipLayer";
+import { VarAutocomplete } from "./components/VarAutocomplete";
 import { Welcome } from "./components/Welcome";
 import { Workbench } from "./components/Workbench";
 import { actions, runAction } from "./lib/actions";
@@ -60,6 +62,8 @@ export function App() {
     <>
       {project ? <Workbench key={project.root} /> : <Welcome />}
       <TooltipLayer />
+      <TextContextMenu />
+      <VarAutocomplete />
       {newProjectOpen && <NewProjectDialog />}
       {settingsOpen && <SettingsDialog />}
     </>

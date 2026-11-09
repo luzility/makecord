@@ -1,15 +1,20 @@
-import { defineNodeMeta, MESSAGE_FIELD_FORMAT } from "@makecord/plugin-sdk";
+import { defineNodeMeta, MESSAGE_FIELD_FORMAT, VARIABLE_FIELD_FORMAT } from "@makecord/plugin-sdk";
 import { z } from "zod";
 
 const text = (title: string, description?: string) =>
   z.string().meta({ title, description, multiline: true });
 const line = (title: string, description?: string) => z.string().meta({ title, description });
-const variable = (fallback: string) =>
+const variable = (fallback: string, also?: string[]) =>
   z
     .string()
     .regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/)
     .default(fallback)
-    .meta({ title: "Save as variable", description: "Read it later as {{vars.name}}" });
+    .meta({
+      title: "Save as variable",
+      description: "Read it later as {{vars.name}}",
+      format: VARIABLE_FIELD_FORMAT,
+      ...(also ? { alsoSets: also } : {}),
+    });
 const variableTr = { title: "Değişkene kaydet", description: "Sonra {{vars.ad}} olarak okunur" };
 const userId = () =>
   z
@@ -431,7 +436,11 @@ export const repeat = defineNodeMeta({
       .string()
       .regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/)
       .default("i")
-      .meta({ title: "Counter variable", description: "1, 2, 3… as {{vars.i}}" }),
+      .meta({
+        title: "Counter variable",
+        description: "1, 2, 3… as {{vars.i}}",
+        format: VARIABLE_FIELD_FORMAT,
+      }),
   }),
   locales: {
     tr: {
@@ -456,7 +465,7 @@ export const setVariable = defineNodeMeta({
     name: z
       .string()
       .regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/)
-      .meta({ title: "Variable name" }),
+      .meta({ title: "Variable name", format: VARIABLE_FIELD_FORMAT }),
     value: line("Value"),
   }),
   locales: {
@@ -558,7 +567,7 @@ export const httpRequest = defineNodeMeta({
       .meta({ title: "Method" }),
     url: line("URL").min(1),
     body: text("JSON body", "For POST, PUT and PATCH").default(""),
-    variable: variable("response"),
+    variable: variable("response", ["Status"]),
   }),
   locales: {
     tr: {
@@ -1349,7 +1358,7 @@ export const timestamp = defineNodeMeta({
       ])
       .default("relative")
       .meta({ title: "Style" }),
-    variable: variable("time"),
+    variable: variable("time", ["Unix"]),
   }),
   locales: {
     tr: {

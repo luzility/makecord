@@ -13,102 +13,8 @@ import { useMessageNames } from "@/lib/messages";
 import { descriptorOf, fieldsOf, type NodeDescriptor, nodeText, useNodes } from "@/lib/nodes";
 import { problemText } from "@/lib/problems";
 import { useStore } from "@/lib/store";
+import { variablesFor } from "@/lib/variables";
 import { CommandSettings } from "./CommandSettings";
-
-const BASE_VARIABLES = ["vars.<name>", "client.ping"];
-const USER_VARIABLES = [
-  "user.id",
-  "user.username",
-  "user.displayName",
-  "user.mention",
-  "guild.name",
-  "guild.memberCount",
-  "channel.id",
-];
-const MEMBER_VARIABLES = ["member.nickname", "member.roles", "member.joinedAt"];
-const MESSAGE_VARIABLES = ["message.id", "message.content", "message.url", "message.authorId"];
-const REACTION_VARIABLES = [...USER_VARIABLES, "message.id", "emoji.name", "emoji.text"];
-const EVENT_VARIABLES: Record<FlowEventName, string[]> = {
-  clientReady: ["client.servers"],
-  guildCreate: ["guild.id", "guild.name", "guild.memberCount", "guild.ownerId"],
-  guildDelete: ["guild.id", "guild.name"],
-  guildMemberAdd: [...USER_VARIABLES, ...MEMBER_VARIABLES],
-  guildMemberRemove: [...USER_VARIABLES, ...MEMBER_VARIABLES],
-  guildMemberUpdate: [
-    ...USER_VARIABLES,
-    ...MEMBER_VARIABLES,
-    "before.nickname",
-    "roles.addedIds",
-    "roles.removedIds",
-    "boosted",
-    "timedOut",
-  ],
-  guildBanAdd: ["user.id", "user.username", "guild.name", "reason"],
-  guildBanRemove: ["user.id", "user.username", "guild.name"],
-  messageCreate: [...USER_VARIABLES, ...MESSAGE_VARIABLES, "message.attachments"],
-  messageUpdate: [...USER_VARIABLES, ...MESSAGE_VARIABLES, "before.content"],
-  messageDelete: [...MESSAGE_VARIABLES, "channel.id", "guild.name"],
-  messageReactionAdd: REACTION_VARIABLES,
-  messageReactionRemove: REACTION_VARIABLES,
-  messagePollVoteAdd: ["user.id", "user.mention", "answer.text", "answer.votes", "poll.question"],
-  voiceStateUpdate: [
-    ...USER_VARIABLES,
-    "voice.action",
-    "voice.channel.id",
-    "voice.channel.name",
-    "voice.before.id",
-  ],
-  channelCreate: ["channel.id", "channel.name", "channel.mention", "guild.name"],
-  channelDelete: ["channel.id", "channel.name", "guild.name"],
-  threadCreate: ["thread.id", "thread.name", "thread.parentId", "user.mention", "guild.name"],
-  roleCreate: ["role.id", "role.name", "role.mention", "guild.name"],
-  roleDelete: ["role.id", "role.name", "guild.name"],
-  inviteCreate: ["invite.url", "invite.code", "invite.maxUses", "user.mention", "channel.id"],
-  autoModerationActionExecution: [
-    "user.id",
-    "user.mention",
-    "channel.id",
-    "message.content",
-    "automod.rule",
-    "automod.keyword",
-  ],
-  buttonClick: [...USER_VARIABLES, "customId", "message.id"],
-  selectMenu: [...USER_VARIABLES, "customId", "value", "values", "message.id"],
-  modalSubmit: [...USER_VARIABLES, "customId", "fields.<id>"],
-  autocomplete: [
-    ...USER_VARIABLES,
-    "focused.name",
-    "focused.value",
-    "options.<name>",
-    "command.name",
-  ],
-  schedule: ["now.date", "now.time", "now.weekday", "now.unix", "now.iso"],
-};
-
-function variablesOf(flow: Flow | undefined) {
-  if (!flow) return BASE_VARIABLES;
-  let own: string[];
-  if (flow.kind === "event") own = EVENT_VARIABLES[flow.event];
-  else if (flow.command.type === "user")
-    own = [
-      ...USER_VARIABLES,
-      "target.id",
-      "target.username",
-      "target.mention",
-      "targetMember.nickname",
-    ];
-  else if (flow.command.type === "message")
-    own = [
-      ...USER_VARIABLES,
-      "message.id",
-      "message.content",
-      "message.url",
-      "target.id",
-      "target.mention",
-    ];
-  else own = [...USER_VARIABLES, ...MEMBER_VARIABLES, "options.<name>", "command.subcommand"];
-  return [...own, ...BASE_VARIABLES];
-}
 
 function NodeForm({
   path,
@@ -140,7 +46,7 @@ function NodeForm({
     );
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col gap-4 p-4" data-var-scope={`flow:${path}`}>
       <div>
         <div className="flex items-center gap-2">
           <span
@@ -214,9 +120,10 @@ function NodeForm({
         <summary className="cursor-pointer select-none hover:text-fg">
           {t("properties.variables")}
         </summary>
+        <p className="mt-2 text-meta text-faint">{t("properties.variablesHint")}</p>
         <ul className="mt-2 flex flex-col gap-1 font-mono text-meta text-muted">
-          {variablesOf(flow).map((v) => (
-            <li key={v}>{`{{${v}}}`}</li>
+          {variablesFor(flow).map((v) => (
+            <li key={v.path} className="select-text">{`{{${v.path}}}`}</li>
           ))}
         </ul>
       </details>

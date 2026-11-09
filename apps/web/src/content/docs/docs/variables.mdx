@@ -5,6 +5,8 @@ description: The values you can put into messages and block settings with {{doub
 
 Any text setting can contain variables in double braces, like `Hey {{user.displayName}}`. The runtime fills them in right before the block runs. A variable that doesn't exist becomes empty text.
 
+In the IDE you rarely need to type them out. Type `{{` in a block setting or a message design and a list of the variables available in that flow opens; arrow keys and Enter pick one. Right-clicking a text field offers the same list under **Insert variable**, grouped by where the value comes from, together with Discord formatting (bold, spoiler, headings, quotes…) and mention syntax. Variables that earlier blocks save, like the result of an **HTTP Request**, show up under **Set in this flow**.
+
 ## Slash commands
 
 | Variable | Value |

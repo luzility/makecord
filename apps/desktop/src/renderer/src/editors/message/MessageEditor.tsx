@@ -113,7 +113,10 @@ export function MessageEditor({ path }: { path: string }) {
     <div className="flex h-full flex-col">
       {toolbar}
       <div className="flex min-h-0 flex-1">
-        <div className="flex w-[420px] min-w-[320px] shrink-0 flex-col gap-3 overflow-y-auto border-r border-line p-4">
+        <div
+          data-var-scope="message"
+          className="flex w-[420px] min-w-[320px] shrink-0 flex-col gap-3 overflow-y-auto border-r border-line p-4"
+        >
           {doc.invalid && (
             <p className="rounded-md bg-warn/10 px-2 py-1 text-label text-warn">
               {t("properties.notSaved", { issue: doc.invalid.message })}
