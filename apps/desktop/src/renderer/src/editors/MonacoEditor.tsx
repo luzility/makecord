@@ -66,5 +66,5 @@ export default function MonacoEditor({ path, value, onChange }: CodeEditorProps)
     applyingExternal.current = false;
   }, [value]);
 
-  return <div ref={host} className="h-full min-h-0 overflow-hidden" />;
+  return <div ref={host} className="monaco-component h-full min-h-0 overflow-hidden" />;
 }
