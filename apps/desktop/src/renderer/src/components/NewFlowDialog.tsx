@@ -1,4 +1,4 @@
-import { FlowEventName, INTERACTION_EVENTS, messageFileOf } from "@makecord/spec";
+import { type CommandType, CUSTOM_ID_EVENTS, FlowEventName, messageFileOf } from "@makecord/spec";
 import { useState } from "react";
 import { newMessage } from "@/editors/message/model";
 import { useT } from "@/i18n";
@@ -25,37 +25,42 @@ export function NewFlowDialog() {
   const [name, setName] = useState("");
   const [event, setEvent] = useState<FlowEventName>("guildMemberAdd");
   const [customId, setCustomId] = useState("");
-  const interaction = INTERACTION_EVENTS.includes(event);
+  const interaction = CUSTOM_ID_EVENTS.includes(event);
+  const [commandType, setCommandType] = useState<CommandType>("chatInput");
   const [error, setError] = useState<string | null>(null);
   const close = () => set({ newFlowOpen: false });
   const validName =
     kind === "message"
       ? /^[-_\p{L}\p{N}]+(\/[-_\p{L}\p{N}]+)*$/u.test(name) && name.length <= 64
-      : /^[-_\p{Ll}\p{N}]{1,32}$/u.test(name);
+      : commandType === "chatInput"
+        ? /^[-_\p{Ll}\p{N}]{1,32}$/u.test(name)
+        : name.trim().length > 0 && name.length <= 32;
 
   const create = async () => {
     const slug = customId
       .replace(/\*$/, "")
       .replace(/[^-_\p{L}\p{N}]+/gu, "-")
       .replace(/^-+|-+$/g, "");
+    const commandSlug =
+      name
+        .trim()
+        .toLowerCase()
+        .replace(/[^-_\p{L}\p{N}]+/gu, "-")
+        .replace(/^-+|-+$/g, "") || "command";
     const base =
       kind === "command"
-        ? `commands/${name}`
+        ? `commands/${commandSlug}`
         : `events/${interaction && slug ? `${event}-${slug}` : event}`;
-    const path =
-      kind === "message"
-        ? messageFileOf(name)
-        : kind === "command"
-          ? `${base}.flow.json`
-          : await freePath(base);
+    const path = kind === "message" ? messageFileOf(name) : await freePath(base);
     const flow =
       kind === "message"
         ? newMessage(messageKind, t("templates.messageText"))
         : kind === "command"
           ? newCommandFlow(
-              name,
+              name.trim(),
               t("templates.commandDescription", { name }),
               t("templates.commandReply"),
+              commandType,
             )
           : newEventFlow(event, customId.trim() || undefined);
     try {
@@ -121,18 +126,45 @@ export function NewFlowDialog() {
             </Field>
           </>
         ) : kind === "command" ? (
-          <Field label={t("newFlow.commandName")} hint={t("newFlow.commandNameHint")}>
-            <div className="flex items-center rounded-md border border-line bg-chrome focus-within:border-fg/40">
-              <span className="pl-2 font-mono text-label text-faint">/</span>
-              <input
-                autoFocus
-                value={name}
-                onChange={(e) => setName(e.target.value.toLowerCase().replace(/\s/g, "-"))}
-                placeholder="help"
-                className="h-7 flex-1 bg-transparent px-1 font-mono text-label outline-none focus-visible:outline-none placeholder:text-faint"
-              />
-            </div>
-          </Field>
+          <>
+            <Field label={t("newFlow.commandType")}>
+              <select
+                value={commandType}
+                onChange={(e) => setCommandType(e.target.value as CommandType)}
+                className={selectCls}
+              >
+                <option value="chatInput">{t("properties.typeSlash")}</option>
+                <option value="user">{t("properties.typeUser")}</option>
+                <option value="message">{t("properties.typeMessage")}</option>
+              </select>
+            </Field>
+            <Field
+              label={t("newFlow.commandName")}
+              hint={t(
+                commandType === "chatInput" ? "newFlow.commandNameHint" : "properties.menuNameHint",
+              )}
+            >
+              <div className="flex items-center rounded-md border border-line bg-chrome focus-within:border-fg/40">
+                {commandType === "chatInput" && (
+                  <span className="pl-2 font-mono text-label text-faint">/</span>
+                )}
+                <input
+                  autoFocus
+                  value={name}
+                  maxLength={32}
+                  onChange={(e) =>
+                    setName(
+                      commandType === "chatInput"
+                        ? e.target.value.toLowerCase().replace(/\s/g, "-")
+                        : e.target.value,
+                    )
+                  }
+                  placeholder={commandType === "chatInput" ? "help" : "Report"}
+                  className="h-7 flex-1 bg-transparent px-2 font-mono text-label outline-none focus-visible:outline-none placeholder:text-faint"
+                />
+              </div>
+            </Field>
+          </>
         ) : (
           <Field label={t("newFlow.eventLabel")}>
             <select
@@ -154,7 +186,7 @@ export function NewFlowDialog() {
               value={customId}
               maxLength={100}
               onChange={(e) => setCustomId(e.target.value)}
-              placeholder="vote:*"
+              placeholder={event === "autocomplete" ? "search.query" : "vote:*"}
               className="h-7 w-full rounded-md border border-line bg-chrome px-2 font-mono text-label outline-none focus:border-fg/40 focus-visible:outline-none placeholder:text-faint"
             />
           </Field>

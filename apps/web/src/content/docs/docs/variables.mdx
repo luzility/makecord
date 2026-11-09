@@ -14,13 +14,19 @@ Any text setting can contain variables in double braces, like `Hey {{user.displa
 | `{{user.displayName}}` | The name shown in Discord |
 | `{{user.mention}}` | A mention, like `<@123…>` |
 | `{{user.avatar}}` | URL of their avatar |
+| `{{user.createdAt}}` | When their account was made, as an ISO date |
 | `{{member.nickname}}` | Their nickname in this server, if any |
 | `{{member.joinedAt}}` | When they joined, as an ISO date |
+| `{{member.roles}}` | The IDs of their roles, as a list |
+| `{{member.boosting}}` | `true` while they boost the server |
 | `{{guild.id}}`, `{{guild.name}}`, `{{guild.memberCount}}` | The server |
-| `{{channel.id}}`, `{{channel.name}}` | The channel the command was used in |
-| `{{options.<name>}}` | The value of an option. IDs for users, channels and roles |
+| `{{guild.icon}}`, `{{guild.ownerId}}`, `{{guild.boosts}}` | Its icon URL, owner and boost count |
+| `{{channel.id}}`, `{{channel.name}}`, `{{channel.mention}}` | The channel the command was used in |
+| `{{options.<name>}}` | The value of an option. IDs for users, channels and roles, a URL for files |
+| `{{command.subcommand}}`, `{{command.group}}` | Which subcommand was used |
 | `{{client.ping}}` | The bot's gateway latency in milliseconds |
-| `{{client.tag}}`, `{{client.id}}` | The bot's own tag and ID |
+| `{{client.tag}}`, `{{client.id}}`, `{{client.mention}}` | The bot's own tag, ID and mention |
+| `{{client.servers}}` | How many servers the bot is in |
 | `{{vars.<name>}}` | A value stored earlier with **Set Variable** |
 
 ## Events
@@ -30,12 +36,26 @@ Any text setting can contain variables in double braces, like `Hey {{user.displa
 | `clientReady` | `client.*` |
 | `guildMemberAdd`, `guildMemberRemove` | `user.*`, `member.*`, `guild.*`, `client.*` |
 | `messageCreate` | `user.*` (the author), `guild.*`, `channel.id`, `message.id`, `message.content`, `message.url`, `client.*` |
+| User menu commands | `user.*` (who used it), `target.*` (who was clicked), `targetMember.*`, `guild.*`, `client.*` |
+| Message menu commands | `user.*`, `message.*` (the message that was clicked), `target.*` (its author), `guild.*`, `channel.*`, `client.*` |
 | `messageUpdate` | Same as `messageCreate`, plus `before.content`, the text before the edit |
 | `messageDelete` | `guild.*`, `channel.id`, `message.id`, `message.content` (empty if the message wasn't cached), `client.*` |
 | `messageReactionAdd` | `user.*` (who reacted), `guild.*`, `channel.id`, `message.*`, `emoji.name`, `emoji.id`, `emoji.text`, `client.*` |
 | `buttonClick` | `user.*`, `member.*`, `guild.*`, `channel.*`, `customId`, `message.id`, `client.*` |
 | `selectMenu` | Same as `buttonClick`, plus `value` (the first pick) and `values` (all picks) |
 | `modalSubmit` | Same as `buttonClick`, plus `fields.<id>`, the text typed into each field of the form |
+| `messageReactionRemove` | Same as `messageReactionAdd` |
+| `messagePollVoteAdd` | `user.id`, `user.mention`, `answer.text`, `answer.votes`, `poll.question`, `message.id`, `channel.id` |
+| `guildMemberUpdate` | `user.*`, `member.*`, `before.nickname`, `roles.addedIds`, `roles.removedIds`, `roles.added`, `roles.removed`, `boosted`, `timedOut` |
+| `guildBanAdd`, `guildBanRemove` | `user.*`, `guild.*`, `reason` |
+| `voiceStateUpdate` | `user.*`, `member.*`, `voice.action` (`join`, `leave`, `move` or `update`), `voice.channel.*`, `voice.before.*`, `voice.muted`, `voice.deafened`, `voice.streaming` |
+| `channelCreate`, `channelDelete` | `channel.id`, `channel.name`, `channel.mention`, `guild.*` |
+| `threadCreate` | `thread.*`, `thread.parentId`, `user.mention` (who made it), `guild.*` |
+| `roleCreate`, `roleDelete` | `role.id`, `role.name`, `role.mention`, `role.color`, `guild.*` |
+| `inviteCreate` | `invite.url`, `invite.code`, `invite.maxUses`, `invite.expiresAt`, `user.*` (who made it), `channel.*` |
+| `guildCreate`, `guildDelete` | `guild.*` |
+| `autoModerationActionExecution` | `user.*`, `channel.id`, `message.content`, `automod.rule`, `automod.keyword`, `automod.matched` |
+| `autocomplete` | `user.*`, `focused.name`, `focused.value`, `options.*`, `command.name`, `command.subcommand` |
 | `schedule` | `now.date` (`2026-11-09`), `now.time` (`09:00`), `now.weekday` (0 is Sunday), `now.iso`, `client.*` |
 
 `vars.*` is available in every flow.

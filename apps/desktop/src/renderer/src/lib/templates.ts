@@ -1,15 +1,21 @@
 import {
   type CommandFlow,
+  type CommandType,
+  CUSTOM_ID_EVENTS,
   type EventFlow,
   type FlowEventName,
-  INTERACTION_EVENTS,
 } from "@makecord/spec";
 
-export function newCommandFlow(name: string, description: string, reply: string): CommandFlow {
+export function newCommandFlow(
+  name: string,
+  description: string,
+  reply: string,
+  type: CommandType = "chatInput",
+): CommandFlow {
   return {
     specVersion: 1,
     kind: "command",
-    command: { name, description, options: [] },
+    command: { type, name, description: type === "chatInput" ? description : "", options: [] },
     nodes: [
       { id: "start", type: "core.trigger", position: { x: 0, y: 0 }, data: {} },
       {
@@ -28,7 +34,7 @@ export function newEventFlow(event: FlowEventName, customId?: string): EventFlow
     specVersion: 1,
     kind: "event",
     event,
-    ...(INTERACTION_EVENTS.includes(event) && customId ? { customId } : {}),
+    ...(CUSTOM_ID_EVENTS.includes(event) && customId ? { customId } : {}),
     ...(event === "schedule" ? { schedule: { everyMinutes: 60 } } : {}),
     nodes: [{ id: "start", type: "core.trigger", position: { x: 0, y: 0 }, data: {} }],
     edges: [],

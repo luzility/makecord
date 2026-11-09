@@ -1,4 +1,5 @@
 export const BOT_PERMISSIONS = {
+  CreateInstantInvite: 0,
   Administrator: 3,
   KickMembers: 1,
   BanMembers: 2,
@@ -13,9 +14,14 @@ export const BOT_PERMISSIONS = {
   ReadMessageHistory: 16,
   MentionEveryone: 17,
   UseExternalEmojis: 18,
+  MoveMembers: 24,
   ManageNicknames: 27,
   ManageRoles: 28,
+  ManageThreads: 34,
+  CreatePublicThreads: 35,
+  SendMessagesInThreads: 38,
   ModerateMembers: 40,
+  SendPolls: 49,
 } as const;
 
 export type BotPermission = keyof typeof BOT_PERMISSIONS;

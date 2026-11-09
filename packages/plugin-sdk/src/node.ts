@@ -9,6 +9,7 @@ export interface NodeLocale {
   description?: string;
   fields?: Record<string, { title?: string; description?: string }>;
   outputs?: Record<string, string>;
+  group?: string;
 }
 
 export interface NodeMeta<F extends z.ZodObject = z.ZodObject> {
@@ -21,6 +22,8 @@ export interface NodeMeta<F extends z.ZodObject = z.ZodObject> {
   contexts?: readonly FlowKind[];
   needsInteraction?: boolean;
   permissions?: readonly string[];
+  events?: readonly string[];
+  group?: string;
   locales?: Readonly<Record<string, NodeLocale>>;
 }
 

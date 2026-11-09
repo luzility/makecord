@@ -1,14 +1,11 @@
 import {
-  CommandOptionType,
+  CUSTOM_ID_EVENTS,
   type Flow,
   FlowEventName,
-  INTERACTION_EVENTS,
   messageFileOf,
-  PermissionName,
   type Schedule,
 } from "@makecord/spec";
-import { ExternalLink, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { ExternalLink } from "lucide-react";
 import { Button, Empty, Field, IconButton, Input, selectCls } from "@/components/ui";
 import { useT } from "@/i18n";
 import { openFile } from "@/lib/dock";
@@ -16,6 +13,7 @@ import { useMessageNames } from "@/lib/messages";
 import { descriptorOf, fieldsOf, type NodeDescriptor, nodeText, useNodes } from "@/lib/nodes";
 import { problemText } from "@/lib/problems";
 import { useStore } from "@/lib/store";
+import { CommandSettings } from "./CommandSettings";
 
 const BASE_VARIABLES = ["vars.<name>", "client.ping"];
 const USER_VARIABLES = [
@@ -27,24 +25,88 @@ const USER_VARIABLES = [
   "guild.memberCount",
   "channel.id",
 ];
+const MEMBER_VARIABLES = ["member.nickname", "member.roles", "member.joinedAt"];
+const MESSAGE_VARIABLES = ["message.id", "message.content", "message.url", "message.authorId"];
+const REACTION_VARIABLES = [...USER_VARIABLES, "message.id", "emoji.name", "emoji.text"];
 const EVENT_VARIABLES: Record<FlowEventName, string[]> = {
-  clientReady: [],
-  guildMemberAdd: USER_VARIABLES,
-  guildMemberRemove: USER_VARIABLES,
-  messageCreate: [...USER_VARIABLES, "message.id", "message.content"],
-  messageUpdate: [...USER_VARIABLES, "message.id", "message.content", "before.content"],
-  messageDelete: ["message.id", "message.content", "channel.id", "guild.name"],
-  messageReactionAdd: [...USER_VARIABLES, "message.id", "emoji.name", "emoji.text"],
+  clientReady: ["client.servers"],
+  guildCreate: ["guild.id", "guild.name", "guild.memberCount", "guild.ownerId"],
+  guildDelete: ["guild.id", "guild.name"],
+  guildMemberAdd: [...USER_VARIABLES, ...MEMBER_VARIABLES],
+  guildMemberRemove: [...USER_VARIABLES, ...MEMBER_VARIABLES],
+  guildMemberUpdate: [
+    ...USER_VARIABLES,
+    ...MEMBER_VARIABLES,
+    "before.nickname",
+    "roles.addedIds",
+    "roles.removedIds",
+    "boosted",
+    "timedOut",
+  ],
+  guildBanAdd: ["user.id", "user.username", "guild.name", "reason"],
+  guildBanRemove: ["user.id", "user.username", "guild.name"],
+  messageCreate: [...USER_VARIABLES, ...MESSAGE_VARIABLES, "message.attachments"],
+  messageUpdate: [...USER_VARIABLES, ...MESSAGE_VARIABLES, "before.content"],
+  messageDelete: [...MESSAGE_VARIABLES, "channel.id", "guild.name"],
+  messageReactionAdd: REACTION_VARIABLES,
+  messageReactionRemove: REACTION_VARIABLES,
+  messagePollVoteAdd: ["user.id", "user.mention", "answer.text", "answer.votes", "poll.question"],
+  voiceStateUpdate: [
+    ...USER_VARIABLES,
+    "voice.action",
+    "voice.channel.id",
+    "voice.channel.name",
+    "voice.before.id",
+  ],
+  channelCreate: ["channel.id", "channel.name", "channel.mention", "guild.name"],
+  channelDelete: ["channel.id", "channel.name", "guild.name"],
+  threadCreate: ["thread.id", "thread.name", "thread.parentId", "user.mention", "guild.name"],
+  roleCreate: ["role.id", "role.name", "role.mention", "guild.name"],
+  roleDelete: ["role.id", "role.name", "guild.name"],
+  inviteCreate: ["invite.url", "invite.code", "invite.maxUses", "user.mention", "channel.id"],
+  autoModerationActionExecution: [
+    "user.id",
+    "user.mention",
+    "channel.id",
+    "message.content",
+    "automod.rule",
+    "automod.keyword",
+  ],
   buttonClick: [...USER_VARIABLES, "customId", "message.id"],
   selectMenu: [...USER_VARIABLES, "customId", "value", "values", "message.id"],
   modalSubmit: [...USER_VARIABLES, "customId", "fields.<id>"],
-  schedule: ["now.date", "now.time", "now.weekday", "now.iso"],
+  autocomplete: [
+    ...USER_VARIABLES,
+    "focused.name",
+    "focused.value",
+    "options.<name>",
+    "command.name",
+  ],
+  schedule: ["now.date", "now.time", "now.weekday", "now.unix", "now.iso"],
 };
 
 function variablesOf(flow: Flow | undefined) {
   if (!flow) return BASE_VARIABLES;
-  const own =
-    flow.kind === "command" ? [...USER_VARIABLES, "options.<name>"] : EVENT_VARIABLES[flow.event];
+  let own: string[];
+  if (flow.kind === "event") own = EVENT_VARIABLES[flow.event];
+  else if (flow.command.type === "user")
+    own = [
+      ...USER_VARIABLES,
+      "target.id",
+      "target.username",
+      "target.mention",
+      "targetMember.nickname",
+    ];
+  else if (flow.command.type === "message")
+    own = [
+      ...USER_VARIABLES,
+      "message.id",
+      "message.content",
+      "message.url",
+      "target.id",
+      "target.mention",
+    ];
+  else own = [...USER_VARIABLES, ...MEMBER_VARIABLES, "options.<name>", "command.subcommand"];
   return [...own, ...BASE_VARIABLES];
 }
 
@@ -199,13 +261,22 @@ function FlowSettings({ path, flow }: { path: string; flow: Flow }) {
             ))}
           </select>
         </Field>
-        {INTERACTION_EVENTS.includes(flow.event) && (
-          <Field label={t("properties.customId")} hint={t("properties.customIdHint")}>
+        {CUSTOM_ID_EVENTS.includes(flow.event) && (
+          <Field
+            label={t(
+              flow.event === "autocomplete" ? "properties.autocompleteFor" : "properties.customId",
+            )}
+            hint={t(
+              flow.event === "autocomplete"
+                ? "properties.autocompleteHint"
+                : "properties.customIdHint",
+            )}
+          >
             <Input
               className="font-mono"
               maxLength={100}
               value={flow.customId ?? ""}
-              placeholder="vote:*"
+              placeholder={flow.event === "autocomplete" ? "search.query" : "vote:*"}
               onChange={(e) => {
                 const customId = e.target.value;
                 updateFlow(
@@ -221,127 +292,11 @@ function FlowSettings({ path, flow }: { path: string; flow: Flow }) {
       </div>
     );
   }
-  const cmd = flow.command;
-  const setCmd = (patch: Partial<typeof cmd>) =>
-    updateFlow(
-      path,
-      (f) => (f.kind === "command" ? { ...f, command: { ...f.command, ...patch } } : f),
-      `cmd:${Object.keys(patch).join(",")}`,
-    );
-  const setOption = (i: number, patch: Partial<(typeof cmd.options)[number]>) =>
-    setCmd({ options: cmd.options.map((o, j) => (i === j ? { ...o, ...patch } : o)) });
-
   return (
     <div className="flex flex-col gap-4 p-4">
       <h3 className="text-title font-medium">{t("properties.commandTitle")}</h3>
       {notice}
-      <Field label={t("properties.commandName")} hint={t("properties.commandNameHint")}>
-        <div className="flex items-center rounded-md border border-line bg-chrome focus-within:border-fg/40">
-          <span className="pl-2 font-mono text-label text-faint">/</span>
-          <input
-            value={cmd.name}
-            onChange={(e) => setCmd({ name: e.target.value.toLowerCase().replace(/\s/g, "-") })}
-            className="h-7 flex-1 bg-transparent px-1 font-mono text-label outline-none focus-visible:outline-none"
-          />
-        </div>
-      </Field>
-      <Field label={t("properties.description")}>
-        <Input
-          value={cmd.description}
-          maxLength={100}
-          onChange={(e) => setCmd({ description: e.target.value })}
-        />
-      </Field>
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <span className="text-label text-muted">{t("properties.options")}</span>
-          <IconButton
-            label={t("properties.addOption")}
-            onClick={() =>
-              setCmd({
-                options: [
-                  ...cmd.options,
-                  {
-                    name: t("properties.newOptionName", { n: cmd.options.length + 1 }),
-                    description: t("properties.newOptionDescription"),
-                    type: "string",
-                    required: false,
-                  },
-                ],
-              })
-            }
-          >
-            <Plus size={16} strokeWidth={1.5} />
-          </IconButton>
-        </div>
-        {cmd.options.length === 0 && (
-          <p className="text-meta text-faint">{t("properties.optionsHint")}</p>
-        )}
-        {cmd.options.map((o, i) => (
-          <div key={i} className="flex flex-col gap-2 rounded-lg border border-line p-2">
-            <div className="flex gap-2">
-              <Input
-                value={o.name}
-                onChange={(e) => setOption(i, { name: e.target.value.toLowerCase() })}
-                className="font-mono"
-              />
-              <select
-                className={`${selectCls} w-24`}
-                value={o.type}
-                onChange={(e) => setOption(i, { type: e.target.value as CommandOptionType })}
-              >
-                {CommandOptionType.options.map((ty) => (
-                  <option key={ty}>{ty}</option>
-                ))}
-              </select>
-              <IconButton
-                label={t("properties.deleteOption")}
-                onClick={() => setCmd({ options: cmd.options.filter((_, j) => j !== i) })}
-              >
-                <Trash2 size={16} strokeWidth={1.5} />
-              </IconButton>
-            </div>
-            <Input
-              value={o.description}
-              onChange={(e) => setOption(i, { description: e.target.value })}
-            />
-            <label className="flex items-center gap-2 text-label text-muted">
-              <input
-                type="checkbox"
-                checked={o.required}
-                onChange={(e) => setOption(i, { required: e.target.checked })}
-                className="accent-fg"
-              />
-              {t("properties.required")}
-            </label>
-            {(o.type === "string" || o.type === "integer" || o.type === "number") && (
-              <Field label={t("properties.choices")} hint={t("properties.choicesHint")}>
-                <ChoicesInput value={o.choices} onChange={(choices) => setOption(i, { choices })} />
-              </Field>
-            )}
-          </div>
-        ))}
-      </div>
-      <Field label={t("properties.permissions")} hint={t("properties.permissionsHint")}>
-        <div className="grid grid-cols-2 gap-x-2 gap-y-1">
-          {PermissionName.options.map((perm) => (
-            <label key={perm} className="flex min-w-0 items-center gap-2 text-label text-muted">
-              <input
-                type="checkbox"
-                className="accent-fg"
-                checked={cmd.permissions?.includes(perm) ?? false}
-                onChange={(e) => {
-                  const next = e.target.checked
-                    ? [...(cmd.permissions ?? []), perm]
-                    : (cmd.permissions ?? []).filter((p) => p !== perm);
-                  setCmd({ permissions: next.length ? next : undefined });
-                }}
-              />
-              <span className="truncate">{t(`permissions.${perm}`)}</span>
-            </label>
-          ))}
-        </div>
-      </Field>
+      <CommandSettings path={path} cmd={flow.command} />
     </div>
   );
 }
@@ -378,49 +333,6 @@ function MessagePicker({ value, onChange }: { value: string; onChange: (v: strin
         <ExternalLink size={14} strokeWidth={1.5} />
       </IconButton>
     </div>
-  );
-}
-
-type Choice = { name: string; value: string };
-
-const choicesToText = (choices: Choice[] | undefined) =>
-  (choices ?? []).map((c) => (c.name === c.value ? c.name : `${c.name} = ${c.value}`)).join("\n");
-
-function parseChoices(text: string): Choice[] | undefined {
-  const list = text
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean)
-    .slice(0, 25)
-    .map((l) => {
-      const at = l.lastIndexOf("=");
-      const name = (at > 0 ? l.slice(0, at) : l).trim().slice(0, 100);
-      const value = (at > 0 ? l.slice(at + 1) : l).trim().slice(0, 100);
-      return { name, value: value || name };
-    })
-    .filter((c) => c.name);
-  return list.length ? list : undefined;
-}
-
-function ChoicesInput({
-  value,
-  onChange,
-}: {
-  value: Choice[] | undefined;
-  onChange: (c: Choice[] | undefined) => void;
-}) {
-  const [text, setText] = useState(() => choicesToText(value));
-  return (
-    <textarea
-      rows={3}
-      value={text}
-      placeholder={"Red\nGreen = green"}
-      onChange={(e) => {
-        setText(e.target.value);
-        onChange(parseChoices(e.target.value));
-      }}
-      className="w-full resize-y rounded-md border border-line bg-chrome p-2 font-mono text-label focus:border-fg/40 focus:outline-none focus-visible:outline-none placeholder:text-faint"
-    />
   );
 }
 

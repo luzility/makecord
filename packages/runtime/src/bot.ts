@@ -3,7 +3,8 @@ import {
   BASE_BOT_PERMISSIONS,
   type CacheConfig,
   type CommandFlow,
-  type CommandOptionType,
+  CUSTOM_ID_EVENTS,
+  commandKey,
   type EventFlow,
   isBotPermission,
   type MessageDesign,
@@ -12,18 +13,15 @@ import {
 } from "@makecord/spec";
 import {
   type AnySelectMenuInteraction,
-  type ApplicationCommandOptionData,
-  ApplicationCommandOptionType,
   type ButtonInteraction,
-  type ChatInputApplicationCommandData,
   Client,
   Events,
   GatewayIntentBits,
   type ModalSubmitInteraction,
   Options,
   Partials,
-  PermissionFlagsBits,
 } from "discord.js";
+import { buildCommands, routeKey } from "./commands.js";
 import type { Debugger } from "./debugger.js";
 import { executeFlow } from "./executor.js";
 import { watchGateway } from "./gateway.js";
@@ -31,18 +29,15 @@ import { inspectProject } from "./inspect.js";
 import { loadPlugins, type NodeRegistry } from "./plugins.js";
 import { type LoadedFlow, type LoadedProject, loadProject } from "./project.js";
 import type { Emit } from "./reporter.js";
-import { commandScope, eventScope, interactionScope } from "./scope.js";
+import {
+  autocompleteScope,
+  commandScope,
+  contextMenuScope,
+  EVENT_SCOPES,
+  eventScope,
+  interactionScope,
+} from "./scope.js";
 import { openStore } from "./store.js";
-
-const OPTION_TYPES: Record<CommandOptionType, ApplicationCommandOptionType> = {
-  string: ApplicationCommandOptionType.String,
-  integer: ApplicationCommandOptionType.Integer,
-  number: ApplicationCommandOptionType.Number,
-  boolean: ApplicationCommandOptionType.Boolean,
-  user: ApplicationCommandOptionType.User,
-  channel: ApplicationCommandOptionType.Channel,
-  role: ApplicationCommandOptionType.Role,
-};
 
 function makeCache(c: CacheConfig) {
   return Options.cacheWithLimits({
@@ -55,35 +50,6 @@ function makeCache(c: CacheConfig) {
       keepOverLimit: (m) => m.id === m.client.user.id,
     },
   });
-}
-
-const CHOICE_TYPES = new Set<CommandOptionType>(["string", "integer", "number"]);
-
-function toCommandData(flow: CommandFlow): ChatInputApplicationCommandData {
-  const { permissions } = flow.command;
-  return {
-    name: flow.command.name,
-    description: flow.command.description,
-    defaultMemberPermissions: permissions?.length
-      ? permissions.reduce((bits, p) => bits | PermissionFlagsBits[p], 0n)
-      : undefined,
-    options: flow.command.options.map(
-      (o) =>
-        ({
-          name: o.name,
-          description: o.description,
-          type: OPTION_TYPES[o.type],
-          required: o.required,
-          choices:
-            o.choices?.length && CHOICE_TYPES.has(o.type)
-              ? o.choices.map((c) => ({
-                  name: c.name,
-                  value: o.type === "string" ? c.value : Number(c.value),
-                }))
-              : undefined,
-        }) as ApplicationCommandOptionData,
-    ),
-  };
 }
 
 function msUntil(time: string): number {
@@ -157,7 +123,13 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
 
   const client = new Client({
     intents: config.intents.map((i) => GatewayIntentBits[i]),
-    partials: [Partials.Message, Partials.Channel, Partials.Reaction, Partials.User],
+    partials: [
+      Partials.Message,
+      Partials.Channel,
+      Partials.Reaction,
+      Partials.User,
+      Partials.GuildMember,
+    ],
     makeCache: makeCache(config.cache),
     sweepers: config.cache.sweepIntervalSeconds
       ? {
@@ -171,13 +143,13 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
     new Map(
       project.flows
         .filter((f): f is LoadedFlow & { flow: CommandFlow } => f.flow.kind === "command")
-        .map((f) => [f.flow.command.name, f]),
+        .map((f) => [commandKey(f.flow.command), f]),
     );
   let commands = commandFlows();
   let registeredSignature = "";
 
   const syncCommands = async () => {
-    const data = [...commands.values()].map((f) => toCommandData(f.flow));
+    const data = buildCommands([...commands.values()].map((f) => f.flow));
     const signature = JSON.stringify(data);
     if (signature === registeredSignature) return;
     const app = client.application;
@@ -266,14 +238,32 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
   };
 
   client.on(Events.InteractionCreate, (i) => {
-    if (i.isChatInputCommand()) {
-      const entry = commands.get(i.commandName);
+    if (i.isChatInputCommand() || i.isContextMenuCommand()) {
+      const entry = commands.get(routeKey(i));
       if (!entry) return;
       void run(entry.file, entry.flow, {
         client: i.client,
         interaction: i,
         eventArgs: [i],
-        scope: commandScope(i),
+        scope: i.isChatInputCommand() ? commandScope(i) : contextMenuScope(i),
+      });
+    } else if (i.isAutocomplete()) {
+      const focused = i.options.getFocused(true);
+      const id = `${routeKey(i)}.${focused.name}`.replace(/ /g, ".");
+      const matching = eventFlows("autocomplete").filter((f) =>
+        matchesCustomId(f.flow.customId, id),
+      );
+      if (!matching.length) {
+        void i.respond([]).catch(() => {});
+        return;
+      }
+      const { file, flow } = matching[0]!;
+      void run(file, flow, {
+        client: i.client,
+        eventArgs: [i],
+        scope: { ...autocompleteScope(i), customId: id },
+      }).then(() => {
+        if (!i.responded) void i.respond([]).catch(() => {});
       });
     } else if (i.isButton()) runInteraction("buttonClick", i);
     else if (i.isAnySelectMenu()) runInteraction("selectMenu", i);
@@ -291,7 +281,12 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
         fromBot(args[event === "messageUpdate" ? 1 : 0])
       )
         return;
-      if (event === "messageReactionAdd") {
+      if (event === "threadCreate" && args[1] === false) return;
+      if (event === "messagePollVoteAdd") {
+        const answer = args[0] as { partial?: boolean; fetch?(): Promise<unknown> };
+        if (answer.partial) await answer.fetch?.().catch(() => {});
+      }
+      if (event === "messageReactionAdd" || event === "messageReactionRemove") {
         const [reaction, user] = args as [
           { partial: boolean; fetch(): Promise<unknown> },
           { bot?: boolean },
@@ -304,15 +299,10 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
         void run(file, flow, { client, eventArgs: args, scope: eventScope(client, event, args) });
       }
     };
-  for (const event of [
-    "guildMemberAdd",
-    "guildMemberRemove",
-    "messageCreate",
-    "messageUpdate",
-    "messageDelete",
-    "messageReactionAdd",
-  ] as const) {
-    client.on(event, (...args: unknown[]) => void dispatch(event)(...args));
+  const NOT_GATEWAY = new Set<string>([...CUSTOM_ID_EVENTS, "schedule", "clientReady"]);
+  for (const event of Object.keys(EVENT_SCOPES) as EventFlow["event"][]) {
+    if (NOT_GATEWAY.has(event)) continue;
+    client.on(event as never, (...args: unknown[]) => void dispatch(event)(...args));
   }
 
   let scheduleTimers: NodeJS.Timeout[] = [];
@@ -432,13 +422,33 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
     MESSAGE_UPDATE: "messageUpdate",
     MESSAGE_DELETE: "messageDelete",
     MESSAGE_REACTION_ADD: "messageReactionAdd",
+    MESSAGE_REACTION_REMOVE: "messageReactionRemove",
+    MESSAGE_POLL_VOTE_ADD: "messagePollVoteAdd",
+    GUILD_MEMBER_UPDATE: "guildMemberUpdate",
+    GUILD_BAN_ADD: "guildBanAdd",
+    GUILD_BAN_REMOVE: "guildBanRemove",
+    VOICE_STATE_UPDATE: "voiceStateUpdate",
+    CHANNEL_CREATE: "channelCreate",
+    CHANNEL_DELETE: "channelDelete",
+    THREAD_CREATE: "threadCreate",
+    GUILD_ROLE_CREATE: "roleCreate",
+    GUILD_ROLE_DELETE: "roleDelete",
+    INVITE_CREATE: "inviteCreate",
+    GUILD_DELETE: "guildDelete",
+    AUTO_MODERATION_ACTION_EXECUTION: "autoModerationActionExecution",
   };
   const isHandled = (t: string, d: Record<string, any>) => {
     if (t === "INTERACTION_CREATE") {
       const id = String(d.data?.custom_id ?? "");
       const byId = (event: EventFlow["event"]) =>
         eventFlows(event).some((f) => matchesCustomId(f.flow.customId, id));
-      if (d.type === 2) return commands.has(d.data?.name);
+      if (d.type === 2) {
+        const name = String(d.data?.name ?? "");
+        return [...commands.keys()].some(
+          (k) => k === name || k.startsWith(`${name} `) || k.endsWith(`:${name}`),
+        );
+      }
+      if (d.type === 4) return eventFlows("autocomplete").length > 0;
       if (d.type === 3) return byId(d.data?.component_type === 2 ? "buttonClick" : "selectMenu");
       if (d.type === 5) return byId("modalSubmit");
       return false;

@@ -1,4 +1,5 @@
 import {
+  commandLabel,
   type Flow,
   type FlowEdge,
   FlowNode as FlowNodeSchema,
@@ -130,7 +131,9 @@ function Canvas({ path, flow }: { path: string; flow: Flow }) {
 
   const derived = useMemo<CanvasNode[]>(() => {
     const label =
-      flow.kind === "command" ? `/${flow.command.name}` : t(`events.${flow.event}` as MessageKey);
+      flow.kind === "command"
+        ? commandLabel(flow.command)
+        : t(`events.${flow.event}` as MessageKey);
     const blocks = flow.nodes.map((n): MkNode => {
       const problem = problems.find((p) => p.file === path && p.nodeId === n.id);
       const meta = descriptorOf(n.type);

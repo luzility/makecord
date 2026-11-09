@@ -323,3 +323,99 @@ test("message designs: missing ones and buttons nobody handles are reported", as
   );
   assert.deepEqual(found.sort(), ["missing-message:nope", "unhandled-component:info"]);
 });
+
+test("loops, cooldowns and timestamps", async () => {
+  const { registry } = await loadPlugins(starter, []);
+  const logs: string[] = [];
+  const flow = flowOf(
+    [
+      { id: "s", type: "core.trigger" },
+      {
+        id: "each",
+        type: "core.forEach",
+        data: { list: "a\nb\nc", itemVariable: "item", indexVariable: "i" },
+      },
+      { id: "cd", type: "core.cooldown", data: { seconds: "60", key: "same", variable: "left" } },
+      {
+        id: "ok",
+        type: "core.log",
+        data: { level: "info", message: "ok {{vars.i}} {{vars.item}}" },
+      },
+      { id: "wait", type: "core.log", data: { level: "info", message: "cooling {{vars.i}}" } },
+      {
+        id: "ts",
+        type: "core.timestamp",
+        data: { time: "2026-01-01T00:00:00Z", addMinutes: "60", style: "relative", variable: "t" },
+      },
+      { id: "end", type: "core.log", data: { level: "info", message: "{{vars.t}}" } },
+    ],
+    [
+      ["s", "each"],
+      ["each", "cd", "loop"],
+      ["cd", "ok", "next"],
+      ["cd", "wait", "cooling"],
+      ["ok", "each"],
+      ["wait", "each"],
+      ["each", "ts", "done"],
+      ["ts", "end"],
+    ],
+  );
+  await executeFlow({
+    file: "t",
+    flow,
+    registry,
+    base: { client: {} as any, eventArgs: [], scope: {}, store: memoryStore() },
+    env: {},
+    emit: (e) => {
+      if (e.type === "log") logs.push(e.message);
+      if (e.type === "flow" && e.phase === "error") logs.push(`ERR ${e.error}`);
+    },
+  });
+  assert.deepEqual(logs, [
+    "ok 1 a",
+    "cooling 2",
+    "cooling 3",
+    `<t:${Date.parse("2026-01-01T01:00:00Z") / 1000}:R>`,
+  ]);
+});
+
+test("inspection: subcommand conflicts and event-only blocks", async () => {
+  const { inspectProject } = await import("./inspect.js");
+  const { coreNodeMetas } = await import("@makecord/plugin-core/meta");
+  const project = await loadProject(starter);
+  const trigger = { id: "s", type: "core.trigger", position: { x: 0, y: 0 }, data: {} };
+  project.flows.push({
+    file: "commands/ping-sub.flow.json",
+    flow: {
+      specVersion: 1,
+      kind: "command",
+      command: {
+        type: "chatInput",
+        name: "ping",
+        description: "x",
+        options: [
+          { name: "q", description: "q", type: "string", required: false, autocomplete: true },
+        ],
+        subcommand: { name: "fast", description: "x" },
+      },
+      nodes: [
+        trigger,
+        {
+          id: "g",
+          type: "core.suggest",
+          position: { x: 0, y: 0 },
+          data: { choices: "a", filter: true },
+        },
+      ],
+      edges: [{ id: "e", source: "s", sourceHandle: "next", target: "g" }],
+    },
+  });
+  const codes = inspectProject(project, coreNodeMetas)
+    .map((p) => `${p.file}:${p.code}`)
+    .sort();
+  assert.deepEqual(codes, [
+    "commands/ping-sub.flow.json:unhandled-autocomplete",
+    "commands/ping-sub.flow.json:wrong-event",
+    "commands/ping.flow.json:command-conflict",
+  ]);
+});

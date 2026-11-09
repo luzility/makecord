@@ -18,7 +18,7 @@ import type {
   APIMessageComponentEmoji,
   APIMessageTopLevelComponent,
   APISectionAccessoryComponent,
-  APIStringSelectComponent,
+  APISelectMenuComponent,
   APIThumbnailComponent,
 } from "discord.js";
 import { renderTemplate } from "./templates.js";
@@ -64,14 +64,22 @@ function button(b: MessageButton, scope: Scope): APIButtonComponent {
   return { ...base, style: BUTTON_STYLE[b.style], custom_id: customId };
 }
 
-function select(s: MessageSelect, scope: Scope): APIStringSelectComponent {
-  return {
-    type: 3,
+const SELECT_TYPES = { string: 3, user: 5, role: 6, mentionable: 7, channel: 8 } as const;
+
+function select(s: MessageSelect, scope: Scope): APISelectMenuComponent {
+  const base = {
     custom_id: text(s.customId, scope, 100) ?? s.customId,
     placeholder: text(s.placeholder, scope, 150),
     min_values: s.minValues,
     max_values: s.maxValues,
     disabled: s.disabled || undefined,
+  };
+  if (s.menuType !== "string") {
+    return { ...base, type: SELECT_TYPES[s.menuType] } as APISelectMenuComponent;
+  }
+  return {
+    ...base,
+    type: 3,
     options: s.options.map((o) => ({
       label: text(o.label, scope, 100) ?? o.label,
       value: text(o.value, scope, 100) ?? o.value,

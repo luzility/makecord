@@ -22,6 +22,7 @@ export const newButton = (n = 1): MessageButton => ({
 
 export const newSelect = (): MessageSelect => ({
   type: "select",
+  menuType: "string",
   customId: "menu",
   placeholder: "Pick one",
   options: [

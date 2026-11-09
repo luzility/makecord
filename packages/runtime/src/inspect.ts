@@ -30,6 +30,22 @@ export const EVENT_INTENTS: Record<EventFlow["event"], IntentName[]> = {
   messageUpdate: ["GuildMessages"],
   messageDelete: ["GuildMessages"],
   messageReactionAdd: ["GuildMessageReactions"],
+  messageReactionRemove: ["GuildMessageReactions"],
+  messagePollVoteAdd: ["GuildMessagePolls"],
+  guildMemberUpdate: ["GuildMembers"],
+  guildBanAdd: ["GuildModeration"],
+  guildBanRemove: ["GuildModeration"],
+  voiceStateUpdate: ["GuildVoiceStates"],
+  channelCreate: ["Guilds"],
+  channelDelete: ["Guilds"],
+  threadCreate: ["Guilds"],
+  roleCreate: ["Guilds"],
+  roleDelete: ["Guilds"],
+  inviteCreate: ["GuildInvites"],
+  guildCreate: ["Guilds"],
+  guildDelete: ["Guilds"],
+  autoModerationActionExecution: ["AutoModerationExecution"],
+  autocomplete: [],
   buttonClick: [],
   selectMenu: [],
   modalSubmit: [],
@@ -120,6 +136,55 @@ export function inspectProject(project: LoadedProject, metas: readonly NodeMeta[
     }
   }
 
+  const byName = new Map<string, { file: string; sub: boolean }[]>();
+  const autocompleteIds = project.flows.flatMap(({ flow }) =>
+    flow.kind === "event" && flow.event === "autocomplete" ? [flow.customId] : [],
+  );
+  for (const { file, flow } of project.flows) {
+    if (flow.kind !== "command" || flow.command.type !== "chatInput") continue;
+    const list = byName.get(flow.command.name) ?? [];
+    list.push({ file, sub: Boolean(flow.command.subcommand) });
+    byName.set(flow.command.name, list);
+    const path = [flow.command.name, flow.command.group?.name, flow.command.subcommand?.name]
+      .filter(Boolean)
+      .join(".");
+    for (const o of flow.command.options) {
+      if (!o.autocomplete) continue;
+      const id = `${path}.${o.name}`;
+      if (!autocompleteIds.some((p) => matchesCustomId(p, id))) {
+        problems.push({
+          severity: "warning",
+          file,
+          code: "unhandled-autocomplete",
+          message: `Option ${o.name} uses autocomplete, but no autocomplete flow has the custom ID ${id}`,
+          params: { option: o.name, customId: id },
+        });
+      }
+    }
+  }
+  for (const [name, list] of byName) {
+    if (list.some((l) => l.sub) && list.some((l) => !l.sub)) {
+      for (const l of list.filter((x) => !x.sub)) {
+        problems.push({
+          severity: "error",
+          file: l.file,
+          code: "command-conflict",
+          message: `/${name} has subcommands in other files, so this flow needs a subcommand too`,
+          params: { name },
+        });
+      }
+    }
+    if (list.filter((l) => l.sub).length > 25) {
+      problems.push({
+        severity: "error",
+        file: list[0]!.file,
+        code: "command-conflict",
+        message: `/${name} has more than 25 subcommands`,
+        params: { name },
+      });
+    }
+  }
+
   for (const { file, flow } of project.flows) {
     const ids = new Set(flow.nodes.map((n) => n.id));
 
@@ -144,6 +209,16 @@ export function inspectProject(project: LoadedProject, metas: readonly NodeMeta[
           code: "needs-interaction",
           message: `"${meta.title}" needs a command, button, menu or form to answer`,
           params: { type: node.type },
+        });
+      }
+      if (meta.events && !(flow.kind === "event" && meta.events.includes(flow.event))) {
+        problems.push({
+          severity: "error",
+          file,
+          nodeId: node.id,
+          code: "wrong-event",
+          message: `"${meta.title}" only works in ${meta.events.join(", ")} flows`,
+          params: { type: node.type, events: meta.events.join(", ") },
         });
       }
       if (meta.contexts && !meta.contexts.includes(flow.kind)) {

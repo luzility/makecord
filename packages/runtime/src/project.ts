@@ -1,6 +1,8 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 import {
+  commandKey,
+  commandLabel,
   FLOW_FILE_SUFFIX,
   Flow,
   MESSAGE_FILE_SUFFIX,
@@ -100,15 +102,16 @@ export async function loadProject(dir: string): Promise<LoadedProject> {
       continue;
     }
     if (flow.kind === "command") {
-      const dup = commandNames.get(flow.command.name);
+      const key = commandKey(flow.command);
+      const dup = commandNames.get(key);
       if (dup) {
         problems.push({
           file,
-          message: `/${flow.command.name} is already defined in ${dup}`,
+          message: `${commandLabel(flow.command)} is already defined in ${dup}`,
         });
         continue;
       }
-      commandNames.set(flow.command.name, file);
+      commandNames.set(key, file);
     }
     flows.push({ file, flow });
   }

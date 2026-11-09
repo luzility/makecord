@@ -35,10 +35,24 @@ In the Project panel, right-click a file or folder to rename, duplicate or delet
 A command flow defines a slash command: its name, description and options. Pick the Start block, or click empty space on the canvas, and edit them in the Properties panel.
 
 - Names are lowercase, without spaces, up to 32 characters.
-- Up to 25 options, each with a type: `string`, `integer`, `number`, `boolean`, `user`, `channel` or `role`.
+- Up to 25 options, each with a type: text, whole number, number, yes/no, user, channel, role, user or role, or file. Numbers can have a min and max value, text a min and max length. A file option gives its URL.
 - Read an option's value in the flow as `{{options.name}}`. For `user`, `channel` and `role` options this is the ID.
 - `string`, `integer` and `number` options can have up to 25 **choices**. Discord then shows a list instead of a text box. Write one per line, or `Label = value` to store something other than the label.
 - **Who can use it** hides the command from members who lack the ticked permissions. Server admins can override this in **Server Settings › Integrations**.
+
+- **Can be used in DMs with the bot** makes the command work in direct messages too. By default commands only work in servers.
+
+### Subcommands
+
+Tick **This flow is a subcommand** to turn the flow into one part of a bigger command. Every flow with the same command name adds a subcommand, so `/config show` and `/config reset` can be two flows. A **group** adds one more level, like `/config role add`. The command description is shared, and each subcommand has its own description and options. A command can't mix a plain flow with subcommand flows, and the Problems panel says so.
+
+### User and message menus
+
+Switch the type to **User menu** or **Message menu** to add the command to the right-click menu, under **Apps**. These commands have a name that can contain spaces and capital letters, and no options. In the flow, `{{target.*}}` is the user that was clicked, or the author of the message, and `{{message.*}}` is the message.
+
+### Autocomplete
+
+Tick **Suggest values while typing** on a text or number option, then create an event flow for **When someone types in an autocomplete option**. Set its target to `command.option`, like `search.query`, or `command.subcommand.option` for subcommands. In the flow, `{{focused.value}}` is what the person typed so far, and the **Suggest Choices** block answers with up to 25 suggestions. Autocomplete flows have to answer within 3 seconds.
 
 The bot registers its commands when it starts and again whenever the set of commands changes.
 
@@ -55,6 +69,18 @@ An event flow runs when Discord sends the bot an event. Supported events:
 | `messageUpdate` | Someone edits a message | `GuildMessages` |
 | `messageDelete` | A message is deleted | `GuildMessages` |
 | `messageReactionAdd` | Someone adds a reaction | `GuildMessageReactions` |
+| `messageReactionRemove` | Someone removes a reaction | `GuildMessageReactions` |
+| `messagePollVoteAdd` | Someone votes in a poll | `GuildMessagePolls` |
+| `guildMemberUpdate` | A member's roles, nickname, boost or timeout changes | `GuildMembers` |
+| `guildBanAdd`, `guildBanRemove` | Someone is banned, or a ban is lifted | `GuildModeration` |
+| `voiceStateUpdate` | Someone joins, leaves, moves or mutes in voice | `GuildVoiceStates` |
+| `channelCreate`, `channelDelete` | A channel is created or deleted | `Guilds` |
+| `threadCreate` | A thread is created | `Guilds` |
+| `roleCreate`, `roleDelete` | A role is created or deleted | `Guilds` |
+| `inviteCreate` | An invite is created | `GuildInvites` |
+| `guildCreate`, `guildDelete` | The bot is added to, or removed from, a server | `Guilds` |
+| `autoModerationActionExecution` | AutoMod blocks or flags something | `AutoModerationExecution` |
+| `autocomplete` | Someone types in an option with autocomplete | — |
 | `buttonClick` | Someone clicks one of the bot's buttons | — |
 | `selectMenu` | Someone picks from one of the bot's menus | — |
 | `modalSubmit` | Someone submits a form opened with **Show Form** | — |
@@ -64,7 +90,7 @@ An event flow runs when Discord sends the bot an event. Supported events:
 
 ### Buttons, menus and forms
 
-Buttons, menus and forms carry a **custom ID** that you choose. Set the same ID on the event flow and it runs only for that component. End the ID with `*` to match everything that starts with it: `vote:*` catches `vote:yes` and `vote:no`, and `{{customId}}` tells you which one it was. Leave it empty to catch them all.
+Buttons, menus and forms carry a **custom ID** that you choose. Menus can list your own options, or let people pick members, roles, both, or channels; `{{values}}` holds the picked IDs. Set the same ID on the event flow and it runs only for that component. End the ID with `*` to match everything that starts with it: `vote:*` catches `vote:yes` and `vote:no`, and `{{customId}}` tells you which one it was. Leave it empty to catch them all.
 
 These flows can answer the person with **Reply**, **Defer Reply** and, for buttons and menus, **Show Form**. Discord expects an answer within 3 seconds, so put **Defer Reply** first when the flow does something slow. **Wait** does this for you when it waits longer than 2 seconds.
 

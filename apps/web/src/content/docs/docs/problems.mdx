@@ -13,6 +13,9 @@ Click a problem to open the flow and select the block.
 | `invalid-project` | Error | `makecord.json` is missing or invalid. | Fix the field named in the message. |
 | `unknown-node` | Error | A block's type isn't provided by any loaded plugin. | Install the plugin and add it to `plugins`, or delete the block. |
 | `wrong-context` | Error | A block is used in a kind of flow it doesn't support. | Use a different block. |
+| `wrong-event` | Error | A block only works for certain events, like **Suggest Choices** in autocomplete flows. | Move the block to a flow for that event. |
+| `command-conflict` | Error | Some flows for a command have subcommands and others don't, or there are more than 25 subcommands. | Give every flow of that command a subcommand, or rename the plain one. |
+| `unhandled-autocomplete` | Warning | An option uses autocomplete, but no autocomplete flow has its `command.option` target. | Create an autocomplete event flow with that target. |
 | `needs-interaction` | Error | A block that answers someone, like **Reply** or **Show Form**, is in a flow nobody can be answered in, such as a member joining. | Use **Send Message** or **Send DM** instead. |
 | `missing-message` | Error | A block uses a message design that doesn't exist. | Create the design in `messages/`, or pick another one. |
 | `unhandled-component` | Warning | A button or menu in a design has a custom ID that no event flow handles. | Add a button or menu event flow with that custom ID, or a pattern like `vote:*`. |

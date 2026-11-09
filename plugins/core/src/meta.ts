@@ -61,6 +61,7 @@ export const trigger = defineNodeMeta({
 
 export const reply = defineNodeMeta({
   type: "core.reply",
+  group: "interaction",
   title: "Reply",
   description: "Replies to the command, button, menu or form that started the flow.",
   category: "action",
@@ -87,6 +88,7 @@ export const reply = defineNodeMeta({
 
 export const deferReply = defineNodeMeta({
   type: "core.deferReply",
+  group: "interaction",
   title: "Defer Reply",
   description: "Tells Discord the answer is coming, for steps that take longer than 3 seconds.",
   category: "action",
@@ -105,6 +107,7 @@ export const deferReply = defineNodeMeta({
 
 export const sendMessage = defineNodeMeta({
   type: "core.sendMessage",
+  group: "messages",
   title: "Send Message",
   description: "Sends a message to a channel.",
   category: "action",
@@ -131,6 +134,7 @@ export const sendMessage = defineNodeMeta({
 
 export const sendDM = defineNodeMeta({
   type: "core.sendDM",
+  group: "messages",
   title: "Send DM",
   description: "Sends a direct message to a user. Fails if they don't accept DMs.",
   category: "action",
@@ -155,6 +159,7 @@ export const sendDM = defineNodeMeta({
 
 export const updateMessage = defineNodeMeta({
   type: "core.updateMessage",
+  group: "interaction",
   title: "Update Message",
   description:
     "Changes the message whose button or menu was used, like a vote count or a next page.",
@@ -178,6 +183,7 @@ export const updateMessage = defineNodeMeta({
 
 export const addReaction = defineNodeMeta({
   type: "core.addReaction",
+  group: "messages",
   title: "Add Reaction",
   description: "Reacts to a message with an emoji.",
   category: "action",
@@ -202,6 +208,7 @@ export const addReaction = defineNodeMeta({
 
 export const deleteMessage = defineNodeMeta({
   type: "core.deleteMessage",
+  group: "messages",
   title: "Delete Message",
   description:
     "Deletes a message. The bot needs the Manage Messages permission for other people's messages.",
@@ -222,6 +229,7 @@ export const deleteMessage = defineNodeMeta({
 
 export const addRole = defineNodeMeta({
   type: "core.addRole",
+  group: "members",
   title: "Add Role",
   description: "Gives a member a role. The bot needs the Manage Roles permission.",
   category: "action",
@@ -241,6 +249,7 @@ export const addRole = defineNodeMeta({
 
 export const removeRole = defineNodeMeta({
   type: "core.removeRole",
+  group: "members",
   title: "Remove Role",
   description: "Takes a role away from a member. The bot needs the Manage Roles permission.",
   category: "action",
@@ -260,6 +269,7 @@ export const removeRole = defineNodeMeta({
 
 export const kick = defineNodeMeta({
   type: "core.kick",
+  group: "members",
   title: "Kick Member",
   description: "Removes a member from the server. They can join again with an invite.",
   category: "action",
@@ -276,6 +286,7 @@ export const kick = defineNodeMeta({
 
 export const ban = defineNodeMeta({
   type: "core.ban",
+  group: "members",
   title: "Ban Member",
   description: "Bans a user from the server.",
   category: "action",
@@ -305,6 +316,7 @@ export const ban = defineNodeMeta({
 
 export const timeout = defineNodeMeta({
   type: "core.timeout",
+  group: "members",
   title: "Timeout Member",
   description: "Mutes a member for a while. Use 0 minutes to lift a timeout.",
   category: "action",
@@ -329,6 +341,7 @@ export const timeout = defineNodeMeta({
 
 export const showModal = defineNodeMeta({
   type: "core.showModal",
+  group: "interaction",
   title: "Show Form",
   description:
     "Opens a form (modal). Handle the answers in a Form submitted event flow with the same ID.",
@@ -665,6 +678,747 @@ export const log = defineNodeMeta({
   },
 });
 
+const channelId = (fallback = "{{channel.id}}") =>
+  z
+    .string()
+    .min(1)
+    .default(fallback)
+    .meta({ title: "Channel ID", description: "For example {{channel.id}}" });
+const channelIdTr = { title: "Kanal ID", description: "Örneğin {{channel.id}}" };
+const messageId = () =>
+  z
+    .string()
+    .min(1)
+    .default("{{message.id}}")
+    .meta({ title: "Message ID", description: "For example {{message.id}}" });
+const messageIdTr = { title: "Mesaj ID", description: "Örneğin {{message.id}}" };
+const roleId = () =>
+  line("Role ID", "Right-click a role with Developer Mode on to copy its ID").min(1);
+const roleIdTr = {
+  title: "Rol ID",
+  description: "Geliştirici Modu açıkken role sağ tıklayıp ID'sini kopyala",
+};
+
+export const replyToMessage = defineNodeMeta({
+  type: "core.replyToMessage",
+  group: "messages",
+  title: "Reply to Message",
+  description: "Replies to a message in its channel, like a member would. Works in message events.",
+  category: "action",
+  permissions: ["ViewChannel", "SendMessages", "ReadMessageHistory"],
+  fields: z
+    .object({
+      channelId: channelId(),
+      messageId: messageId(),
+      content: content(),
+      message: design(),
+      mention: z.boolean().default(true).meta({ title: "Ping the author" }),
+    })
+    .refine(contentOrDesign, contentOrDesignError),
+  locales: {
+    tr: {
+      title: "Mesaja Yanıt Ver",
+      description:
+        "Bir mesaja kendi kanalında, bir üye gibi yanıt verir. Mesaj event'lerinde çalışır.",
+      fields: {
+        channelId: channelIdTr,
+        messageId: messageIdTr,
+        content: contentTr,
+        message: designTr,
+        mention: { title: "Yazarı etiketle" },
+      },
+    },
+  },
+});
+
+export const editMessage = defineNodeMeta({
+  type: "core.editMessage",
+  group: "messages",
+  title: "Edit Message",
+  description: "Changes a message the bot sent earlier.",
+  category: "action",
+  fields: z
+    .object({
+      channelId: channelId(),
+      messageId: messageId(),
+      content: content(),
+      message: design(),
+    })
+    .refine(contentOrDesign, contentOrDesignError),
+  locales: {
+    tr: {
+      title: "Mesajı Düzenle",
+      description: "Botun daha önce gönderdiği bir mesajı değiştirir.",
+      fields: {
+        channelId: channelIdTr,
+        messageId: messageIdTr,
+        content: contentTr,
+        message: designTr,
+      },
+    },
+  },
+});
+
+export const pinMessage = defineNodeMeta({
+  type: "core.pinMessage",
+  group: "messages",
+  title: "Pin Message",
+  description: "Pins or unpins a message.",
+  category: "action",
+  permissions: ["ManageMessages", "ReadMessageHistory"],
+  fields: z.object({
+    action: z.enum(["pin", "unpin"]).default("pin").meta({ title: "Action" }),
+    channelId: channelId(),
+    messageId: messageId(),
+  }),
+  locales: {
+    tr: {
+      title: "Mesajı Sabitle",
+      description: "Bir mesajı sabitler ya da sabitlemeyi kaldırır.",
+      fields: { action: { title: "İşlem" }, channelId: channelIdTr, messageId: messageIdTr },
+    },
+  },
+});
+
+export const purgeMessages = defineNodeMeta({
+  type: "core.purgeMessages",
+  group: "messages",
+  title: "Delete Recent Messages",
+  description:
+    "Deletes up to 100 recent messages in a channel. Messages older than 14 days are skipped.",
+  category: "action",
+  permissions: ["ManageMessages", "ReadMessageHistory"],
+  fields: z.object({
+    channelId: channelId(),
+    amount: line("How many", "1 to 100").default("10"),
+    fromUser: line("Only from user ID", "Leave empty to delete from everyone").default(""),
+    variable: variable("deleted"),
+  }),
+  locales: {
+    tr: {
+      title: "Son Mesajları Sil",
+      description: "Bir kanaldaki son 100 mesaja kadar siler. 14 günden eski mesajlar atlanır.",
+      fields: {
+        channelId: channelIdTr,
+        amount: { title: "Kaç tane", description: "1 ile 100 arası" },
+        fromUser: {
+          title: "Sadece şu kullanıcıdan",
+          description: "Herkesten silmek için boş bırak",
+        },
+        variable: variableTr,
+      },
+    },
+  },
+});
+
+export const getMessage = defineNodeMeta({
+  type: "core.getMessage",
+  title: "Get Message",
+  description: "Loads a message and saves its text, author and link in a variable.",
+  category: "data",
+  outputs: ["next", "notFound"],
+  fields: z.object({
+    channelId: channelId(),
+    messageId: messageId(),
+    variable: variable("msg"),
+  }),
+  locales: {
+    tr: {
+      title: "Mesajı Getir",
+      description: "Bir mesajı yükler, metnini, yazarını ve linkini bir değişkene kaydeder.",
+      fields: { channelId: channelIdTr, messageId: messageIdTr, variable: variableTr },
+      outputs: { next: "bulundu", notFound: "bulunamadı" },
+    },
+  },
+});
+
+export const removeReactions = defineNodeMeta({
+  type: "core.removeReactions",
+  group: "messages",
+  title: "Remove Reactions",
+  description: "Removes reactions from a message: all of them, one emoji, or one person's.",
+  category: "action",
+  permissions: ["ManageMessages", "ReadMessageHistory"],
+  fields: z.object({
+    channelId: channelId(),
+    messageId: messageId(),
+    emoji: line("Emoji", "Leave empty to remove every reaction").default(""),
+    userId: line("Only from user ID", "With an emoji, removes just this person's reaction").default(
+      "",
+    ),
+  }),
+  locales: {
+    tr: {
+      title: "Tepkileri Kaldır",
+      description: "Bir mesajdaki tepkileri kaldırır: hepsini, bir emojiyi ya da bir kişininkini.",
+      fields: {
+        channelId: channelIdTr,
+        messageId: messageIdTr,
+        emoji: { title: "Emoji", description: "Tüm tepkileri kaldırmak için boş bırak" },
+        userId: {
+          title: "Sadece şu kullanıcıdan",
+          description: "Bir emojiyle birlikte sadece bu kişinin tepkisini kaldırır",
+        },
+      },
+    },
+  },
+});
+
+export const createThread = defineNodeMeta({
+  type: "core.createThread",
+  group: "messages",
+  title: "Create Thread",
+  description: "Starts a thread in a channel, or on a message if you give one.",
+  category: "action",
+  permissions: ["CreatePublicThreads", "SendMessagesInThreads"],
+  fields: z.object({
+    channelId: channelId(),
+    messageId: line("On message ID", "Optional. For example {{message.id}}").default(""),
+    name: line("Thread name").min(1).max(100),
+    archiveAfter: z
+      .enum(["60", "1440", "4320", "10080"])
+      .default("1440")
+      .meta({ title: "Hide after inactivity (minutes)" }),
+    variable: variable("threadId"),
+  }),
+  locales: {
+    tr: {
+      title: "Thread Oluştur",
+      description: "Bir kanalda, verilirse bir mesajın üzerinde thread başlatır.",
+      fields: {
+        channelId: channelIdTr,
+        messageId: {
+          title: "Mesaj ID'si üzerinde",
+          description: "İsteğe bağlı. Örneğin {{message.id}}",
+        },
+        name: { title: "Thread adı" },
+        archiveAfter: { title: "Hareketsizlikten sonra gizle (dakika)" },
+        variable: variableTr,
+      },
+    },
+  },
+});
+
+export const sendPoll = defineNodeMeta({
+  type: "core.sendPoll",
+  group: "messages",
+  title: "Send Poll",
+  description: "Posts a Discord poll in a channel.",
+  category: "action",
+  permissions: ["ViewChannel", "SendMessages", "SendPolls"],
+  fields: z.object({
+    channelId: channelId(),
+    question: line("Question").min(1).max(300),
+    answers: text("Answers", "One per line, up to 10. Start a line with an emoji to show it").min(
+      1,
+    ),
+    hours: line("Open for (hours)", "1 to 768").default("24"),
+    multiple: z.boolean().default(false).meta({ title: "Allow more than one answer" }),
+  }),
+  locales: {
+    tr: {
+      title: "Anket Gönder",
+      description: "Bir kanala Discord anketi gönderir.",
+      fields: {
+        channelId: channelIdTr,
+        question: { title: "Soru" },
+        answers: {
+          title: "Cevaplar",
+          description: "Her satıra bir tane, en fazla 10. Göstermek için satıra emojiyle başla",
+        },
+        hours: { title: "Açık kalma süresi (saat)", description: "1 ile 768 arası" },
+        multiple: { title: "Birden fazla cevaba izin ver" },
+      },
+    },
+  },
+});
+
+export const getMember = defineNodeMeta({
+  type: "core.getMember",
+  title: "Get Member",
+  description: "Loads a server member and saves their name, roles and dates in a variable.",
+  category: "data",
+  outputs: ["next", "notFound"],
+  fields: z.object({ userId: userId(), variable: variable("member") }),
+  locales: {
+    tr: {
+      title: "Üyeyi Getir",
+      description:
+        "Bir sunucu üyesini yükler; adını, rollerini ve tarihlerini bir değişkene kaydeder.",
+      fields: { userId: userIdTr, variable: variableTr },
+      outputs: { next: "bulundu", notFound: "bulunamadı" },
+    },
+  },
+});
+
+export const hasRole = defineNodeMeta({
+  type: "core.hasRole",
+  title: "Has Role",
+  description: "Checks whether a member has a role.",
+  category: "logic",
+  outputs: ["true", "false"],
+  fields: z.object({ userId: userId(), roleId: roleId() }),
+  locales: {
+    tr: {
+      title: "Rolü Var mı",
+      description: "Bir üyenin bir role sahip olup olmadığını kontrol eder.",
+      fields: { userId: userIdTr, roleId: roleIdTr },
+      outputs: { true: "evet", false: "hayır" },
+    },
+  },
+});
+
+export const MEMBER_PERMISSIONS = [
+  "Administrator",
+  "ManageGuild",
+  "ManageRoles",
+  "ManageChannels",
+  "ManageMessages",
+  "KickMembers",
+  "BanMembers",
+  "ModerateMembers",
+  "ManageNicknames",
+  "MentionEveryone",
+  "MoveMembers",
+  "ManageThreads",
+] as const;
+
+export const hasPermission = defineNodeMeta({
+  type: "core.hasPermission",
+  title: "Has Permission",
+  description: "Checks whether a member has a permission in the server.",
+  category: "logic",
+  outputs: ["true", "false"],
+  fields: z.object({
+    userId: userId(),
+    permission: z.enum(MEMBER_PERMISSIONS).default("ManageMessages").meta({ title: "Permission" }),
+  }),
+  locales: {
+    tr: {
+      title: "Yetkisi Var mı",
+      description: "Bir üyenin sunucuda bir yetkiye sahip olup olmadığını kontrol eder.",
+      fields: { userId: userIdTr, permission: { title: "Yetki" } },
+      outputs: { true: "evet", false: "hayır" },
+    },
+  },
+});
+
+export const setNickname = defineNodeMeta({
+  type: "core.setNickname",
+  group: "members",
+  title: "Set Nickname",
+  description: "Changes a member's nickname in the server. Leave it empty to reset.",
+  category: "action",
+  permissions: ["ManageNicknames"],
+  fields: z.object({
+    userId: userId(),
+    nickname: line("Nickname", "Up to 32 characters").max(32).default(""),
+    reason: reason(),
+  }),
+  locales: {
+    tr: {
+      title: "Takma Ad Ver",
+      description: "Bir üyenin sunucudaki takma adını değiştirir. Sıfırlamak için boş bırak.",
+      fields: {
+        userId: userIdTr,
+        nickname: { title: "Takma ad", description: "En fazla 32 karakter" },
+        reason: reasonTr,
+      },
+    },
+  },
+});
+
+export const unban = defineNodeMeta({
+  type: "core.unban",
+  group: "members",
+  title: "Unban Member",
+  description: "Lifts a ban so the user can join again.",
+  category: "action",
+  permissions: ["BanMembers"],
+  fields: z.object({ userId: line("User ID").min(1), reason: reason() }),
+  locales: {
+    tr: {
+      title: "Yasağı Kaldır",
+      description: "Bir yasağı kaldırır, kullanıcı tekrar katılabilir.",
+      fields: { userId: { title: "Kullanıcı ID" }, reason: reasonTr },
+    },
+  },
+});
+
+export const moveVoice = defineNodeMeta({
+  type: "core.moveVoice",
+  group: "members",
+  title: "Move in Voice",
+  description: "Moves a member to another voice channel, or disconnects them.",
+  category: "action",
+  permissions: ["MoveMembers"],
+  fields: z.object({
+    userId: userId(),
+    channelId: line("Voice channel ID", "Leave empty to disconnect").default(""),
+  }),
+  locales: {
+    tr: {
+      title: "Seste Taşı",
+      description: "Bir üyeyi başka bir ses kanalına taşır ya da bağlantısını keser.",
+      fields: {
+        userId: userIdTr,
+        channelId: { title: "Ses kanalı ID", description: "Bağlantıyı kesmek için boş bırak" },
+      },
+    },
+  },
+});
+
+export const createRole = defineNodeMeta({
+  type: "core.createRole",
+  group: "server",
+  title: "Create Role",
+  description: "Creates a role in the server.",
+  category: "action",
+  permissions: ["ManageRoles"],
+  fields: z.object({
+    name: line("Name").min(1).max(100),
+    color: line("Color", "Hex, like #5865f2. Optional").default(""),
+    hoist: z.boolean().default(false).meta({ title: "Show members separately" }),
+    mentionable: z.boolean().default(false).meta({ title: "Anyone can mention it" }),
+    variable: variable("roleId"),
+  }),
+  locales: {
+    tr: {
+      title: "Rol Oluştur",
+      description: "Sunucuda bir rol oluşturur.",
+      fields: {
+        name: { title: "Ad" },
+        color: { title: "Renk", description: "#5865f2 gibi hex. İsteğe bağlı" },
+        hoist: { title: "Üyeleri ayrı göster" },
+        mentionable: { title: "Herkes etiketleyebilir" },
+        variable: variableTr,
+      },
+    },
+  },
+});
+
+export const deleteRole = defineNodeMeta({
+  type: "core.deleteRole",
+  group: "server",
+  title: "Delete Role",
+  description: "Deletes a role from the server.",
+  category: "action",
+  permissions: ["ManageRoles"],
+  fields: z.object({ roleId: roleId(), reason: reason() }),
+  locales: {
+    tr: {
+      title: "Rolü Sil",
+      description: "Sunucudan bir rolü siler.",
+      fields: { roleId: roleIdTr, reason: reasonTr },
+    },
+  },
+});
+
+export const createChannel = defineNodeMeta({
+  type: "core.createChannel",
+  group: "server",
+  title: "Create Channel",
+  description: "Creates a text, voice, announcement or forum channel, or a category.",
+  category: "action",
+  permissions: ["ManageChannels"],
+  fields: z.object({
+    name: line("Name").min(1).max(100),
+    kind: z
+      .enum(["text", "voice", "category", "announcement", "forum", "stage"])
+      .default("text")
+      .meta({ title: "Type" }),
+    parentId: line("Category ID", "Optional").default(""),
+    topic: line("Topic", "Optional").default(""),
+    private: z.boolean().default(false).meta({ title: "Hide from @everyone" }),
+    variable: variable("channelId"),
+  }),
+  locales: {
+    tr: {
+      title: "Kanal Oluştur",
+      description: "Metin, ses, duyuru veya forum kanalı ya da kategori oluşturur.",
+      fields: {
+        name: { title: "Ad" },
+        kind: { title: "Tür" },
+        parentId: { title: "Kategori ID", description: "İsteğe bağlı" },
+        topic: { title: "Konu", description: "İsteğe bağlı" },
+        private: { title: "@everyone'dan gizle" },
+        variable: variableTr,
+      },
+    },
+  },
+});
+
+export const deleteChannel = defineNodeMeta({
+  type: "core.deleteChannel",
+  group: "server",
+  title: "Delete Channel",
+  description: "Deletes a channel or thread.",
+  category: "action",
+  permissions: ["ManageChannels"],
+  fields: z.object({ channelId: channelId(), reason: reason() }),
+  locales: {
+    tr: {
+      title: "Kanalı Sil",
+      description: "Bir kanalı ya da thread'i siler.",
+      fields: { channelId: channelIdTr, reason: reasonTr },
+    },
+  },
+});
+
+export const editChannel = defineNodeMeta({
+  type: "core.editChannel",
+  group: "server",
+  title: "Edit Channel",
+  description: "Renames a channel or changes its topic or slowmode. Empty fields stay as they are.",
+  category: "action",
+  permissions: ["ManageChannels"],
+  fields: z.object({
+    channelId: channelId(),
+    name: line("New name").default(""),
+    topic: line("New topic").default(""),
+    slowmode: line("Slowmode (seconds)", "0 to 21600. Empty keeps it").default(""),
+  }),
+  locales: {
+    tr: {
+      title: "Kanalı Düzenle",
+      description:
+        "Bir kanalın adını, konusunu veya yavaş modunu değiştirir. Boş alanlar olduğu gibi kalır.",
+      fields: {
+        channelId: channelIdTr,
+        name: { title: "Yeni ad" },
+        topic: { title: "Yeni konu" },
+        slowmode: { title: "Yavaş mod (saniye)", description: "0 ile 21600 arası. Boşsa değişmez" },
+      },
+    },
+  },
+});
+
+export const lockChannel = defineNodeMeta({
+  type: "core.lockChannel",
+  group: "server",
+  title: "Lock Channel",
+  description: "Stops @everyone from sending messages in a channel, or lets them again.",
+  category: "action",
+  permissions: ["ManageChannels", "ManageRoles"],
+  fields: z.object({
+    action: z.enum(["lock", "unlock"]).default("lock").meta({ title: "Action" }),
+    channelId: channelId(),
+    reason: reason(),
+  }),
+  locales: {
+    tr: {
+      title: "Kanalı Kilitle",
+      description: "@everyone'ın bir kanalda mesaj göndermesini engeller ya da tekrar izin verir.",
+      fields: { action: { title: "İşlem" }, channelId: channelIdTr, reason: reasonTr },
+    },
+  },
+});
+
+export const createInvite = defineNodeMeta({
+  type: "core.createInvite",
+  group: "server",
+  title: "Create Invite",
+  description: "Creates an invite link for a channel.",
+  category: "action",
+  permissions: ["CreateInstantInvite"],
+  fields: z.object({
+    channelId: channelId(),
+    hours: line("Expires after (hours)", "0 never expires").default("24"),
+    maxUses: line("Max uses", "0 is unlimited").default("0"),
+    variable: variable("invite"),
+  }),
+  locales: {
+    tr: {
+      title: "Davet Oluştur",
+      description: "Bir kanal için davet linki oluşturur.",
+      fields: {
+        channelId: channelIdTr,
+        hours: { title: "Süre (saat)", description: "0 süresiz" },
+        maxUses: { title: "En fazla kullanım", description: "0 sınırsız" },
+        variable: variableTr,
+      },
+    },
+  },
+});
+
+export const setPresence = defineNodeMeta({
+  type: "core.setPresence",
+  group: "server",
+  title: "Set Bot Status",
+  description: "Sets the bot's online status and the activity under its name.",
+  category: "action",
+  fields: z.object({
+    status: z
+      .enum(["online", "idle", "dnd", "invisible"])
+      .default("online")
+      .meta({ title: "Status" }),
+    activity: z
+      .enum(["none", "custom", "playing", "listening", "watching", "competing"])
+      .default("custom")
+      .meta({ title: "Activity" }),
+    text: line("Text", "For example {{client.servers}} servers").default(""),
+  }),
+  locales: {
+    tr: {
+      title: "Bot Durumunu Ayarla",
+      description: "Botun çevrimiçi durumunu ve adının altındaki etkinliği ayarlar.",
+      fields: {
+        status: { title: "Durum" },
+        activity: { title: "Etkinlik" },
+        text: { title: "Metin", description: "Örneğin {{client.servers}} sunucu" },
+      },
+    },
+  },
+});
+
+export const forEach = defineNodeMeta({
+  type: "core.forEach",
+  title: "For Each",
+  description: "Runs the loop branch once for every item in a list, then continues from done.",
+  category: "logic",
+  outputs: ["loop", "done"],
+  fields: z.object({
+    list: line("List", "A variable holding a list, like {{vars.items}}, or lines of text").min(1),
+    itemVariable: variable("item"),
+    indexVariable: variable("index"),
+  }),
+  locales: {
+    tr: {
+      title: "Her Biri İçin",
+      description:
+        "Listedeki her öğe için loop dalını bir kez çalıştırır, sonra done'dan devam eder.",
+      fields: {
+        list: {
+          title: "Liste",
+          description: "{{vars.items}} gibi liste tutan bir değişken ya da metin satırları",
+        },
+        itemVariable: { title: "Öğe değişkeni", description: "Sonra {{vars.item}} olarak okunur" },
+        indexVariable: { title: "Sıra değişkeni", description: "1'den başlar" },
+      },
+      outputs: { loop: "her biri", done: "bitti" },
+    },
+  },
+});
+
+export const cooldown = defineNodeMeta({
+  type: "core.cooldown",
+  title: "Cooldown",
+  description: "Lets a flow continue only once per period for each key, like per user.",
+  category: "logic",
+  outputs: ["next", "cooling"],
+  fields: z.object({
+    seconds: line("Seconds").default("10"),
+    key: line("Per", "{{user.id}} limits each person separately").default("{{user.id}}"),
+    variable: variable("remaining"),
+  }),
+  locales: {
+    tr: {
+      title: "Bekleme Süresi",
+      description:
+        "Bir akışın her anahtar için (örneğin kullanıcı başına) belli sürede bir kez devam etmesine izin verir.",
+      fields: {
+        seconds: { title: "Saniye" },
+        key: { title: "Kime göre", description: "{{user.id}} her kişiyi ayrı sınırlar" },
+        variable: {
+          title: "Kalan süre değişkeni",
+          description: "Saniye olarak, {{vars.remaining}}",
+        },
+      },
+      outputs: { next: "devam", cooling: "beklemede" },
+    },
+  },
+});
+
+export const timestamp = defineNodeMeta({
+  type: "core.timestamp",
+  title: "Timestamp",
+  description: 'Makes a time Discord shows in each reader\'s own time zone, like "in 2 hours".',
+  category: "data",
+  fields: z.object({
+    time: line("Time", "now, an ISO date like {{member.joinedAt}}, or a Unix time").default("now"),
+    addMinutes: line("Add minutes", "Can be negative").default("0"),
+    style: z
+      .enum([
+        "relative",
+        "shortTime",
+        "longTime",
+        "shortDate",
+        "longDate",
+        "shortDateTime",
+        "longDateTime",
+      ])
+      .default("relative")
+      .meta({ title: "Style" }),
+    variable: variable("time"),
+  }),
+  locales: {
+    tr: {
+      title: "Zaman Damgası",
+      description:
+        'Discord\'un her okuyucuya kendi saat diliminde gösterdiği bir zaman üretir, örneğin "2 saat içinde".',
+      fields: {
+        time: {
+          title: "Zaman",
+          description: "now, {{member.joinedAt}} gibi ISO tarih ya da Unix zamanı",
+        },
+        addMinutes: { title: "Dakika ekle", description: "Negatif olabilir" },
+        style: { title: "Biçim" },
+        variable: variableTr,
+      },
+    },
+  },
+});
+
+export const randomItem = defineNodeMeta({
+  type: "core.randomItem",
+  title: "Random Item",
+  description: "Picks one item from a list at random.",
+  category: "data",
+  fields: z.object({
+    list: text("List", "One per line, or a variable holding a list").min(1),
+    variable: variable("pick"),
+  }),
+  locales: {
+    tr: {
+      title: "Rastgele Öğe",
+      description: "Bir listeden rastgele bir öğe seçer.",
+      fields: {
+        list: { title: "Liste", description: "Her satıra bir tane ya da liste tutan bir değişken" },
+        variable: variableTr,
+      },
+    },
+  },
+});
+
+export const suggest = defineNodeMeta({
+  type: "core.suggest",
+  group: "interaction",
+  title: "Suggest Choices",
+  description: "Answers autocomplete with up to 25 suggestions for what the person is typing.",
+  category: "action",
+  events: ["autocomplete"],
+  fields: z.object({
+    choices: text("Choices", "One per line as Label | value, or a variable holding a list").min(1),
+    filter: z
+      .boolean()
+      .default(true)
+      .meta({ title: "Only show choices that match what was typed" }),
+  }),
+  locales: {
+    tr: {
+      title: "Öneri Göster",
+      description: "Autocomplete'e, kişinin yazdığına göre en fazla 25 öneriyle cevap verir.",
+      fields: {
+        choices: {
+          title: "Seçenekler",
+          description: "Her satıra Etiket | değer ya da liste tutan bir değişken",
+        },
+        filter: { title: "Sadece yazılanla eşleşenleri göster" },
+      },
+    },
+  },
+});
+
 export const coreNodeMetas = [
   trigger,
   reply,
@@ -693,4 +1447,31 @@ export const coreNodeMetas = [
   storeIncrement,
   storeDelete,
   log,
+  replyToMessage,
+  editMessage,
+  pinMessage,
+  purgeMessages,
+  getMessage,
+  removeReactions,
+  createThread,
+  sendPoll,
+  getMember,
+  hasRole,
+  hasPermission,
+  setNickname,
+  unban,
+  moveVoice,
+  createRole,
+  deleteRole,
+  createChannel,
+  deleteChannel,
+  editChannel,
+  lockChannel,
+  createInvite,
+  setPresence,
+  forEach,
+  cooldown,
+  timestamp,
+  randomItem,
+  suggest,
 ];

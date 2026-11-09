@@ -85,7 +85,10 @@ function Select({ s }: { s: MessageSelect }) {
       )}
     >
       <span className={picked.length ? "text-dc-text" : "text-dc-muted"}>
-        {picked.length ? picked.join(", ") : s.placeholder || "Make a selection"}
+        {picked.length
+          ? picked.join(", ")
+          : s.placeholder ||
+            (s.menuType === "string" ? "Make a selection" : `Select ${s.menuType}`)}
       </span>
       <ChevronDown size={18} className="text-dc-text" />
     </div>

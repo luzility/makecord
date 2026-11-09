@@ -2,6 +2,7 @@ import {
   ButtonStyle,
   type MessageButton,
   type MessageSelect,
+  SelectMenuType,
   type SelectOption,
 } from "@makecord/spec";
 import { ChevronDown, ChevronRight, ChevronUp, Plus, Trash2, X } from "lucide-react";
@@ -326,18 +327,33 @@ export function SelectForm({
           />
         </Field>
       </div>
-      <Field label={t("message.options")} hint={t("message.optionsHint")}>
-        <textarea
-          rows={4}
-          value={text}
-          onChange={(e) => {
-            const options = parseOptions(e.target.value);
-            setText(e.target.value, options);
-            set({ options });
-          }}
-          className={areaCls}
-        />
+      <Field label={t("message.menuType")}>
+        <select
+          className={selectCls}
+          value={value.menuType}
+          onChange={(e) => set({ menuType: e.target.value as MessageSelect["menuType"] })}
+        >
+          {SelectMenuType.options.map((m) => (
+            <option key={m} value={m}>
+              {t(`message.menuTypes.${m}`)}
+            </option>
+          ))}
+        </select>
       </Field>
+      {value.menuType === "string" && (
+        <Field label={t("message.options")} hint={t("message.optionsHint")}>
+          <textarea
+            rows={4}
+            value={text}
+            onChange={(e) => {
+              const options = parseOptions(e.target.value);
+              setText(e.target.value, options);
+              set({ options });
+            }}
+            className={areaCls}
+          />
+        </Field>
+      )}
       <div className="grid grid-cols-2 gap-2">
         <Field label={t("message.minValues")}>
           <Input

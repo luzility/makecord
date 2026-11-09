@@ -35,21 +35,29 @@ export const SelectOption = z.object({
 });
 export type SelectOption = z.infer<typeof SelectOption>;
 
+export const SelectMenuType = z.enum(["string", "user", "role", "mentionable", "channel"]);
+export type SelectMenuType = z.infer<typeof SelectMenuType>;
+
 export const MessageSelect = z
   .object({
     type: z.literal("select"),
+    menuType: SelectMenuType.default("string"),
     customId: z.string().min(1).max(100),
     placeholder: z.string().max(150).optional(),
     minValues: z.number().int().min(0).max(25).optional(),
     maxValues: z.number().int().min(1).max(25).optional(),
     disabled: z.boolean().optional(),
-    options: z.array(SelectOption).min(1).max(25),
+    options: z.array(SelectOption).max(25).default([]),
+  })
+  .refine((s) => s.menuType !== "string" || s.options.length > 0, {
+    message: "A menu of your own options needs at least one option",
+    path: ["options"],
   })
   .refine((s) => (s.minValues ?? 1) <= (s.maxValues ?? 1), {
     message: "Min picks can't be more than max picks",
     path: ["minValues"],
   })
-  .refine((s) => (s.maxValues ?? 1) <= s.options.length, {
+  .refine((s) => s.menuType !== "string" || (s.maxValues ?? 1) <= s.options.length, {
     message: "Max picks can't be more than the number of options",
     path: ["maxValues"],
   });

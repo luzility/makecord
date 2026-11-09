@@ -10,6 +10,8 @@ export interface NodeDescriptor {
   contexts?: FlowKind[];
   needsInteraction?: boolean;
   permissions?: string[];
+  events?: string[];
+  group?: string;
   locales?: Record<string, NodeLocale>;
   fields: Record<string, unknown>;
   plugin: string;
@@ -25,6 +27,8 @@ export function describeNode(meta: NodeMeta, plugin: string): NodeDescriptor {
     contexts: meta.contexts ? [...meta.contexts] : undefined,
     needsInteraction: meta.needsInteraction,
     permissions: meta.permissions ? [...meta.permissions] : undefined,
+    events: meta.events ? [...meta.events] : undefined,
+    group: meta.group,
     locales: meta.locales ? { ...meta.locales } : undefined,
     fields: z.toJSONSchema(meta.fields, { io: "input", unrepresentable: "any" }) as Record<
       string,
