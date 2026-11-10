@@ -308,8 +308,8 @@ function ScheduleField({ path, schedule }: { path: string; schedule: Schedule | 
 export function PropertiesPanel() {
   const { t } = useT();
   useNodes();
-  const selection = useStore((s) => s.selection);
   const activePath = useStore((s) => s.activePath);
+  const selection = useStore((s) => (s.selection?.path === s.activePath ? s.selection : null));
   const docs = useStore((s) => s.docs);
   const select = useStore((s) => s.select);
 
@@ -330,7 +330,7 @@ export function PropertiesPanel() {
       );
     }
   }
-  const path = selection?.path ?? activePath;
+  const path = activePath;
   const flow = path ? docs[path]?.flow : undefined;
   if (path && flow) {
     return (
