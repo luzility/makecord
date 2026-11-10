@@ -82,8 +82,17 @@ npm start               # or: docker compose up -d
 
 ## Getting started
 
-> [!NOTE]
-> Makecord hasn't had its first release yet. Until then, run the IDE from source. The runtime isn't on npm yet either, so `npm install` inside a project only works once it's published.
+Download the app for your system from [Releases](https://github.com/luzility/makecord/releases):
+
+| System  | File                                                | Notes                                                     |
+| ------- | --------------------------------------------------- | --------------------------------------------------------- |
+| Windows | `Makecord-<version>-win-x64.exe`                    | Updates itself                                            |
+| Linux   | `.AppImage` or `.deb`                               | The AppImage updates itself and needs FUSE 2 (`libfuse2`) |
+| macOS   | `.dmg` for Apple Silicon (`arm64`) or Intel (`x64`) | Not signed yet: open it once with right-click › Open      |
+
+Then choose **New project**, add your bot token under **Secrets**, invite the bot with **Run › Invite bot to a server** and press **Run**. The [first bot guide](https://makecord.luzili.tech/docs/first-bot/) walks through it step by step.
+
+### Running from source
 
 You need Node 22.12 or newer and pnpm 12.
 
@@ -93,8 +102,6 @@ cd makecord
 pnpm install
 pnpm dev:desktop
 ```
-
-Then choose **New project**, add your bot token under **Secrets**, invite the bot with **Run › Invite bot to a server** and press **Run**. The [first bot guide](apps/web/src/content/docs/docs/first-bot.mdx) walks through it step by step.
 
 ## Documentation
 

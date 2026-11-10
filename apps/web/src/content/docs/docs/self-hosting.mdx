@@ -9,10 +9,6 @@ The IDE runs your bot only while it's open. To keep the bot online, copy the pro
 
 A project is ready to deploy as it is: it already has a `package.json`, a `Dockerfile` and a `docker-compose.yml`.
 
-<Aside type="caution" title="Not published yet">
-  `@makecord/runtime` isn't on npm yet, so `npm install` on a server will fail until the first release. This page describes how deployment works once it is.
-</Aside>
-
 ## Before you deploy
 
 - Remove `devGuildId` from `makecord.json` if the bot should work in every server. Global commands can take a while to show up in Discord.

@@ -3,7 +3,7 @@ title: Writing plugins
 description: Add your own blocks with the plugin SDK.
 ---
 
-import { Aside, Steps } from "@astrojs/starlight/components";
+import { Steps } from "@astrojs/starlight/components";
 
 A plugin is an npm package that adds blocks. The built-in blocks are a plugin too, so yours work the same way.
 
@@ -157,7 +157,3 @@ By hand, it's the same two steps:
 </Steps>
 
 If a plugin can't be loaded, the Problems panel says why.
-
-<Aside type="caution">
-  `@makecord/runtime` isn't published to npm yet, so `npm install` in a project fails until the first release. This also affects installing plugins from the IDE.
-</Aside>
