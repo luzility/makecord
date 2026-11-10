@@ -547,6 +547,14 @@ export const tr: Messages = {
     language: "Dili değiştir: %{lang}",
   },
   newFlow: {
+    preset: "Hazır şablon",
+    presets: {
+      blank: "Boş",
+      announcement: "Duyuru",
+      rules: "Kurallar",
+      welcome: "Karşılama kartı",
+      choice: "Evet / hayır butonları",
+    },
     title: "Yeni",
     command: "Slash komutu",
     event: "Event",

@@ -6,7 +6,7 @@ import {
   messageFileOf,
 } from "@makecord/spec";
 import { useState } from "react";
-import { newMessage } from "@/editors/message/model";
+import { PRESET_IDS, type PresetId, presetMessage } from "@/editors/message/presets";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import { openFile } from "@/lib/dock";
@@ -30,7 +30,8 @@ async function freePath(base: string) {
 }
 
 export function NewFlowDialog() {
-  const { t } = useT();
+  const { t, locale } = useT();
+  const [preset, setPreset] = useState<PresetId>("blank");
   const set = useStore((s) => s.set);
   const initial = useStore((s) => s.newFlowOpen);
   const [kind, setKind] = useState<"command" | "event" | "function" | "message">(
@@ -75,7 +76,7 @@ export function NewFlowDialog() {
       kind === "function"
         ? newFunctionFlow(name, "")
         : kind === "message"
-          ? newMessage(messageKind, t("templates.messageText"))
+          ? presetMessage(preset, messageKind, locale, t("templates.messageText"))
           : kind === "command"
             ? newCommandFlow(
                 name.trim(),
@@ -145,6 +146,13 @@ export function NewFlowDialog() {
                   className="h-7 flex-1 bg-transparent px-1 font-mono text-label outline-none focus-visible:outline-none placeholder:text-faint"
                 />
               </div>
+            </Field>
+            <Field label={t("newFlow.preset")}>
+              <Select
+                value={preset}
+                options={PRESET_IDS.map((id) => ({ value: id, label: t(`newFlow.presets.${id}`) }))}
+                onChange={setPreset}
+              />
             </Field>
             <Field label={t("message.format")} hint={t("newFlow.formatHint")}>
               <Select

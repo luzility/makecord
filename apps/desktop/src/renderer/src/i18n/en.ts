@@ -544,6 +544,14 @@ export const en = {
     language: "Switch language to %{lang}",
   },
   newFlow: {
+    preset: "Start from",
+    presets: {
+      blank: "Empty",
+      announcement: "Announcement",
+      rules: "Rules",
+      welcome: "Welcome card",
+      choice: "Yes or no buttons",
+    },
     title: "New",
     command: "Slash command",
     event: "Event",
