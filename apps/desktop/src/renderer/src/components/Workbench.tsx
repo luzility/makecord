@@ -24,8 +24,10 @@ import { useStore } from "@/lib/store";
 import { sanitizeTools } from "@/lib/tools";
 import { EditorPanel } from "@/panels/EditorPanel";
 import { StartPanel } from "@/panels/StartPanel";
+import { FindInFiles } from "./FindInFiles";
 import { InviteDialog } from "./InviteDialog";
 import { NewFlowDialog } from "./NewFlowDialog";
+import { RecentFiles } from "./RecentFiles";
 import { SearchEverywhere } from "./SearchEverywhere";
 import { SecretsDialog } from "./SecretsDialog";
 import { StatusBar } from "./StatusBar";
@@ -103,8 +105,15 @@ async function buildLayout(dock: DockviewApi): Promise<LayoutSaver> {
   const trackActive = () => {
     const panel = dock.activePanel;
     const path = panel?.id.startsWith("editor:") ? panel.id.slice("editor:".length) : null;
-    if (path || !panel || panel.id === EDITOR_GROUP_ANCHOR)
-      useStore.getState().set({ activePath: path });
+    if (path || !panel || panel.id === EDITOR_GROUP_ANCHOR) {
+      const st = useStore.getState();
+      st.set({
+        activePath: path,
+        ...(path
+          ? { recentFiles: [path, ...st.recentFiles.filter((p) => p !== path)].slice(0, 30) }
+          : {}),
+      });
+    }
   };
   trackActive();
   dock.onDidActivePanelChange(trackActive);
@@ -153,6 +162,8 @@ export function Workbench() {
   const secretsOpen = useStore((s) => s.secretsOpen);
   const inviteOpen = useStore((s) => s.inviteOpen);
   const searchOpen = useStore((s) => s.searchOpen);
+  const findOpen = useStore((s) => s.findOpen);
+  const recentOpen = useStore((s) => s.recentOpen);
   const newFlowOpen = useStore((s) => s.newFlowOpen);
   const left = useStore((s) => s.tools.left.open);
   const right = useStore((s) => s.tools.right.open);
@@ -263,6 +274,8 @@ export function Workbench() {
       {secretsOpen && <SecretsDialog />}
       {inviteOpen && <InviteDialog />}
       {searchOpen && <SearchEverywhere />}
+      {findOpen && <FindInFiles />}
+      {recentOpen && <RecentFiles />}
       {newFlowOpen && <NewFlowDialog />}
     </div>
   );

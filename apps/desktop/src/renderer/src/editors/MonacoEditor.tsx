@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { onReveal, takeReveal } from "@/lib/reveal";
 import { languageFor, monaco } from "./monaco";
 
 export interface CodeEditorProps {
@@ -49,7 +50,19 @@ export default function MonacoEditor({ path, value, onChange }: CodeEditorProps)
       if (!applyingExternal.current) changeRef.current(model.getValue());
     });
     editor.current = e;
+    const reveal = () => {
+      const r = takeReveal(path);
+      if (!r) return;
+      const line = Math.min(r.line, model.getLineCount());
+      e.setSelection(new monaco.Range(line, r.column, line, r.column + r.length));
+      e.revealLineInCenter(line);
+      e.focus();
+    };
+    const offReveal = onReveal((p) => p === path && reveal());
+    const first = setTimeout(reveal, 0);
     return () => {
+      clearTimeout(first);
+      offReveal();
       sub.dispose();
       e.dispose();
       model.dispose();

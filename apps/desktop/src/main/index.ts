@@ -13,7 +13,7 @@ import {
   type ProcessMetric,
   shell,
 } from "electron";
-import type { Catalog, Metrics, Settings } from "../shared/api";
+import type { Catalog, FindOptions, Metrics, Settings } from "../shared/api";
 import {
   getCatalog,
   inspectWithService,
@@ -33,6 +33,7 @@ import {
   createProject,
   createProjectFolder,
   currentProject,
+  findInProject,
   functions,
   inspect,
   openProject,
@@ -254,6 +255,7 @@ function registerIpc() {
   handle("project:tree", () => readTree());
   handle("project:inspect", () => inspectWithService().catch(() => inspect()));
   handle("project:functions", () => functions());
+  handle("project:find", (query: string, options: FindOptions) => findInProject(query, options));
   handle("project:catalog", () => getCatalog().catch(() => localCatalog()));
   handle("project:botId", async () => {
     const token = (await decryptSecrets(requireProject().root)).DISCORD_TOKEN;

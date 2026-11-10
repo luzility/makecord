@@ -1,15 +1,4 @@
-import {
-  ChevronRight,
-  FileCode2,
-  FileJson,
-  FileText,
-  Folder,
-  MessageSquare,
-  Plus,
-  SquareFunction,
-  Workflow,
-  Zap,
-} from "lucide-react";
+import { ChevronRight, Folder, Plus } from "lucide-react";
 import { type MouseEvent, useCallback, useState } from "react";
 import { ContextMenu, type MenuEntry } from "@/components/Menu";
 import { ConfirmDialog, PromptDialog } from "@/components/Prompts";
@@ -17,6 +6,7 @@ import { cn, IconButton } from "@/components/ui";
 import { useT } from "@/i18n";
 import type { FileNode } from "@/lib/api";
 import { openFile } from "@/lib/dock";
+import { fileIcon } from "@/lib/fileIcons";
 import {
   baseOf,
   createFile,
@@ -33,14 +23,8 @@ import { useStore } from "@/lib/store";
 const icon = { size: 16, strokeWidth: 1.5, className: "shrink-0 text-faint" };
 
 function iconFor(node: FileNode) {
-  if (node.path.startsWith("events/") && node.name.endsWith(".flow.json")) return <Zap {...icon} />;
-  if (node.path.startsWith("functions/") && node.name.endsWith(".flow.json"))
-    return <SquareFunction {...icon} />;
-  if (node.name.endsWith(".flow.json")) return <Workflow {...icon} />;
-  if (node.name.endsWith(".message.json")) return <MessageSquare {...icon} />;
-  if (node.name.endsWith(".json")) return <FileJson {...icon} />;
-  if (/\.(ts|js)$/.test(node.name)) return <FileCode2 {...icon} />;
-  return <FileText {...icon} />;
+  const Icon = fileIcon(node.path);
+  return <Icon {...icon} />;
 }
 
 const INDENT = 12;

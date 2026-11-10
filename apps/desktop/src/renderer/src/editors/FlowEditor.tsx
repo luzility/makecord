@@ -20,9 +20,11 @@ import {
   useNodesInitialized,
   useReactFlow,
 } from "@xyflow/react";
+import { ChevronDown, ChevronUp, Search, X } from "lucide-react";
 import { type MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { ContextMenu, type MenuEntry } from "@/components/Menu";
+import { IconButton } from "@/components/ui";
 import { type MessageKey, useT } from "@/i18n";
 import { defaultData, descriptorOf, type NodeDescriptor, nodeText, useNodes } from "@/lib/nodes";
 import { problemText } from "@/lib/problems";
@@ -66,6 +68,64 @@ const newId = (prefix: string) =>
   `${prefix}-${Date.now().toString(36)}${(idCounter++).toString(36)}`;
 
 const LIVE_MS = 1600;
+
+function textOf(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) return value.map(textOf).join(" ");
+  if (value && typeof value === "object") return Object.values(value).map(textOf).join(" ");
+  return "";
+}
+
+function FindBar({
+  query,
+  count,
+  at,
+  onChange,
+  onStep,
+  onClose,
+}: {
+  query: string;
+  count: number;
+  at: number;
+  onChange: (q: string) => void;
+  onStep: (step: 1 | -1) => void;
+  onClose: () => void;
+}) {
+  const { t } = useT();
+  const input = useRef<HTMLInputElement>(null);
+  useEffect(() => input.current?.focus(), []);
+  return (
+    <div className="absolute top-3 left-1/2 z-10 flex h-9 -translate-x-1/2 items-center gap-1 rounded-lg border border-line bg-panel pr-1 pl-2 shadow-lg shadow-black/40">
+      <Search size={14} strokeWidth={1.5} className="shrink-0 text-faint" />
+      <input
+        ref={input}
+        value={query}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") onClose();
+          else if (e.key === "Enter") onStep(e.shiftKey ? -1 : 1);
+          else return;
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        placeholder={t("flow.find")}
+        className="h-7 w-52 bg-transparent px-1 text-label outline-none placeholder:text-faint focus-visible:outline-none"
+      />
+      <span className="w-14 shrink-0 text-right font-mono text-meta text-faint">
+        {query ? (count ? `${at + 1}/${count}` : t("flow.findNone")) : ""}
+      </span>
+      <IconButton label={t("flow.findPrev")} disabled={!count} onClick={() => onStep(-1)}>
+        <ChevronUp size={14} strokeWidth={1.5} />
+      </IconButton>
+      <IconButton label={t("flow.findNext")} disabled={!count} onClick={() => onStep(1)}>
+        <ChevronDown size={14} strokeWidth={1.5} />
+      </IconButton>
+      <IconButton label={t("common.close")} onClick={onClose}>
+        <X size={14} strokeWidth={1.5} />
+      </IconButton>
+    </div>
+  );
+}
 
 function Canvas({ path, flow }: { path: string; flow: Flow }) {
   const updateFlow = useStore((s) => s.updateFlow);
@@ -451,10 +511,53 @@ function Canvas({ path, flow }: { path: string; flow: Flow }) {
       : { x: 0, y: 0 };
   };
 
+  const [finding, setFinding] = useState<string | null>(null);
+  const [findAt, setFindAt] = useState(0);
+  const found = useMemo(() => {
+    const q = finding?.trim().toLowerCase();
+    if (!q) return [];
+    return flow.nodes
+      .filter((n) => {
+        const meta = descriptorOf(n.type);
+        const title = meta ? nodeText(meta, locale).title : n.type;
+        return `${title} ${textOf(n.data)}`.toLowerCase().includes(q);
+      })
+      .map((n) => n.id);
+  }, [finding, flow.nodes, locale]);
+
+  const focusNodes = (ids: string[], duration = 200) =>
+    void fitView(
+      ids.length
+        ? { nodes: ids.map((id) => ({ id })), maxZoom: 1.2, padding: 0.5, duration }
+        : { maxZoom: 1.1, padding: 0.3, duration },
+    );
+
+  const showFound = (i: number) => {
+    const id = found[i];
+    if (!id) return;
+    setFindAt(i);
+    setSelectedIds(new Set([id]));
+    select({ path, nodeId: id });
+    focusNodes([id]);
+  };
+
+  const firstFound = found[0];
+  useEffect(() => {
+    setFindAt(0);
+    if (!firstFound) return;
+    setSelectedIds(new Set([firstFound]));
+    select({ path, nodeId: firstFound });
+    void fitView({ nodes: [{ id: firstFound }], maxZoom: 1.2, padding: 0.5, duration: 200 });
+  }, [firstFound, path, select, fitView]);
+
+  const zoomToSelection = () => focusNodes([...selectedIds]);
+
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (isEditableTarget(e.target)) return;
     const ev = e.nativeEvent;
-    if (matches("Mod+C", ev)) void copy();
+    if (matches("Mod+F", ev)) setFinding((q) => q ?? "");
+    else if (matches("F", ev)) zoomToSelection();
+    else if (matches("Mod+C", ev)) void copy();
     else if (matches("Mod+X", ev)) void copy().then((c) => c && remove());
     else if (matches("Mod+V", ev)) void paste();
     else if (matches("Mod+D", ev)) duplicate();
@@ -498,6 +601,12 @@ function Canvas({ path, flow }: { path: string; flow: Flow }) {
           },
           {
             kind: "item",
+            label: t("flow.zoomSelection"),
+            keys: ["F"],
+            onSelect: () => focusNodes(targetIds),
+          },
+          {
+            kind: "item",
             label: t("debug.toggleBreakpoint"),
             keys: k("Mod+F8"),
             disabled: targetIds.length !== 1 || !!targetIds[0]?.startsWith("note-"),
@@ -523,6 +632,14 @@ function Canvas({ path, flow }: { path: string; flow: Flow }) {
         { kind: "item", label: t("flow.addNote"), onSelect: () => addNote(at) },
         { kind: "separator" },
         { kind: "item", label: t("flow.selectAll"), keys: k("Mod+A"), onSelect: selectAll },
+        { kind: "separator" },
+        {
+          kind: "item",
+          label: t("flow.find"),
+          keys: k("Mod+F"),
+          onSelect: () => setFinding((q) => q ?? ""),
+        },
+        { kind: "item", label: t("flow.fitAll"), keys: ["F"], onSelect: () => focusNodes([]) },
       ],
     });
   };
@@ -584,6 +701,19 @@ function Canvas({ path, flow }: { path: string; flow: Flow }) {
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#2a2a2e" />
           <Controls showInteractive={false} position="bottom-left" />
         </ReactFlow>
+        {finding !== null && (
+          <FindBar
+            query={finding}
+            count={found.length}
+            at={findAt}
+            onChange={setFinding}
+            onStep={(step) => showFound((findAt + step + found.length) % Math.max(1, found.length))}
+            onClose={() => {
+              setFinding(null);
+              wrapper.current?.focus();
+            }}
+          />
+        )}
         {menu && <ContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={closeMenu} />}
       </div>
     </div>

@@ -5,8 +5,15 @@ import { coreNodeMetas } from "@makecord/plugin-core/meta";
 import { inspectProject, type Problem } from "@makecord/runtime/inspect";
 import { loadProject } from "@makecord/runtime/project";
 import { PROJECT_FILE, ProjectConfig } from "@makecord/spec";
-import type { FileNode, FunctionSummary, ProjectInfo } from "../shared/api";
+import type {
+  FileNode,
+  FindOptions,
+  FindResult,
+  FunctionSummary,
+  ProjectInfo,
+} from "../shared/api";
 import { TEMPLATES_DIR } from "./bundled";
+import { findIn } from "./find";
 import { appState } from "./state";
 
 const IGNORED = new Set(["node_modules", ".git", ".makecord", "dist", ".DS_Store"]);
@@ -82,6 +89,13 @@ export async function readTree(abs = requireProject().root, rel = ""): Promise<F
     a.kind === b.kind ? a.name.localeCompare(b.name) : a.kind === "dir" ? -1 : 1,
   );
   return { name: rel ? basename(abs) : requireProject().name, path: rel, kind: "dir", children };
+}
+
+export function findInProject(query: string, options: FindOptions): Promise<FindResult> {
+  return findIn(requireProject().root, String(query ?? "").slice(0, 500), {
+    caseSensitive: Boolean(options?.caseSensitive),
+    regex: Boolean(options?.regex),
+  });
 }
 
 export async function functions(): Promise<FunctionSummary[]> {

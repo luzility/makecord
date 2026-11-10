@@ -2,6 +2,7 @@ import type { DockviewApi } from "dockview-react";
 import { translate } from "@/i18n/locale";
 import { useStore } from "./store";
 import { DEFAULT_TOOLS, type ToolId } from "./tools";
+import { resolveUnsaved } from "./unsaved";
 
 let dock: DockviewApi | null = null;
 export const EDITOR_GROUP_ANCHOR = "start";
@@ -57,6 +58,22 @@ export function openPaths(): string[] {
   return (dock?.panels ?? [])
     .filter((p) => p.id.startsWith("editor:"))
     .map((p) => p.id.slice("editor:".length));
+}
+
+export async function closeActiveEditor() {
+  const panel = dock?.activePanel;
+  if (!panel) return;
+  const path = panel.id.startsWith("editor:") ? panel.id.slice("editor:".length) : null;
+  if (path && !(await resolveUnsaved([path]))) return;
+  panel.api.close();
+}
+
+export function cycleEditor(step: 1 | -1) {
+  const group = dock?.activeGroup;
+  if (!group || group.panels.length < 2) return;
+  const at = group.panels.findIndex((p) => p.id === group.activePanel?.id);
+  const next = group.panels[(at + step + group.panels.length) % group.panels.length];
+  next?.api.setActive();
 }
 
 export function closeFile(path: string) {

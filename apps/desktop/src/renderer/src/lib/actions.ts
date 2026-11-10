@@ -1,6 +1,7 @@
 import {
   FilePlus2,
   FolderOpen,
+  History,
   KeyRound,
   LayoutPanelLeft,
   type LucideIcon,
@@ -11,13 +12,15 @@ import {
   Search,
   Settings,
   Square,
+  TextSearch,
   Undo2,
   UserPlus,
+  X,
 } from "lucide-react";
 import type { MessageKey } from "@/i18n/locale";
 import { LOCALES, type Locale } from "@/i18n/locale";
 import { api } from "./api";
-import { flushAll, resetLayout } from "./dock";
+import { closeActiveEditor, cycleEditor, flushAll, resetLayout } from "./dock";
 import { DOCS_URL, ISSUES_URL } from "./links";
 import type { Shortcut } from "./shortcuts";
 import { cleanError, isFlowFile, useStore } from "./store";
@@ -175,6 +178,49 @@ export const actions: Action[] = [
     project: true,
     global: true,
     run: () => st().set({ searchOpen: true }),
+  },
+  {
+    id: "edit.findInFiles",
+    label: "find.title",
+    shortcuts: ["Mod+Shift+F"],
+    icon: TextSearch,
+    project: true,
+    global: true,
+    run: () => st().set({ findOpen: true }),
+  },
+  {
+    id: "view.recent",
+    label: "recent.title",
+    shortcuts: ["Mod+E"],
+    icon: History,
+    project: true,
+    global: true,
+    run: () => st().set({ recentOpen: true }),
+  },
+  {
+    id: "file.closeTab",
+    label: "editor.closeTab",
+    shortcuts: ["Mod+W", "Mod+F4"],
+    icon: X,
+    project: true,
+    global: true,
+    run: () => closeActiveEditor(),
+  },
+  {
+    id: "view.nextTab",
+    label: "editor.nextTab",
+    shortcuts: ["Ctrl+Tab"],
+    project: true,
+    global: true,
+    run: () => cycleEditor(1),
+  },
+  {
+    id: "view.prevTab",
+    label: "editor.prevTab",
+    shortcuts: ["Ctrl+Shift+Tab"],
+    project: true,
+    global: true,
+    run: () => cycleEditor(-1),
   },
   {
     id: "view.project",
@@ -345,6 +391,7 @@ export const MENU: { label: MessageKey; items: string[] }[] = [
       "-",
       "file.newFlow",
       "file.save",
+      "file.closeTab",
       "-",
       "file.settings",
       "file.plugins",
@@ -353,11 +400,14 @@ export const MENU: { label: MessageKey; items: string[] }[] = [
       "file.quit",
     ],
   },
-  { label: "menu.edit", items: ["edit.undo", "edit.redo"] },
+  { label: "menu.edit", items: ["edit.undo", "edit.redo", "-", "edit.findInFiles"] },
   {
     label: "menu.view",
     items: [
       "view.search",
+      "view.recent",
+      "view.nextTab",
+      "view.prevTab",
       "-",
       "view.project",
       "view.properties",

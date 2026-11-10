@@ -3,6 +3,28 @@ import type { FunctionSignature } from "@makecord/spec";
 
 export type FunctionSummary = FunctionSignature & { file: string };
 
+export interface FindOptions {
+  caseSensitive: boolean;
+  regex: boolean;
+}
+
+export interface FindMatch {
+  path: string;
+  text: string;
+  start: number;
+  length: number;
+  line?: number;
+  nodeId?: string;
+  nodeType?: string;
+  field?: string;
+}
+
+export interface FindResult {
+  matches: FindMatch[];
+  truncated: boolean;
+  error?: string;
+}
+
 import type { Catalog } from "@makecord/runtime/language-service";
 import type { HostMessage, RuntimeMessage, RuntimeStatus } from "@makecord/runtime/protocol";
 
@@ -58,6 +80,7 @@ export interface MakecordApi {
     tree(): Promise<FileNode>;
     inspect(): Promise<Problem[]>;
     functions(): Promise<FunctionSummary[]>;
+    find(query: string, options: FindOptions): Promise<FindResult>;
     catalog(): Promise<Catalog>;
     botId(): Promise<string | null>;
   };

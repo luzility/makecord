@@ -6,6 +6,7 @@ const isMac = api.platform === "darwin";
 
 interface Parsed {
   mod: boolean;
+  ctrl: boolean;
   shift: boolean;
   alt: boolean;
   key: string;
@@ -16,6 +17,7 @@ function parse(shortcut: Shortcut): Parsed {
   const key = parts.pop()?.toLowerCase() ?? "";
   return {
     mod: parts.includes("Mod"),
+    ctrl: parts.includes("Ctrl"),
     shift: parts.includes("Shift"),
     alt: parts.includes("Alt"),
     key,
@@ -24,15 +26,18 @@ function parse(shortcut: Shortcut): Parsed {
 
 export function matches(shortcut: Shortcut, e: KeyboardEvent): boolean {
   const p = parse(shortcut);
-  const mod = isMac ? e.metaKey : e.ctrlKey;
   const key = /^digit\d$/i.test(e.code) ? e.code.slice(5) : e.key.toLowerCase();
-  return mod === p.mod && e.shiftKey === p.shift && e.altKey === p.alt && key === p.key;
+  const mods = isMac
+    ? e.metaKey === p.mod && e.ctrlKey === p.ctrl
+    : e.ctrlKey === (p.mod || p.ctrl) && !e.metaKey;
+  return mods && e.shiftKey === p.shift && e.altKey === p.alt && key === p.key;
 }
 
 export function keysOf(shortcut: Shortcut): string[] {
   const p = parse(shortcut);
   const keys: string[] = [];
-  if (p.mod) keys.push(isMac ? "⌘" : "Ctrl");
+  if (p.ctrl && isMac) keys.push("⌃");
+  if (p.mod || (p.ctrl && !isMac)) keys.push(isMac ? "⌘" : "Ctrl");
   if (p.alt) keys.push(isMac ? "⌥" : "Alt");
   if (p.shift) keys.push(isMac ? "⇧" : "Shift");
   keys.push(p.key.length === 1 ? p.key.toUpperCase() : p.key[0]!.toUpperCase() + p.key.slice(1));

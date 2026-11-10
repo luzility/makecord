@@ -1,10 +1,11 @@
 import { Command } from "cmdk";
-import { Circle, FileCode2, MessageSquare, SquareFunction, Workflow, Zap } from "lucide-react";
+import { Circle } from "lucide-react";
 import { useMemo } from "react";
 import { useT } from "@/i18n";
 import { actions, isAvailable, runAction } from "@/lib/actions";
 import type { FileNode } from "@/lib/api";
 import { openFile } from "@/lib/dock";
+import { fileIcon } from "@/lib/fileIcons";
 import { keysOf } from "@/lib/shortcuts";
 import { useStore } from "@/lib/store";
 import { Kbd, useModalFlag } from "./ui";
@@ -87,15 +88,7 @@ export function SearchEverywhere() {
           </Command.Group>
           <Command.Group heading={t("search.files")} className={groupCls}>
             {files.map((f) => {
-              const Icon = f.path.startsWith("events/")
-                ? Zap
-                : f.path.startsWith("functions/") && f.name.endsWith(".flow.json")
-                  ? SquareFunction
-                  : f.name.endsWith(".flow.json")
-                    ? Workflow
-                    : f.name.endsWith(".message.json")
-                      ? MessageSquare
-                      : FileCode2;
+              const Icon = fileIcon(f.path);
               return (
                 <Command.Item
                   key={f.path}
