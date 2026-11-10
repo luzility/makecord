@@ -20,7 +20,7 @@ pnpm build
 pnpm publish-packages
 ```
 
-This publishes `@makecord/spec`, `@makecord/plugin-sdk`, `@makecord/plugin-core` and `@makecord/runtime` with public access. pnpm replaces the `workspace:*` dependencies with the real version.
+This publishes `@makecord/spec`, `@makecord/plugin-sdk`, `@makecord/plugin-core`, `@makecord/plugin-ai` and `@makecord/runtime` with public access. Projects made from the AI assistant template depend on `@makecord/plugin-ai` too. pnpm replaces the `workspace:*` dependencies with the real version.
 
 ## 3. Build the app
 

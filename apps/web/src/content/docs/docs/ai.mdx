@@ -1,0 +1,76 @@
+---
+title: AI
+description: Answer with Claude or another model, give the bot memory and let it call your functions.
+---
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import { aiNodeMetas } from "@makecord/plugin-ai/meta";
+import BlockReference from "../../../components/docs/BlockReference.astro";
+
+The AI plugin, `@makecord/plugin-ai`, adds blocks that talk to a language model. It works with Claude through the official Anthropic SDK, and with OpenAI, Gemini, OpenRouter, Groq, Ollama or any OpenAI-compatible server.
+
+## Set it up
+
+<Steps>
+
+1. Open **Plugins** in the IDE, search for `@makecord/plugin-ai` and install it. Projects made from the **AI assistant** template have it already.
+
+2. Get an API key from your provider and add it in **Secrets**:
+
+   | Provider          | Secret               |
+   | ----------------- | -------------------- |
+   | Anthropic         | `ANTHROPIC_API_KEY`  |
+   | OpenAI            | `OPENAI_API_KEY`     |
+   | Google Gemini     | `GEMINI_API_KEY`     |
+   | OpenRouter        | `OPENROUTER_API_KEY` |
+   | Groq              | `GROQ_API_KEY`       |
+   | Ollama            | none, it runs locally |
+   | OpenAI-compatible | `AI_API_KEY`         |
+
+   When you host the bot yourself, put the same names in `.env`.
+
+3. Drop an AI block into a flow and pick the provider. With Anthropic, an empty **Model** uses `claude-opus-5-5`. Other providers need a model name.
+
+</Steps>
+
+Keys stay in Secrets like your bot token: encrypted on your machine, never written to the project, and only handed to this plugin because it asks for them by name.
+
+## Answer when someone mentions the bot
+
+The **AI assistant** template does this for you. By hand:
+
+1. Create an event flow for **When a message is sent** and turn on the `GuildMessages` and `MessageContent` intents.
+2. Add a **Condition**: `{{message.mentions}}` contains `{{client.id}}`.
+3. On `true`, add **AI Agent**. Its message is `{{message.content}}` and **Remember by** is `{{channel.id}}`, so each channel has its own conversation.
+4. Connect `next` to **Reply to Message** with `{{vars.answer}}`, and `failed` to another reply with `{{vars.answerError}}`.
+
+AI blocks answer slower than Discord's 3 second limit for commands, so in command and button flows they defer the reply for you. In message flows the bot shows that it's typing.
+
+## Memory
+
+**AI Agent** keeps the last exchanges for each value of **Remember by** in the project's storage. `{{channel.id}}` shares a conversation per channel, `{{user.id}}` per person, and `{{channel.id}}-{{user.id}}` per person in each channel. Leave it empty to answer every message on its own. **Exchanges to remember** caps how much history is sent each time, which also caps the cost.
+
+## Tools
+
+An agent can call your [functions](/docs/functions/). List them in **Functions it may call**, separated by commas, or `*` for all. The agent reads each function's name, description and arguments, calls the ones that help and uses what they return. `{{vars.answerTools}}` lists what it called, and every call is in the Run log.
+
+**Max tool rounds** stops an agent that keeps calling functions. Model output is untrusted: only offer functions that are safe for anyone to trigger, and check permissions inside the function before it bans, deletes or spends anything.
+
+## Structured answers
+
+- **AI Extract** turns free text into values. List them one per line as `name: what it is`, and add `(number)` or `(yes/no)` for other types. The result is an object: `{{vars.data.amount}}`.
+- **AI Check** asks a yes or no question and leaves through `yes` or `no`, with a short reason in `{{vars.reason}}`. It's handy for moderation, such as catching scams before a human sees them.
+
+<Aside type="caution">
+  Every AI block call costs money with most providers. Put a **Cooldown** in front of AI blocks
+  that anyone can trigger, keep **Max tokens** sensible, and pick a smaller model where quality
+  allows.
+</Aside>
+
+## Claude specifics
+
+With Anthropic, requests go through the official SDK. Thinking is on by default on current Claude models, and **Effort** controls how much the model thinks before it answers: `low` suits quick chat, `high` suits harder questions. When a safety classifier declines a request on a current model, the API retries it on a fallback model automatically, and a request that's still declined leaves through `failed`.
+
+## Blocks
+
+<BlockReference metas={aiNodeMetas} />

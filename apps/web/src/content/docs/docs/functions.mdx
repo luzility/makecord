@@ -1,0 +1,59 @@
+---
+title: Functions
+description: Reusable flows with arguments and a return value, which other flows and AI agents can call.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+A function is a flow you call from other flows. Build something once, like "give a member XP" or "look up a ticket", and use it from every command and event that needs it. AI agents can call functions too, which is how you give them tools.
+
+## Create a function
+
+Choose **New › Function** in the Project panel and give it a name. Names use letters, numbers and `_`, like `get_level`. New functions go to `functions/`.
+
+In the Properties panel, with the Start block or empty canvas selected:
+
+- **Description** says what the function does and when to use it. AI agents read it to decide when to call the function, so be specific.
+- **Arguments** are the inputs. Each has a name, a type (text, number or yes/no), a description and whether it's required. Inside the function, read them as `{{args.name}}`.
+
+End the flow with a **Return** block. Its value is handed back to the caller. It can be text, a variable like `{{vars.total}}`, or JSON such as `{"level": {{vars.level}}}`, which the caller can then read field by field.
+
+A function sees the server, channel and user of the flow that called it, so `{{user.mention}}` and `{{guild.name}}` work as you'd expect, and it can **Reply** when it was called from a command or a button.
+
+## Call a function
+
+Add a **Call Function** block, pick the function and fill in its arguments. The arguments are listed with their types, and the ones marked with `*` are required. The value from **Return** is saved as `{{vars.result}}` (or the variable you choose).
+
+If the function fails, for example because an argument is missing or a block inside it fails, **Call Function** leaves through its `failed` port and `{{vars.resultError}}` says why.
+
+<Aside>
+  Functions can call other functions, up to 8 levels deep. The Problems panel flags calls to
+  functions that don't exist and required arguments that are left empty.
+</Aside>
+
+## Functions as AI tools
+
+The **AI Agent** block from the [AI plugin](/docs/ai/) can call your functions while it answers. List the ones it may use in its **Functions it may call** setting. The agent sees each function's name, description and arguments, decides when to call them and uses what they return in its answer.
+
+```txt title="functions/roll_dice.flow.json"
+Start → Random Number (1 to {{args.sides}}) → Return {{vars.roll}}
+```
+
+With `roll_dice` listed, "roll a d20 for me" makes the agent call `roll_dice` with `sides: 20` and answer with the result.
+
+Treat what a model sends as untrusted. Only list functions that are safe for anyone in the server to trigger, and check permissions inside a function before it does anything drastic, with blocks like **Has Permission**.
+
+## Run something before every command
+
+A **Before a command runs** event flow runs ahead of each command, like middleware. Use it to check something for many commands at once: a maintenance switch, a blocklist, a channel the bot should stay out of, or a log of who used what.
+
+Set **Only for commands** to limit it: `ban` for one command, `mod*` for every command that starts with `mod`, or leave it empty for all of them. In the flow you have the same variables as in the command, including `{{command.name}}` and `{{options.*}}`.
+
+To keep the command from running, end with **Stop Command**. Reply first if the person should know why:
+
+```txt title="events/maintenance.flow.json"
+Start → Read Value (maintenance) → Condition (= on)
+  true  → Reply "The bot is under maintenance" → Stop Command
+```
+
+If the flow ends without **Stop Command**, the command runs as usual. A flow that fails also stops the command, so a broken check never lets everything through.

@@ -13,6 +13,7 @@
   "dependencies": {
     "@astrojs/starlight": "0.42.10",
     "@fontsource-variable/jetbrains-mono": "5.3.0",
+    "@makecord/plugin-ai": "workspace:*",
     "@makecord/plugin-core": "workspace:*",
     "@makecord/plugin-sdk": "workspace:*",
     "@makecord/spec": "workspace:*",

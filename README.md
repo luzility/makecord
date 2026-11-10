@@ -36,7 +36,15 @@ Most bot builders are hosted services: your bot lives on someone else's servers,
 - Slash commands with options, choices, autocomplete, subcommands and permission limits.
 - User and message context menu commands.
 - 27 events, from members joining and messages to reactions, voice, bans, threads, AutoMod, polls, buttons, menus, forms and schedules.
-- 53 built-in blocks: replies, messages, DMs, roles, moderation, channels, threads, polls, forms, HTTP requests, loops, cooldowns, timestamps, persistent storage and more.
+- 56 built-in blocks: replies, messages, DMs, roles, moderation, channels, threads, polls, forms, HTTP requests, loops, cooldowns, timestamps, persistent storage and more.
+- Functions: reusable flows with arguments and a return value, called from any flow.
+- Checks that run before every command, or a group of them, and can stop it.
+- Templates to start from: welcome messages, moderation, support tickets, levels and an AI assistant.
+
+**AI**
+
+- The official AI plugin answers with Claude, OpenAI, Gemini, OpenRouter, Groq, Ollama or any OpenAI-compatible server.
+- Agents remember each channel and call your functions as tools. Other blocks extract values from text or answer yes or no questions.
 
 **Messages**
 
@@ -49,10 +57,10 @@ Most bot builders are hosted services: your bot lives on someone else's servers,
 
 **IDE**
 
-- JetBrains-style workspace: project tree, properties, run log, problems, search everywhere and a full keymap.
+- JetBrains-style workspace: project tree, properties, run log, problems, search everywhere, find in files, recent files and a full keymap.
 - A debugger with breakpoints, stepping and a variable inspector, plus a live view of every gateway event the bot receives.
 - Checks as you type: missing intents, unreachable blocks, blocks used where they can't work, buttons that nothing handles.
-- Variable autocomplete (`{{`), Discord formatting helpers, copy and paste between flows, canvas notes.
+- Variable autocomplete (`{{`), Discord formatting helpers, copy and paste between flows, canvas notes and block search.
 - An invite link generator that ticks the permissions your blocks need.
 - Monaco for code and JSON, with schema-aware completion.
 - English and Turkish interface.
@@ -66,6 +74,7 @@ my-bot/
 ├── makecord.json            name, intents, plugins, cache limits
 ├── commands/*.flow.json     slash and context menu commands
 ├── events/*.flow.json       gateway events, buttons, menus, forms, schedules
+├── functions/*.flow.json    reusable flows that other flows and AI agents call
 ├── messages/*.message.json  message designs
 ├── package.json             "start": "makecord start ."
 ├── Dockerfile, docker-compose.yml, .env.example
@@ -107,7 +116,8 @@ pnpm dev:desktop
 
 The documentation lives in [`apps/web/src/content/docs`](apps/web/src/content/docs/docs) and is published with the website:
 
-- [Flows](apps/web/src/content/docs/docs/flows.mdx), [variables](apps/web/src/content/docs/docs/variables.mdx) and [message designs](apps/web/src/content/docs/docs/messages.mdx)
+- [Flows](apps/web/src/content/docs/docs/flows.mdx), [functions](apps/web/src/content/docs/docs/functions.mdx), [variables](apps/web/src/content/docs/docs/variables.mdx) and [message designs](apps/web/src/content/docs/docs/messages.mdx)
+- [AI](apps/web/src/content/docs/docs/ai.mdx)
 - [Debugging](apps/web/src/content/docs/docs/debugging.mdx) and [problems](apps/web/src/content/docs/docs/problems.mdx)
 - [Running a bot on a server](apps/web/src/content/docs/docs/self-hosting.mdx)
 - [Writing plugins](apps/web/src/content/docs/docs/writing-plugins.mdx)
@@ -153,7 +163,8 @@ This is a pnpm and Turborepo monorepo.
 | [`packages/spec`](packages/spec)             | Zod schemas for project, flow and message files           |
 | [`packages/plugin-sdk`](packages/plugin-sdk) | `definePlugin`, `defineNode` and the block context types  |
 | [`plugins/core`](plugins/core)               | The built-in blocks                                       |
-| [`packages/templates`](packages/templates)   | The new project template                                  |
+| [`plugins/ai`](plugins/ai)                   | The AI plugin                                             |
+| [`packages/templates`](packages/templates)   | The new project templates                                 |
 | [`packages/config`](packages/config)         | Shared TypeScript configuration                           |
 
 ```bash

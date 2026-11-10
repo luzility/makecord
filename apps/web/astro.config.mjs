@@ -41,6 +41,7 @@ export default defineConfig({
           items: [
             { slug: "docs/projects" },
             { slug: "docs/flows" },
+            { slug: "docs/functions" },
             { slug: "docs/variables" },
             { slug: "docs/messages" },
             { slug: "docs/debugging" },
@@ -50,7 +51,11 @@ export default defineConfig({
         {
           label: "Guides",
           translations: { tr: "Rehberler" },
-          items: [{ slug: "docs/self-hosting" }, { slug: "docs/writing-plugins" }],
+          items: [
+            { slug: "docs/ai" },
+            { slug: "docs/self-hosting" },
+            { slug: "docs/writing-plugins" },
+          ],
         },
         {
           label: "Reference",

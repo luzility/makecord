@@ -13,6 +13,8 @@ my-bot/
 │   └── greet.flow.json
 ├── events/
 │   └── ready.flow.json    # one file per event flow
+├── functions/             # flows that other flows call
+├── messages/              # message designs
 ├── package.json           # "start": "makecord start ."
 ├── Dockerfile
 ├── docker-compose.yml
@@ -22,6 +24,27 @@ my-bot/
 ```
 
 Flow files can live in any folder. The runtime loads every `*.flow.json` in the project except inside `node_modules` and hidden folders. `commands/` and `events/` are only a convention.
+
+## Templates
+
+**New project** starts from a template:
+
+| Template | What you get |
+| --- | --- |
+| Starter | `/ping`, `/greet` and a log line when the bot is ready |
+| Welcome messages | A designed welcome message in the server's system channel, a welcome DM and a goodbye |
+| Moderation | `/ban`, `/kick`, `/timeout`, `/purge`, and `/warn` with a warning count per member |
+| Support tickets | A panel with a button that opens a private channel per ticket, and a button to close it |
+| Levels | XP for chatting, a level up every 25 messages and `/rank` |
+| AI assistant | Answers when mentioned, remembers each channel, `/ask`, and two functions it can call. Needs an [AI](/docs/ai/) key |
+
+Templates add the intents and plugins they need to `makecord.json`. Some intents, like `GuildMembers` and `MessageContent`, also have to be turned on in the Developer Portal.
+
+## Finding things
+
+- **Search everywhere** (**Ctrl+K**, or **Shift** twice) finds files and actions.
+- **Find in files** (**Ctrl+Shift+F**) searches the text of every file. In flows it searches block settings and opens the block it found.
+- **Recent files** (**Ctrl+E**) switches to a file you had open. **Ctrl+Tab** and **Ctrl+Shift+Tab** move between tabs, and **Ctrl+W** closes one.
 
 ## makecord.json
 

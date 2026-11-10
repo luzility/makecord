@@ -1,6 +1,6 @@
 import { defineNodeMeta, VARIABLE_FIELD_FORMAT } from "@makecord/plugin-sdk";
 import { z } from "zod";
-import { PROVIDER_IDS } from "./providers.js";
+import { PROVIDER_IDS } from "./presets.js";
 
 const variable = (fallback: string, also?: string[]) =>
   z

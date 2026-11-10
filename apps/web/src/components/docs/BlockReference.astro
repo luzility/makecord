@@ -5,6 +5,10 @@ import ConfigTable from "./ConfigTable.astro";
 import { labels } from "./labels";
 import { rowsOf } from "./schema";
 
+interface Props {
+  metas?: readonly NodeMeta[];
+}
+const source = Astro.props.metas ?? coreNodeMetas;
 const lang = Astro.currentLocale === "tr" ? "tr" : "en";
 const l = labels[lang];
 const categories = ["trigger", "action", "logic", "data"] as const;
@@ -22,12 +26,15 @@ function text(meta: NodeMeta) {
   };
 }
 const usable = (m: NodeMeta) =>
-  !m.contexts ? l.anywhere : m.contexts.includes("command") && !m.contexts.includes("event") ? l.commandOnly : l.eventOnly;
+  m.events?.length
+    ? `${l.onlyIn} ${m.events.join(", ")}`
+    : !m.contexts ? l.anywhere : m.contexts.includes("command") && !m.contexts.includes("event") ? l.commandOnly : l.eventOnly;
 ---
 
 {
   categories.map((cat) => {
-    const metas = coreNodeMetas.filter((m) => m.category === cat);
+    const metas = source.filter((m) => m.category === cat);
+    if (!metas.length) return null;
     return (
       <>
         <h2 id={cat}>{l[cat]}</h2>
@@ -45,7 +52,11 @@ const usable = (m: NodeMeta) =>
                 <span class="mk-sep" aria-hidden="true" />
                 <span>{usable(m)}</span>
                 <span class="mk-sep" aria-hidden="true" />
-                <span>{`${l.outputs}: ${m.outputs.map((o) => t.output(o)).join(", ")}`}</span>
+                <span>
+                  {m.outputs.length
+                    ? `${l.outputs}: ${m.outputs.map((o) => t.output(o)).join(", ")}`
+                    : l.endsFlow}
+                </span>
               </p>
               {t.rows.length ? <ConfigTable rows={t.rows} labels={l} /> : <p class="mk-muted">{l.noFields}</p>}
             </section>

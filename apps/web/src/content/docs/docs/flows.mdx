@@ -27,6 +27,7 @@ Each port carries one connection. Connecting a port again replaces the old conne
 - **Shift**, **Ctrl** or **⌘** click adds blocks to the selection, and **Shift** drag selects an area.
 - **Ctrl+C**, **Ctrl+X** and **Ctrl+V** copy, cut and paste blocks with the connections between them, also from one flow to another. **Ctrl+D** duplicates and **Ctrl+A** selects everything. Right-click a block or empty space for the same actions.
 - **Add note** in the palette or the right-click menu puts a sticky note on the canvas. Notes are saved in the flow file and ignored by the bot.
+- **Ctrl+F** finds blocks by name or by anything in their settings. **Enter** and **Shift+Enter** step through the matches. **F** zooms to the selected blocks, or shows the whole flow when nothing is selected.
 
 In the Project panel, right-click a file or folder to rename, duplicate or delete it, or to create files and folders. Renaming a message design updates the blocks that use it.
 
@@ -85,6 +86,7 @@ An event flow runs when Discord sends the bot an event. Supported events:
 | `selectMenu` | Someone picks from one of the bot's menus | — |
 | `modalSubmit` | Someone submits a form opened with **Show Form** | — |
 | `schedule` | Every N minutes, or every day at a set time | — |
+| `beforeCommand` | Before a command runs, to check or stop it. See [functions](/docs/functions/#run-something-before-every-command) | — |
 
 `GuildMembers` is a privileged intent: turn on **Server Members Intent** under **Bot** in the Developer Portal as well. To read the text of messages you also need `MessageContent`, which is privileged too.
 
@@ -97,6 +99,10 @@ These flows can answer the person with **Reply**, **Defer Reply** and, for butto
 ### Schedules
 
 A schedule flow runs every N minutes (1 to 10080) or every day at `HH:MM`, using the clock of the machine the bot runs on. It runs only while the bot is online, and a run that was missed while the bot was offline doesn't catch up later.
+
+### Functions
+
+A function is a flow that other flows call with **Call Function**, with arguments and a return value. AI agents can call them as tools. See [Functions](/docs/functions/).
 
 ## Live reload
 
