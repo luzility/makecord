@@ -3,6 +3,7 @@ import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import { flushAll } from "@/lib/dock";
 import { cleanError, useStore } from "@/lib/store";
+import { resolveUnsaved } from "@/lib/unsaved";
 import { Button, Dialog, Field, Input } from "./ui";
 
 export function NewProjectDialog() {
@@ -20,6 +21,10 @@ export function NewProjectDialog() {
     setBusy(true);
     setError(null);
     try {
+      if (!(await resolveUnsaved())) {
+        setBusy(false);
+        return;
+      }
       await flushAll();
       const project = await api.project.create(dir, name.trim());
       onClose();

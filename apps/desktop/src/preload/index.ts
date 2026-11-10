@@ -66,6 +66,8 @@ const api: MakecordApi = {
     openExternal: invoke("app:openExternal"),
     onBeforeClose: subscribe("app:beforeClose"),
     closeReady: invoke("app:closeReady"),
+    closeHold: invoke("app:closeHold"),
+    closeCancel: invoke("app:closeCancel"),
     quit: invoke("app:quit"),
   } as MakecordApi["app"],
 };

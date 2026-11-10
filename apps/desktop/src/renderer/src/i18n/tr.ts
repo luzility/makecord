@@ -171,6 +171,16 @@ export const tr: Messages = {
     emoji: "Özel emoji",
     slashMention: "Bir slash komutuna bağlantı ver",
   },
+  unsaved: {
+    title: "Değişiklikler kaydedilsin mi?",
+    one: "%{name} dosyasında kaydedilmemiş değişiklikler var.",
+    many_one: "%{count} dosyada kaydedilmemiş değişiklikler var.",
+    many_other: "%{count} dosyada kaydedilmemiş değişiklikler var.",
+    hint: "Kaydetmezsen değişiklikler atılır ve dosyalar diskteki haline döner.",
+    save: "Kaydet",
+    saveAll: "Tümünü kaydet",
+    discard: "Kaydetme",
+  },
   tools: { hide: "Gizle" },
   files: {
     open: "Aç",

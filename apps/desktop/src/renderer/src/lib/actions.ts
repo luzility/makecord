@@ -20,6 +20,7 @@ import { api } from "./api";
 import { flushAll, resetLayout } from "./dock";
 import type { Shortcut } from "./shortcuts";
 import { cleanError, isFlowFile, useStore } from "./store";
+import { resolveUnsaved } from "./unsaved";
 import { isRunning, startBot, stopBot } from "./useRun";
 
 export const DOCS_URL = "https://makecord.app/docs/";
@@ -46,6 +47,7 @@ const report = (e: unknown) => st().set({ notice: { key: "actionFailed", detail:
 
 export async function openProject(root?: string) {
   try {
+    if (!(await resolveUnsaved())) return;
     await flushAll();
     const p = await api.project.open(root);
     if (p) await st().setProject(p);
@@ -56,6 +58,7 @@ export async function openProject(root?: string) {
 
 export async function closeProject() {
   try {
+    if (!(await resolveUnsaved())) return;
     await flushAll();
     await api.project.close();
     await st().setProject(null);

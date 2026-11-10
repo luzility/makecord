@@ -41,6 +41,8 @@ export type LogEntry = RuntimeMessage & { id: number };
 
 export type { Area, ToolId, ToolLayout } from "./tools";
 
+export type UnsavedChoice = "save" | "discard" | "cancel";
+
 export interface PausedRun {
   runId: string;
   flow: string;
@@ -119,6 +121,8 @@ interface State {
   saveAll(): Promise<number>;
   savePath(path: string): Promise<void>;
   isDirty(path: string): boolean;
+  discard(path: string): void;
+  unsavedPrompt: { paths: string[]; resolve: (choice: UnsavedChoice) => void } | null;
   savedAt: number;
   updateFlow(path: string, fn: (flow: Flow) => Flow, mergeKey?: string): void;
   updateMessage(
@@ -294,6 +298,7 @@ export const useStore = create<State>((set, get) => {
       autoSave: true,
     },
     savedAt: 0,
+    unsavedPrompt: null,
     settingsPage: null,
 
     async refreshCatalog() {
@@ -409,6 +414,20 @@ export const useStore = create<State>((set, get) => {
     async savePath(path) {
       clearTimeout(timers.get(path));
       await saveNow(path);
+    },
+
+    discard(path) {
+      clearTimeout(timers.get(path));
+      timers.delete(path);
+      const doc = get().docs[path];
+      if (!doc) return;
+      histories.delete(path);
+      set((s) => ({
+        docs: {
+          ...s.docs,
+          [path]: { text: doc.savedText, savedText: doc.savedText, ...parse(path, doc.savedText) },
+        },
+      }));
     },
 
     isDirty(path) {

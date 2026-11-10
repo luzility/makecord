@@ -52,6 +52,8 @@ import { appState } from "./state";
 
 let win: BrowserWindow | null = null;
 let readyToClose: () => void = () => {};
+let holdClose: () => void = () => {};
+let cancelClose: () => void = () => {};
 
 async function processKB(m: ProcessMetric): Promise<number> {
   if (process.platform === "linux") {
@@ -94,15 +96,25 @@ function createWindow() {
 
   let closeReady = false;
   const current = win;
+  let fallback: ReturnType<typeof setTimeout> | undefined;
+  let closing = false;
   current.on("close", (e) => {
     if (closeReady) return;
     e.preventDefault();
+    if (closing) return;
+    closing = true;
     current.webContents.send("app:beforeClose");
-    setTimeout(() => {
+    fallback = setTimeout(() => {
       closeReady = true;
       if (!current.isDestroyed()) current.close();
     }, 2000);
   });
+  holdClose = () => clearTimeout(fallback);
+  cancelClose = () => {
+    clearTimeout(fallback);
+    closing = false;
+    quitRequested = false;
+  };
   readyToClose = () => {
     closeReady = true;
     if (!current.isDestroyed()) current.close();
@@ -305,6 +317,8 @@ function registerIpc() {
     return { ideMB: Math.round(ide / 1024), botMB: bot === null ? null : Math.round(bot / 1024) };
   });
   handle("app:closeReady", () => readyToClose());
+  handle("app:closeHold", () => holdClose());
+  handle("app:closeCancel", () => cancelClose());
   handle("app:quit", () => app.quit());
   handle("app:openExternal", async (url: string) => {
     if (/^https:\/\//.test(url)) await shell.openExternal(url);

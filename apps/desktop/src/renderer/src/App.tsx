@@ -3,6 +3,7 @@ import { NewProjectDialog } from "./components/NewProjectDialog";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { TextContextMenu } from "./components/TextContextMenu";
 import { TooltipLayer } from "./components/TooltipLayer";
+import { UnsavedDialog } from "./components/UnsavedDialog";
 import { VarAutocomplete } from "./components/VarAutocomplete";
 import { Welcome } from "./components/Welcome";
 import { Workbench } from "./components/Workbench";
@@ -12,6 +13,7 @@ import { flushAll } from "./lib/dock";
 import { applyUiFont } from "./lib/fonts";
 import { isEditableTarget, matches } from "./lib/shortcuts";
 import { useStore } from "./lib/store";
+import { resolveUnsaved } from "./lib/unsaved";
 
 export function App() {
   const project = useStore((s) => s.project);
@@ -39,7 +41,16 @@ export function App() {
   useEffect(
     () =>
       api.app.onBeforeClose(() => {
-        void flushAll().finally(() => api.app.closeReady());
+        void (async () => {
+          const { settings, docs, isDirty } = useStore.getState();
+          const asking = !settings.autoSave && Object.keys(docs).some((p) => isDirty(p));
+          if (asking) await api.app.closeHold();
+          if (!(await resolveUnsaved())) {
+            await api.app.closeCancel();
+            return;
+          }
+          await flushAll().finally(() => api.app.closeReady());
+        })();
       }),
     [],
   );
@@ -62,6 +73,7 @@ export function App() {
     <>
       {project ? <Workbench key={project.root} /> : <Welcome />}
       <TooltipLayer />
+      <UnsavedDialog />
       <TextContextMenu />
       <VarAutocomplete />
       {newProjectOpen && <NewProjectDialog />}

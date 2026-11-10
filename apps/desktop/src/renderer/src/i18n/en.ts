@@ -169,6 +169,16 @@ export const en = {
     emoji: "Custom emoji",
     slashMention: "Link a slash command",
   },
+  unsaved: {
+    title: "Save changes?",
+    one: "%{name} has changes that aren't saved yet.",
+    many_one: "%{count} file has changes that aren't saved yet.",
+    many_other: "%{count} files have changes that aren't saved yet.",
+    hint: "If you don't save, the changes are thrown away and the files go back to how they are on disk.",
+    save: "Save",
+    saveAll: "Save all",
+    discard: "Don't save",
+  },
   tools: { hide: "Hide" },
   files: {
     open: "Open",

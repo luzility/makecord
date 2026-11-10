@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { cn } from "@/components/ui";
 import { useT } from "@/i18n";
 import { useStore } from "@/lib/store";
+import { resolveUnsaved } from "@/lib/unsaved";
 
 export function EditorTab({ api, params }: IDockviewPanelHeaderProps<{ path?: string }>) {
   const { t } = useT();
@@ -21,7 +22,7 @@ export function EditorTab({ api, params }: IDockviewPanelHeaderProps<{ path?: st
   }, [api]);
 
   const close = async () => {
-    if (path && useStore.getState().isDirty(path)) await useStore.getState().savePath(path);
+    if (path && !(await resolveUnsaved([path]))) return;
     api.close();
   };
 
