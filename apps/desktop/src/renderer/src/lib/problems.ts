@@ -20,6 +20,10 @@ const KEYS: Record<string, MessageKey> = {
   "missing-intent": "problems.missingIntent",
   "plugin-failed": "problems.pluginFailed",
   "plugin-incompatible": "problems.pluginIncompatible",
+  "missing-function-name": "problems.missingFunctionName",
+  "duplicate-function": "problems.duplicateFunction",
+  "missing-function": "problems.missingFunction",
+  "missing-argument": "problems.missingArgument",
 };
 
 export function problemText(p: Problem, locale: Locale): string {

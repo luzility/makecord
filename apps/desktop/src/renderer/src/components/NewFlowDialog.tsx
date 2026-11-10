@@ -1,11 +1,23 @@
-import { type CommandType, CUSTOM_ID_EVENTS, FlowEventName, messageFileOf } from "@makecord/spec";
+import {
+  type CommandType,
+  CUSTOM_ID_EVENTS,
+  type FlowEventName,
+  FUNCTION_NAME,
+  messageFileOf,
+} from "@makecord/spec";
 import { useState } from "react";
 import { newMessage } from "@/editors/message/model";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import { openFile } from "@/lib/dock";
 import { useStore } from "@/lib/store";
-import { newCommandFlow, newEventFlow, toJson } from "@/lib/templates";
+import {
+  newCommandFlow,
+  newEventFlow,
+  newFunctionFlow,
+  SELECTABLE_EVENTS,
+  toJson,
+} from "@/lib/templates";
 import { Select } from "./Select";
 import { Button, cn, Dialog, Field } from "./ui";
 
@@ -21,7 +33,9 @@ export function NewFlowDialog() {
   const { t } = useT();
   const set = useStore((s) => s.set);
   const initial = useStore((s) => s.newFlowOpen);
-  const [kind, setKind] = useState<"command" | "event" | "message">(initial || "command");
+  const [kind, setKind] = useState<"command" | "event" | "function" | "message">(
+    initial || "command",
+  );
   const [messageKind, setMessageKind] = useState<"classic" | "componentsV2">("componentsV2");
   const [name, setName] = useState("");
   const [event, setEvent] = useState<FlowEventName>("guildMemberAdd");
@@ -31,11 +45,13 @@ export function NewFlowDialog() {
   const [error, setError] = useState<string | null>(null);
   const close = () => set({ newFlowOpen: false });
   const validName =
-    kind === "message"
-      ? /^[-_\p{L}\p{N}]+(\/[-_\p{L}\p{N}]+)*$/u.test(name) && name.length <= 64
-      : commandType === "chatInput"
-        ? /^[-_\p{Ll}\p{N}]{1,32}$/u.test(name)
-        : name.trim().length > 0 && name.length <= 32;
+    kind === "function"
+      ? FUNCTION_NAME.test(name)
+      : kind === "message"
+        ? /^[-_\p{L}\p{N}]+(\/[-_\p{L}\p{N}]+)*$/u.test(name) && name.length <= 64
+        : commandType === "chatInput"
+          ? /^[-_\p{Ll}\p{N}]{1,32}$/u.test(name)
+          : name.trim().length > 0 && name.length <= 32;
 
   const create = async () => {
     const slug = customId
@@ -51,19 +67,23 @@ export function NewFlowDialog() {
     const base =
       kind === "command"
         ? `commands/${commandSlug}`
-        : `events/${interaction && slug ? `${event}-${slug}` : event}`;
+        : kind === "function"
+          ? `functions/${name}`
+          : `events/${interaction && slug ? `${event}-${slug}` : event}`;
     const path = kind === "message" ? messageFileOf(name) : await freePath(base);
     const flow =
-      kind === "message"
-        ? newMessage(messageKind, t("templates.messageText"))
-        : kind === "command"
-          ? newCommandFlow(
-              name.trim(),
-              t("templates.commandDescription", { name }),
-              t("templates.commandReply"),
-              commandType,
-            )
-          : newEventFlow(event, customId.trim() || undefined);
+      kind === "function"
+        ? newFunctionFlow(name, "")
+        : kind === "message"
+          ? newMessage(messageKind, t("templates.messageText"))
+          : kind === "command"
+            ? newCommandFlow(
+                name.trim(),
+                t("templates.commandDescription", { name }),
+                t("templates.commandReply"),
+                commandType,
+              )
+            : newEventFlow(event, customId.trim() || undefined);
     try {
       await api.fs.create(path, toJson(flow));
       close();
@@ -85,8 +105,8 @@ export function NewFlowDialog() {
           if (kind === "event" || validName) void create();
         }}
       >
-        <fieldset className="m-0 grid min-w-0 grid-cols-3 gap-1 rounded-lg border border-line bg-chrome p-1">
-          {(["command", "event", "message"] as const).map((k) => (
+        <fieldset className="m-0 grid min-w-0 grid-cols-4 gap-1 rounded-lg border border-line bg-chrome p-1">
+          {(["command", "event", "function", "message"] as const).map((k) => (
             <button
               key={k}
               type="button"
@@ -101,7 +121,18 @@ export function NewFlowDialog() {
             </button>
           ))}
         </fieldset>
-        {kind === "message" ? (
+        {kind === "function" ? (
+          <Field label={t("newFlow.functionName")} hint={t("newFlow.functionNameHint")}>
+            <input
+              autoFocus
+              value={name}
+              maxLength={64}
+              onChange={(e) => setName(e.target.value.replace(/[^a-zA-Z0-9_]/g, "_"))}
+              placeholder="get_level"
+              className="h-7 w-full rounded-md border border-line bg-chrome px-2 font-mono text-label outline-none focus:border-fg/40 focus-visible:outline-none placeholder:text-faint"
+            />
+          </Field>
+        ) : kind === "message" ? (
           <>
             <Field label={t("newFlow.messageName")} hint={t("newFlow.messageNameHint")}>
               <div className="flex items-center rounded-md border border-line bg-chrome focus-within:border-fg/40">
@@ -170,7 +201,7 @@ export function NewFlowDialog() {
           <Field label={t("newFlow.eventLabel")}>
             <Select
               value={event}
-              options={FlowEventName.options.map((ev) => ({ value: ev, label: t(`events.${ev}`) }))}
+              options={SELECTABLE_EVENTS.map((ev) => ({ value: ev, label: t(`events.${ev}`) }))}
               onChange={setEvent}
             />
           </Field>

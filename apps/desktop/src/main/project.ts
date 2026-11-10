@@ -5,7 +5,7 @@ import { coreNodeMetas } from "@makecord/plugin-core/meta";
 import { inspectProject, type Problem } from "@makecord/runtime/inspect";
 import { loadProject } from "@makecord/runtime/project";
 import { PROJECT_FILE, ProjectConfig } from "@makecord/spec";
-import type { FileNode, ProjectInfo } from "../shared/api";
+import type { FileNode, FunctionSummary, ProjectInfo } from "../shared/api";
 import { TEMPLATES_DIR } from "./bundled";
 import { appState } from "./state";
 
@@ -82,6 +82,21 @@ export async function readTree(abs = requireProject().root, rel = ""): Promise<F
     a.kind === b.kind ? a.name.localeCompare(b.name) : a.kind === "dir" ? -1 : 1,
   );
   return { name: rel ? basename(abs) : requireProject().name, path: rel, kind: "dir", children };
+}
+
+export async function functions(): Promise<FunctionSummary[]> {
+  try {
+    const project = await loadProject(requireProject().root);
+    return project.flows
+      .flatMap(({ file, flow }) =>
+        flow.kind === "event" && flow.event === "function" && flow.function
+          ? [{ ...flow.function, file }]
+          : [],
+      )
+      .sort((a, b) => a.name.localeCompare(b.name));
+  } catch {
+    return [];
+  }
 }
 
 export async function inspect(): Promise<Problem[]> {

@@ -24,6 +24,19 @@ export interface BuiltMessage {
   flags?: number;
 }
 
+export interface FunctionParamInfo {
+  name: string;
+  description: string;
+  type: "string" | "number" | "boolean";
+  required: boolean;
+}
+
+export interface FunctionInfo {
+  name: string;
+  description: string;
+  params: readonly FunctionParamInfo[];
+}
+
 export interface NodeContext {
   readonly client: Client<true>;
   readonly interaction?: RepliableInteraction;
@@ -34,5 +47,8 @@ export interface NodeContext {
   readonly store: KeyValueStore;
   message(name: string): BuiltMessage;
   secret(name: string): string | undefined;
+  functions(): readonly FunctionInfo[];
+  callFunction(name: string, args: Record<string, unknown>): Promise<unknown>;
+  setResult(value: unknown): void;
   log(level: LogLevel, message: string): void;
 }

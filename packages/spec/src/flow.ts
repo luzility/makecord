@@ -187,6 +187,7 @@ export const FlowEventName = z.enum([
   "modalSubmit",
   "autocomplete",
   "schedule",
+  "function",
 ]);
 export type FlowEventName = z.infer<typeof FlowEventName>;
 
@@ -204,11 +205,32 @@ export const Schedule = z.union([
 ]);
 export type Schedule = z.infer<typeof Schedule>;
 
+export const FUNCTION_NAME = /^[a-zA-Z_][a-zA-Z0-9_]{0,63}$/;
+
+export const FunctionParamType = z.enum(["string", "number", "boolean"]);
+export type FunctionParamType = z.infer<typeof FunctionParamType>;
+
+export const FunctionParam = z.object({
+  name: z.string().regex(FUNCTION_NAME, "Letters, numbers and _ only, not starting with a number"),
+  description: z.string().max(500).default(""),
+  type: FunctionParamType.default("string"),
+  required: z.boolean().default(true),
+});
+export type FunctionParam = z.infer<typeof FunctionParam>;
+
+export const FunctionSignature = z.object({
+  name: z.string().regex(FUNCTION_NAME, "Letters, numbers and _ only, not starting with a number"),
+  description: z.string().max(1000).default(""),
+  params: z.array(FunctionParam).max(20).default([]),
+});
+export type FunctionSignature = z.infer<typeof FunctionSignature>;
+
 export const EventFlow = FlowBase.extend({
   kind: z.literal("event"),
   event: FlowEventName,
   customId: z.string().min(1).max(100).optional(),
   schedule: Schedule.optional(),
+  function: FunctionSignature.optional(),
 });
 export type EventFlow = z.infer<typeof EventFlow>;
 

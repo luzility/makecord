@@ -140,8 +140,8 @@ function parseInputs(spec: string) {
 
 export default definePlugin({
   id: "core",
-  version: "0.1.0",
-  engines: { makecord: "^0.1.0" },
+  version: "0.2.0",
+  engines: { makecord: "^0.2.0" },
   nodes: [
     defineNode(m.trigger, () => "next"),
 
@@ -268,6 +268,29 @@ export default definePlugin({
       }
       ctx.vars.delete(key);
       return "done";
+    }),
+
+    defineNode(m.callFunction, async (ctx, data) => {
+      try {
+        ctx.vars.set(data.variable, await ctx.callFunction(data.function.trim(), data.args));
+        ctx.vars.set(`${data.variable}Error`, "");
+        return "next";
+      } catch (e) {
+        ctx.vars.set(`${data.variable}Error`, (e as Error).message);
+        ctx.log("warn", (e as Error).message);
+        return "failed";
+      }
+    }),
+
+    defineNode(m.returnValue, (ctx, data) => {
+      const raw = data.value.trim();
+      let value: unknown = data.value;
+      if (/^[[{]/.test(raw)) {
+        try {
+          value = JSON.parse(raw);
+        } catch {}
+      }
+      ctx.setResult(value);
     }),
 
     defineNode(m.setVariable, (ctx, data) => {

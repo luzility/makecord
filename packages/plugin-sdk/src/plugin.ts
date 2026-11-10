@@ -9,7 +9,10 @@ export interface PluginDefinition {
 }
 
 export function definePlugin(plugin: PluginDefinition): PluginDefinition {
-  const prefix = plugin.id.replace(/^@[^/]+\//, "").replace(/^makecord-plugin-/, "");
+  const prefix = plugin.id
+    .replace(/^@makecord\/plugin-/, "")
+    .replace(/^@[^/]+\//, "")
+    .replace(/^makecord-plugin-/, "");
   for (const node of plugin.nodes) {
     if (!node.meta.type.startsWith(`${prefix}.`)) {
       throw new Error(`Node type "${node.meta.type}" must be namespaced as "${prefix}.<name>"`);

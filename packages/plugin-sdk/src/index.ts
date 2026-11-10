@@ -1,5 +1,18 @@
-export type { BuiltMessage, KeyValueStore, LogLevel, NodeContext, StoredValue } from "./context.js";
-export { MESSAGE_FIELD_FORMAT, VARIABLE_FIELD_FORMAT } from "./fields.js";
+export type {
+  BuiltMessage,
+  FunctionInfo,
+  FunctionParamInfo,
+  KeyValueStore,
+  LogLevel,
+  NodeContext,
+  StoredValue,
+} from "./context.js";
+export {
+  FUNCTION_ARGS_FIELD_FORMAT,
+  FUNCTION_FIELD_FORMAT,
+  MESSAGE_FIELD_FORMAT,
+  VARIABLE_FIELD_FORMAT,
+} from "./fields.js";
 export {
   defineNode,
   defineNodeMeta,

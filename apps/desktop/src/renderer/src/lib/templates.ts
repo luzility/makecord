@@ -3,7 +3,7 @@ import {
   type CommandType,
   CUSTOM_ID_EVENTS,
   type EventFlow,
-  type FlowEventName,
+  FlowEventName,
 } from "@makecord/spec";
 
 export function newCommandFlow(
@@ -40,5 +40,21 @@ export function newEventFlow(event: FlowEventName, customId?: string): EventFlow
     edges: [],
   };
 }
+
+export function newFunctionFlow(name: string, description: string): EventFlow {
+  return {
+    specVersion: 1,
+    kind: "event",
+    event: "function",
+    function: { name, description, params: [] },
+    nodes: [
+      { id: "start", type: "core.trigger", position: { x: 0, y: 0 }, data: {} },
+      { id: "return", type: "core.return", position: { x: 320, y: 0 }, data: { value: "" } },
+    ],
+    edges: [{ id: "e1", source: "start", sourceHandle: "next", target: "return" }],
+  };
+}
+
+export const SELECTABLE_EVENTS = FlowEventName.options.filter((e) => e !== "function");
 
 export const toJson = (v: unknown) => `${JSON.stringify(v, null, 2)}\n`;

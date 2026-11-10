@@ -23,7 +23,8 @@ import {
 } from "discord.js";
 import { buildCommands, routeKey } from "./commands.js";
 import type { Debugger } from "./debugger.js";
-import { executeFlow } from "./executor.js";
+import { type Caller, executeFlow, type FlowResult, type FunctionHost } from "./executor.js";
+import { coerceArgs, functionInfo, functionsOf, MAX_FUNCTION_DEPTH } from "./functions.js";
 import { watchGateway } from "./gateway.js";
 import { inspectProject } from "./inspect.js";
 import { loadPlugins, type NodeRegistry } from "./plugins.js";
@@ -165,11 +166,32 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
   };
 
   let runCounter = 0;
+  const functions: FunctionHost = {
+    list: () => [...functionsOf(project.flows).values()].map((f) => functionInfo(f.flow.function)),
+    call: async (name: string, args: Record<string, unknown>, caller: Caller, depth: number) => {
+      if (depth > MAX_FUNCTION_DEPTH) {
+        throw new Error(`Functions called each other more than ${MAX_FUNCTION_DEPTH} levels deep`);
+      }
+      const entry = functionsOf(project.flows).get(name);
+      if (!entry) throw new Error(`Function "${name}" doesn't exist`);
+      const { vars: _vars, args: _args, ...scope } = caller.scope;
+      const res = await run(
+        entry.file,
+        entry.flow,
+        { ...caller, scope: { ...scope, args: coerceArgs(entry.flow.function, args) } },
+        depth,
+      );
+      if (!res.ok) throw new Error(`Function "${name}" failed: ${res.error}`);
+      return res.result;
+    },
+  };
+
   const run = (
     file: string,
     flow: CommandFlow | EventFlow,
     base: Omit<Parameters<typeof executeFlow>[0]["base"], "store" | "messages">,
-  ) => {
+    depth = 0,
+  ): Promise<FlowResult> => {
     const runId = `r${++runCounter}`;
     const debug = opts.debug;
     const i = base.interaction;
@@ -202,8 +224,13 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
       env,
       emit,
       beforeNode,
+      functions,
+      depth,
     })
-      .catch((e: Error) => emit({ type: "flow", phase: "error", flow: file, error: e.message }))
+      .catch((e: Error): FlowResult => {
+        emit({ type: "flow", phase: "error", flow: file, error: e.message });
+        return { ok: false, error: e.message };
+      })
       .finally(() => debug?.finished(runId));
   };
 

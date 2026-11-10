@@ -25,6 +25,7 @@ const api: MakecordApi = {
     close: invoke("project:close"),
     tree: invoke("project:tree"),
     inspect: invoke("project:inspect"),
+    functions: invoke("project:functions"),
     catalog: invoke("project:catalog"),
     botId: invoke("project:botId"),
   } as MakecordApi["project"],

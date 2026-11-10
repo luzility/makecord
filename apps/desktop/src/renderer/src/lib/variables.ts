@@ -154,6 +154,7 @@ export const EVENT_VARIABLES: Record<FlowEventName, string[]> = {
     "command.subcommand",
   ],
   schedule: ["now.date", "now.time", "now.weekday", "now.unix", "now.iso"],
+  function: PEOPLE,
 };
 
 function groupOf(path: string): VarGroup {
@@ -203,6 +204,8 @@ function flowVariables(flow: Flow): string[] {
 }
 
 function ownVariables(flow: Flow): string[] {
+  if (flow.kind === "event" && flow.event === "function")
+    return [...(flow.function?.params ?? []).map((p) => `args.${p.name}`), ...PEOPLE];
   if (flow.kind === "event") return EVENT_VARIABLES[flow.event];
   if (flow.command.type === "user")
     return [

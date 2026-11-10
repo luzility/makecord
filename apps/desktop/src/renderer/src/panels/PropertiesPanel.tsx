@@ -1,10 +1,4 @@
-import {
-  CUSTOM_ID_EVENTS,
-  type Flow,
-  FlowEventName,
-  messageFileOf,
-  type Schedule,
-} from "@makecord/spec";
+import { CUSTOM_ID_EVENTS, type Flow, messageFileOf, type Schedule } from "@makecord/spec";
 import { ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { Select } from "@/components/Select";
@@ -15,8 +9,10 @@ import { useMessageNames } from "@/lib/messages";
 import { descriptorOf, fieldsOf, type NodeDescriptor, nodeText, useNodes } from "@/lib/nodes";
 import { problemText } from "@/lib/problems";
 import { useStore } from "@/lib/store";
+import { SELECTABLE_EVENTS } from "@/lib/templates";
 import { variablesFor } from "@/lib/variables";
 import { CommandSettings } from "./CommandSettings";
+import { FunctionSettings } from "./FunctionSettings";
 
 function NodeForm({
   path,
@@ -73,6 +69,8 @@ function NodeForm({
       ))}
       {fieldsOf(meta, locale).map((f) => {
         const value = data[f.key];
+        const fnKey = fieldsOf(meta).find((x) => x.kind === "function")?.key;
+        if (f.kind === "functionArgs" && !String(data[fnKey ?? ""] ?? "").trim()) return null;
         if (f.kind === "boolean") {
           return (
             <label key={f.key} className="flex items-center gap-2 text-label">
@@ -90,6 +88,14 @@ function NodeForm({
           <Field key={f.key} label={f.title} hint={f.description}>
             {f.kind === "message" ? (
               <MessagePicker value={String(value ?? "")} onChange={(v) => setField(f.key, v)} />
+            ) : f.kind === "function" ? (
+              <FunctionPicker value={String(value ?? "")} onChange={(v) => setField(f.key, v)} />
+            ) : f.kind === "functionArgs" ? (
+              <FunctionArgs
+                fn={String(data[fnKey ?? ""] ?? "")}
+                value={(value ?? {}) as Record<string, string>}
+                onChange={(v) => setField(f.key, v)}
+              />
             ) : f.kind === "enum" ? (
               <Select
                 value={String(value ?? "")}
@@ -146,6 +152,15 @@ function FlowSettings({ path, flow }: { path: string; flow: Flow }) {
           })}
     </p>
   );
+  if (flow.kind === "event" && flow.event === "function") {
+    return (
+      <div className="flex flex-col gap-4 p-4">
+        <h3 className="text-title font-medium">{t("properties.functionTitle")}</h3>
+        {notice}
+        <FunctionSettings path={path} signature={flow.function} />
+      </div>
+    );
+  }
   if (flow.kind === "event") {
     return (
       <div className="flex flex-col gap-4 p-4">
@@ -154,7 +169,7 @@ function FlowSettings({ path, flow }: { path: string; flow: Flow }) {
         <Field label={t("properties.event")}>
           <Select
             value={flow.event}
-            options={FlowEventName.options.map((ev) => ({ value: ev, label: t(`events.${ev}`) }))}
+            options={SELECTABLE_EVENTS.map((ev) => ({ value: ev, label: t(`events.${ev}`) }))}
             onChange={(event) => updateFlow(path, (f) => ({ ...f, event }))}
           />
         </Field>
@@ -227,6 +242,78 @@ function MessagePicker({ value, onChange }: { value: string; onChange: (v: strin
       >
         <ExternalLink size={14} strokeWidth={1.5} />
       </IconButton>
+    </div>
+  );
+}
+
+const NEW_FUNCTION = ":new-function";
+
+function FunctionPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { t } = useT();
+  const functions = useStore((s) => s.functions);
+  const set = useStore((s) => s.set);
+  const current = functions.find((f) => f.name === value);
+  return (
+    <div className="flex gap-1">
+      <Select
+        value={value}
+        options={[
+          ...(value ? [] : [{ value: "", label: t("properties.noFunction") }]),
+          ...functions.map((f) => ({ value: f.name, label: f.name })),
+          ...(value && !current ? [{ value, label: value }] : []),
+          { value: NEW_FUNCTION, label: t("properties.newFunction"), divider: true },
+        ]}
+        onChange={(v) => {
+          if (v === NEW_FUNCTION) set({ newFlowOpen: "function" });
+          else onChange(v);
+        }}
+      />
+      <IconButton
+        label={t("properties.openFunction")}
+        disabled={!current}
+        onClick={() => current && void openFile(current.file)}
+      >
+        <ExternalLink size={14} strokeWidth={1.5} />
+      </IconButton>
+    </div>
+  );
+}
+
+function FunctionArgs({
+  fn,
+  value,
+  onChange,
+}: {
+  fn: string;
+  value: Record<string, string>;
+  onChange: (v: Record<string, string>) => void;
+}) {
+  const { t } = useT();
+  const sig = useStore((s) => s.functions.find((f) => f.name === fn));
+  if (!sig) return null;
+  if (!sig.params.length) return <p className="text-meta text-faint">{t("properties.noArgs")}</p>;
+  return (
+    <div className="flex flex-col gap-2">
+      {sig.params.map((p) => (
+        <label key={p.name} className="flex flex-col gap-1">
+          <span className="flex items-baseline gap-2 font-mono text-meta text-muted">
+            {p.name}
+            {p.required && <span className="text-bad">*</span>}
+            {p.description && (
+              <span className="truncate font-sans text-faint">{p.description}</span>
+            )}
+          </span>
+          <Input
+            value={value[p.name] ?? ""}
+            placeholder={t(`properties.paramTypes.${p.type}`)}
+            onChange={(e) => {
+              const next = { ...value, [p.name]: e.target.value };
+              if (!e.target.value) delete next[p.name];
+              onChange(next);
+            }}
+          />
+        </label>
+      ))}
     </div>
   );
 }

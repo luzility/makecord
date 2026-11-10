@@ -6,6 +6,7 @@ import {
   Folder,
   MessageSquare,
   Plus,
+  SquareFunction,
   Workflow,
   Zap,
 } from "lucide-react";
@@ -33,6 +34,8 @@ const icon = { size: 16, strokeWidth: 1.5, className: "shrink-0 text-faint" };
 
 function iconFor(node: FileNode) {
   if (node.path.startsWith("events/") && node.name.endsWith(".flow.json")) return <Zap {...icon} />;
+  if (node.path.startsWith("functions/") && node.name.endsWith(".flow.json"))
+    return <SquareFunction {...icon} />;
   if (node.name.endsWith(".flow.json")) return <Workflow {...icon} />;
   if (node.name.endsWith(".message.json")) return <MessageSquare {...icon} />;
   if (node.name.endsWith(".json")) return <FileJson {...icon} />;

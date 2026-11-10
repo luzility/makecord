@@ -1,4 +1,9 @@
-import { MESSAGE_FIELD_FORMAT, type NodeMeta } from "@makecord/plugin-sdk";
+import {
+  FUNCTION_ARGS_FIELD_FORMAT,
+  FUNCTION_FIELD_FORMAT,
+  MESSAGE_FIELD_FORMAT,
+  type NodeMeta,
+} from "@makecord/plugin-sdk";
 import {
   type EventFlow,
   type IntentName,
@@ -50,6 +55,7 @@ export const EVENT_INTENTS: Record<EventFlow["event"], IntentName[]> = {
   selectMenu: [],
   modalSubmit: [],
   schedule: [],
+  function: [],
 };
 
 const READS_CONTENT = new Set<EventFlow["event"]>([
@@ -66,14 +72,16 @@ export function isEmptyIssue(issue: {
   return issue.code === "too_small" && issue.minimum === 1 && issue.origin === "string";
 }
 
-function messageFields(meta: NodeMeta): string[] {
+function fieldsWithFormat(meta: NodeMeta, format: string): string[] {
   return Object.entries(meta.fields.shape)
     .filter(([, field]) => {
       const m = (field as { meta?: () => Record<string, unknown> | undefined }).meta?.();
-      return m?.format === MESSAGE_FIELD_FORMAT;
+      return m?.format === format;
     })
     .map(([key]) => key);
 }
+
+const messageFields = (meta: NodeMeta) => fieldsWithFormat(meta, MESSAGE_FIELD_FORMAT);
 
 type Interactive = { event: "buttonClick" | "selectMenu"; customId: string; label: string };
 
@@ -185,8 +193,42 @@ export function inspectProject(project: LoadedProject, metas: readonly NodeMeta[
     }
   }
 
+  const functionFiles = new Map<string, string>();
+  for (const { file, flow } of project.flows) {
+    if (flow.kind !== "event" || flow.event !== "function") continue;
+    if (!flow.function) {
+      problems.push({
+        severity: "error",
+        file,
+        code: "missing-function-name",
+        params: {},
+        message: "A function needs a name",
+      });
+      continue;
+    }
+    const name = flow.function.name;
+    const first = functionFiles.get(name);
+    if (first) {
+      problems.push({
+        severity: "error",
+        file,
+        code: "duplicate-function",
+        params: { name, file: first },
+        message: `A function named "${name}" already exists in ${first}`,
+      });
+    } else functionFiles.set(name, file);
+  }
+  const signatures = new Map(
+    project.flows.flatMap(({ flow }) =>
+      flow.kind === "event" && flow.event === "function" && flow.function
+        ? [[flow.function.name, flow.function] as const]
+        : [],
+    ),
+  );
+
   for (const { file, flow } of project.flows) {
     const ids = new Set(flow.nodes.map((n) => n.id));
+    const isFunction = flow.kind === "event" && flow.event === "function";
 
     for (const node of flow.nodes) {
       const meta = byType.get(node.type);
@@ -201,7 +243,7 @@ export function inspectProject(project: LoadedProject, metas: readonly NodeMeta[
         });
         continue;
       }
-      if (meta.needsInteraction && !isInteractionFlow(flow)) {
+      if (meta.needsInteraction && !isInteractionFlow(flow) && !isFunction) {
         problems.push({
           severity: "error",
           file,
@@ -242,6 +284,38 @@ export function inspectProject(project: LoadedProject, metas: readonly NodeMeta[
             message: `Message design "${name}" doesn't exist in messages/`,
             params: { type: node.type, name },
           });
+        }
+      }
+      const argFields = fieldsWithFormat(meta, FUNCTION_ARGS_FIELD_FORMAT);
+      for (const key of fieldsWithFormat(meta, FUNCTION_FIELD_FORMAT)) {
+        const name = String(node.data[key] ?? "").trim();
+        if (!name) continue;
+        const sig = signatures.get(name);
+        if (!sig) {
+          problems.push({
+            severity: "error",
+            file,
+            nodeId: node.id,
+            code: "missing-function",
+            message: `Function "${name}" doesn't exist`,
+            params: { type: node.type, name },
+          });
+          continue;
+        }
+        for (const argKey of argFields) {
+          const given = (node.data[argKey] ?? {}) as Record<string, unknown>;
+          for (const p of sig.params) {
+            if (p.required && !String(given[p.name] ?? "").trim()) {
+              problems.push({
+                severity: "error",
+                file,
+                nodeId: node.id,
+                code: "missing-argument",
+                message: `"${name}" needs the argument "${p.name}"`,
+                params: { type: node.type, name, arg: p.name },
+              });
+            }
+          }
         }
       }
       const res = meta.fields.safeParse(node.data);

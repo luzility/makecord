@@ -1,4 +1,10 @@
-import { defineNodeMeta, MESSAGE_FIELD_FORMAT, VARIABLE_FIELD_FORMAT } from "@makecord/plugin-sdk";
+import {
+  defineNodeMeta,
+  FUNCTION_ARGS_FIELD_FORMAT,
+  FUNCTION_FIELD_FORMAT,
+  MESSAGE_FIELD_FORMAT,
+  VARIABLE_FIELD_FORMAT,
+} from "@makecord/plugin-sdk";
 import { z } from "zod";
 
 const text = (title: string, description?: string) =>
@@ -1428,6 +1434,58 @@ export const suggest = defineNodeMeta({
   },
 });
 
+export const callFunction = defineNodeMeta({
+  type: "core.callFunction",
+  title: "Call Function",
+  description: "Runs a function flow and saves what it returns.",
+  category: "logic",
+  outputs: ["next", "failed"],
+  fields: z.object({
+    function: z.string().min(1).meta({ title: "Function", format: FUNCTION_FIELD_FORMAT }),
+    args: z
+      .record(z.string(), z.string())
+      .default({})
+      .meta({ title: "Arguments", format: FUNCTION_ARGS_FIELD_FORMAT }),
+    variable: variable("result", ["Error"]),
+  }),
+  locales: {
+    tr: {
+      title: "Fonksiyon Çağır",
+      description: "Bir fonksiyon akışını çalıştırır ve döndürdüğünü kaydeder.",
+      fields: {
+        function: { title: "Fonksiyon" },
+        args: { title: "Argümanlar" },
+        variable: variableTr,
+      },
+      outputs: { next: "sonra", failed: "hata" },
+    },
+  },
+});
+
+export const returnValue = defineNodeMeta({
+  type: "core.return",
+  title: "Return",
+  description: "Ends a function and hands a value back to whoever called it.",
+  category: "logic",
+  outputs: [],
+  events: ["function"],
+  fields: z.object({
+    value: text("Value", "Text, a variable like {{vars.total}}, or JSON").default(""),
+  }),
+  locales: {
+    tr: {
+      title: "Döndür",
+      description: "Fonksiyonu bitirir ve çağırana bir değer geri verir.",
+      fields: {
+        value: {
+          title: "Değer",
+          description: "Metin, {{vars.toplam}} gibi bir değişken ya da JSON",
+        },
+      },
+    },
+  },
+});
+
 export const coreNodeMetas = [
   trigger,
   reply,
@@ -1483,4 +1541,6 @@ export const coreNodeMetas = [
   timestamp,
   randomItem,
   suggest,
+  callFunction,
+  returnValue,
 ];

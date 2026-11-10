@@ -1,4 +1,8 @@
 import type { Problem } from "@makecord/runtime/inspect";
+import type { FunctionSignature } from "@makecord/spec";
+
+export type FunctionSummary = FunctionSignature & { file: string };
+
 import type { Catalog } from "@makecord/runtime/language-service";
 import type { HostMessage, RuntimeMessage, RuntimeStatus } from "@makecord/runtime/protocol";
 
@@ -53,6 +57,7 @@ export interface MakecordApi {
     close(): Promise<void>;
     tree(): Promise<FileNode>;
     inspect(): Promise<Problem[]>;
+    functions(): Promise<FunctionSummary[]>;
     catalog(): Promise<Catalog>;
     botId(): Promise<string | null>;
   };

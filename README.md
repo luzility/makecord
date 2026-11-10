@@ -130,7 +130,7 @@ const roll = defineNodeMeta({
 export default definePlugin({
   id: "makecord-plugin-dice",
   version: "1.0.0",
-  engines: { makecord: "^0.1.0" },
+  engines: { makecord: "^0.2.0" },
   nodes: [
     defineNode(roll, (ctx, { sides }) => {
       ctx.vars.set("roll", 1 + Math.floor(Math.random() * sides));

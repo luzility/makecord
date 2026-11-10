@@ -1,5 +1,9 @@
 import { coreNodeMetas } from "@makecord/plugin-core/meta";
-import { MESSAGE_FIELD_FORMAT } from "@makecord/plugin-sdk";
+import {
+  FUNCTION_ARGS_FIELD_FORMAT,
+  FUNCTION_FIELD_FORMAT,
+  MESSAGE_FIELD_FORMAT,
+} from "@makecord/plugin-sdk";
 import { describeNode, type NodeDescriptor } from "@makecord/runtime/describe";
 import type { Locale } from "@/i18n/locale";
 import { useStore } from "./store";
@@ -21,7 +25,15 @@ export interface FieldSpec {
   key: string;
   title: string;
   description?: string;
-  kind: "text" | "multiline" | "boolean" | "number" | "enum" | "message";
+  kind:
+    | "text"
+    | "multiline"
+    | "boolean"
+    | "number"
+    | "enum"
+    | "message"
+    | "function"
+    | "functionArgs";
   options?: string[];
   defaultValue?: unknown;
   required: boolean;
@@ -57,15 +69,19 @@ export function fieldsOf(node: NodeDescriptor, locale: Locale = "en"): FieldSpec
     const kind: FieldSpec["kind"] =
       p.format === MESSAGE_FIELD_FORMAT
         ? "message"
-        : Array.isArray(p.enum)
-          ? "enum"
-          : p.type === "boolean"
-            ? "boolean"
-            : p.type === "number" || p.type === "integer"
-              ? "number"
-              : p.multiline
-                ? "multiline"
-                : "text";
+        : p.format === FUNCTION_FIELD_FORMAT
+          ? "function"
+          : p.format === FUNCTION_ARGS_FIELD_FORMAT
+            ? "functionArgs"
+            : Array.isArray(p.enum)
+              ? "enum"
+              : p.type === "boolean"
+                ? "boolean"
+                : p.type === "number" || p.type === "integer"
+                  ? "number"
+                  : p.multiline
+                    ? "multiline"
+                    : "text";
     return {
       key,
       title: localized[key]?.title ?? (p.title as string) ?? key,
@@ -91,6 +107,7 @@ export function defaultData(node: NodeDescriptor): Record<string, unknown> {
     else if (f.kind === "boolean") data[f.key] = false;
     else if (f.kind === "enum") data[f.key] = f.options?.[0];
     else if (f.kind === "number") data[f.key] = 0;
+    else if (f.kind === "functionArgs") data[f.key] = {};
     else data[f.key] = "";
   }
   return data;

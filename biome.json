@@ -46,7 +46,10 @@
         "packages/runtime/src/gateway.ts",
         "packages/runtime/src/bot.ts",
         "packages/runtime/src/scope.ts",
-        "packages/runtime/src/commands.test.ts"
+        "packages/runtime/src/commands.test.ts",
+        "packages/runtime/src/functions.test.ts",
+        "plugins/ai/src/providers.test.ts",
+        "plugins/ai/src/nodes.test.ts"
       ],
       "linter": {
         "rules": {
@@ -64,7 +67,8 @@
         "apps/desktop/src/renderer/src/editors/message/ClassicForm.tsx",
         "apps/desktop/src/renderer/src/editors/message/LayoutForm.tsx",
         "apps/desktop/src/renderer/src/editors/message/parts.tsx",
-        "apps/desktop/src/renderer/src/panels/CommandSettings.tsx"
+        "apps/desktop/src/renderer/src/panels/CommandSettings.tsx",
+        "apps/desktop/src/renderer/src/panels/FunctionSettings.tsx"
       ],
       "linter": {
         "rules": {

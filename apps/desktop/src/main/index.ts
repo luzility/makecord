@@ -33,6 +33,7 @@ import {
   createProject,
   createProjectFolder,
   currentProject,
+  functions,
   inspect,
   openProject,
   projectPath,
@@ -252,6 +253,7 @@ function registerIpc() {
   });
   handle("project:tree", () => readTree());
   handle("project:inspect", () => inspectWithService().catch(() => inspect()));
+  handle("project:functions", () => functions());
   handle("project:catalog", () => getCatalog().catch(() => localCatalog()));
   handle("project:botId", async () => {
     const token = (await decryptSecrets(requireProject().root)).DISCORD_TOKEN;

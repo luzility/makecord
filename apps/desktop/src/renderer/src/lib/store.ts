@@ -6,6 +6,7 @@ import {
   api,
   type Catalog,
   type FileNode,
+  type FunctionSummary,
   type Problem,
   type ProjectInfo,
   type RuntimeMessage,
@@ -74,6 +75,7 @@ interface State {
   docs: Record<string, Doc>;
   selection: { path: string; nodeId: string } | null;
   problems: Problem[];
+  functions: FunctionSummary[];
   status: RuntimeStatus | "idle";
   statusDetail?: string;
   statusCode?: string;
@@ -99,7 +101,7 @@ interface State {
   secretsOpen: boolean;
   inviteOpen: boolean;
   searchOpen: boolean;
-  newFlowOpen: false | "command" | "event" | "message";
+  newFlowOpen: false | "command" | "event" | "function" | "message";
   newProjectOpen: boolean;
   activePath: string | null;
   locale: Locale;
@@ -273,6 +275,7 @@ export const useStore = create<State>((set, get) => {
     docs: {},
     selection: null,
     problems: [],
+    functions: [],
     status: "idle",
     logs: [],
     tools: DEFAULT_TOOLS,
@@ -335,6 +338,7 @@ export const useStore = create<State>((set, get) => {
         docs: {},
         selection: null,
         problems: [],
+        functions: [],
         logs: [],
         gateway: [],
         breakpoints: {},
@@ -366,7 +370,11 @@ export const useStore = create<State>((set, get) => {
     },
 
     async refreshProblems() {
-      set({ problems: await api.project.inspect() });
+      const [problems, functions] = await Promise.all([
+        api.project.inspect(),
+        api.project.functions(),
+      ]);
+      set({ problems, functions });
     },
 
     async loadDoc(path) {
