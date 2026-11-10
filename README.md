@@ -10,6 +10,12 @@
 </p>
 
 <p align="center">
+  <a href="https://makecord.luzili.tech">Website</a>&emsp;
+  <a href="https://makecord.luzili.tech/docs/">Documentation</a>&emsp;
+  <a href="https://github.com/luzility/makecord/releases">Releases</a>
+</p>
+
+<p align="center">
   <img src="assets/screenshots/flow-editor.png" alt="The Makecord flow editor with a /greet command, its blocks and their settings">
 </p>
 
