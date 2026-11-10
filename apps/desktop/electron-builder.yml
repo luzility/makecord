@@ -18,6 +18,8 @@ extraResources:
 asar: true
 npmRebuild: false
 nodeGypRebuild: false
+toolsets:
+  appimage: "1.0.3"
 artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 publish:
   provider: github
