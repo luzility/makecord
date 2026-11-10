@@ -2,7 +2,21 @@
   "name": "@makecord/spec",
   "version": "0.1.0",
   "license": "Apache-2.0",
-  "description": "Makecord project and flow file schemas",
+  "description": "Zod schemas for Makecord project, flow and message files",
+  "keywords": [
+    "makecord",
+    "discord",
+    "discord-bot",
+    "schema",
+    "zod"
+  ],
+  "homepage": "https://makecord.luzili.tech",
+  "bugs": "https://github.com/luzility/makecord/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luzility/makecord.git",
+    "directory": "packages/spec"
+  },
   "type": "module",
   "exports": {
     ".": {
@@ -11,7 +25,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "!dist/**/*.test.*",
+    "!dist/**/*.map"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -23,5 +39,8 @@
   },
   "devDependencies": {
     "@makecord/config": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

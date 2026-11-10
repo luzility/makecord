@@ -2,7 +2,20 @@
   "name": "@makecord/plugin-core",
   "version": "0.1.0",
   "license": "Apache-2.0",
-  "description": "Built-in Makecord nodes: triggers, messages, logic, variables",
+  "description": "The built-in blocks of Makecord",
+  "keywords": [
+    "makecord",
+    "discord",
+    "discord-bot",
+    "discord.js"
+  ],
+  "homepage": "https://makecord.luzili.tech",
+  "bugs": "https://github.com/luzility/makecord/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luzility/makecord.git",
+    "directory": "plugins/core"
+  },
   "type": "module",
   "exports": {
     ".": {
@@ -15,7 +28,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "!dist/**/*.test.*",
+    "!dist/**/*.map"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -32,5 +47,8 @@
   },
   "peerDependencies": {
     "discord.js": "^14.20.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

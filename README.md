@@ -167,6 +167,8 @@ DISCORD_TOKEN=... node packages/runtime/dist/cli.js start ./path/to/bot --watch
 
 Design decisions and how the pieces fit together are written up in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (in Turkish).
 
+Releasing is described in [`docs/RELEASING.md`](docs/RELEASING.md).
+
 ## Status
 
 Makecord is young and is developed on Linux. Windows and macOS builds haven't been tested yet, and no bot built with it has run in production. Expect rough edges, and please report what you find.

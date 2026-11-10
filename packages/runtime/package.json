@@ -2,7 +2,23 @@
   "name": "@makecord/runtime",
   "version": "0.1.0",
   "license": "Apache-2.0",
-  "description": "Headless engine that runs Makecord projects — inside the IDE or on any server",
+  "description": "Runs Makecord bots, inside the IDE or on any server",
+  "keywords": [
+    "makecord",
+    "discord",
+    "discord-bot",
+    "discord.js",
+    "bot",
+    "runtime",
+    "cli"
+  ],
+  "homepage": "https://makecord.luzili.tech",
+  "bugs": "https://github.com/luzility/makecord/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luzility/makecord.git",
+    "directory": "packages/runtime"
+  },
   "type": "module",
   "bin": {
     "makecord": "./dist/cli.js"
@@ -35,7 +51,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "!dist/**/*.test.*",
+    "!dist/**/*.map"
   ],
   "engines": {
     "node": ">=22.12"
@@ -57,5 +75,8 @@
   "devDependencies": {
     "@makecord/config": "workspace:*",
     "@types/semver": "^7.8.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
