@@ -282,6 +282,7 @@ export const en = {
     addEmbed: "Add embed",
     color: "Color",
     noColor: "No color",
+    pickColor: "Pick a color",
     authorName: "Author",
     authorIcon: "Author icon URL",
     title: "Title",

@@ -8,7 +8,8 @@ import {
 } from "@makecord/spec";
 import { Plus, Trash2 } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { cn, Field, IconButton, Input, selectCls } from "@/components/ui";
+import { Select } from "@/components/Select";
+import { cn, Field, IconButton, Input } from "@/components/ui";
 import { type MessageKey, useT } from "@/i18n";
 import { useStore } from "@/lib/store";
 
@@ -116,11 +117,14 @@ function OptionEditor({
           onChange={(e) => onChange({ name: e.target.value.toLowerCase().replace(/\s/g, "-") })}
           className="font-mono"
         />
-        <select
-          className={`${selectCls} w-32`}
+        <Select
+          className="w-32 shrink-0"
           value={o.type}
-          onChange={(e) => {
-            const type = e.target.value as CommandOptionType;
+          options={CommandOptionType.options.map((ty) => ({
+            value: ty,
+            label: t(`optionTypes.${ty}` as MessageKey),
+          }))}
+          onChange={(type) =>
             onChange({
               type,
               choices: CHOICE_TYPES.has(type) ? o.choices : undefined,
@@ -129,15 +133,9 @@ function OptionEditor({
               maxValue: NUMERIC.has(type) ? o.maxValue : undefined,
               minLength: type === "string" ? o.minLength : undefined,
               maxLength: type === "string" ? o.maxLength : undefined,
-            });
-          }}
-        >
-          {CommandOptionType.options.map((ty) => (
-            <option key={ty} value={ty}>
-              {t(`optionTypes.${ty}` as MessageKey)}
-            </option>
-          ))}
-        </select>
+            })
+          }
+        />
         <IconButton label={t("properties.deleteOption")} onClick={onDelete}>
           <Trash2 size={16} strokeWidth={1.5} />
         </IconButton>

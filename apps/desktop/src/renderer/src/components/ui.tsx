@@ -64,9 +64,6 @@ export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElem
   );
 }
 
-export const selectCls =
-  "h-7 w-full rounded-md border border-line bg-chrome px-2 text-label text-fg focus:border-fg/40 focus:outline-none focus-visible:outline-none";
-
 export function Field({
   label,
   hint,

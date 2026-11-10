@@ -284,6 +284,7 @@ export const tr: Messages = {
     addEmbed: "Embed ekle",
     color: "Renk",
     noColor: "Renk yok",
+    pickColor: "Renk seç",
     authorName: "Yazar",
     authorIcon: "Yazar simgesi URL'si",
     title: "Başlık",

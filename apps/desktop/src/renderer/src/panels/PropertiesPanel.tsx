@@ -6,7 +6,9 @@ import {
   type Schedule,
 } from "@makecord/spec";
 import { ExternalLink } from "lucide-react";
-import { Button, Empty, Field, IconButton, Input, selectCls } from "@/components/ui";
+import { useState } from "react";
+import { Select } from "@/components/Select";
+import { Button, cn, Empty, Field, IconButton, Input } from "@/components/ui";
 import { useT } from "@/i18n";
 import { openFile } from "@/lib/dock";
 import { useMessageNames } from "@/lib/messages";
@@ -89,15 +91,11 @@ function NodeForm({
             {f.kind === "message" ? (
               <MessagePicker value={String(value ?? "")} onChange={(v) => setField(f.key, v)} />
             ) : f.kind === "enum" ? (
-              <select
-                className={selectCls}
+              <Select
                 value={String(value ?? "")}
-                onChange={(e) => setField(f.key, e.target.value)}
-              >
-                {f.options?.map((o) => (
-                  <option key={o}>{o}</option>
-                ))}
-              </select>
+                options={(f.options ?? []).map((o) => ({ value: o, label: o }))}
+                onChange={(v) => setField(f.key, v)}
+              />
             ) : f.kind === "multiline" ? (
               <textarea
                 rows={4}
@@ -154,19 +152,11 @@ function FlowSettings({ path, flow }: { path: string; flow: Flow }) {
         <h3 className="text-title font-medium">{t("properties.eventTitle")}</h3>
         {notice}
         <Field label={t("properties.event")}>
-          <select
-            className={selectCls}
+          <Select
             value={flow.event}
-            onChange={(e) =>
-              updateFlow(path, (f) => ({ ...f, event: e.target.value as FlowEventName }))
-            }
-          >
-            {FlowEventName.options.map((ev) => (
-              <option key={ev} value={ev}>
-                {t(`events.${ev}`)}
-              </option>
-            ))}
-          </select>
+            options={FlowEventName.options.map((ev) => ({ value: ev, label: t(`events.${ev}`) }))}
+            onChange={(event) => updateFlow(path, (f) => ({ ...f, event }))}
+          />
         </Field>
         {CUSTOM_ID_EVENTS.includes(flow.event) && (
           <Field
@@ -208,6 +198,8 @@ function FlowSettings({ path, flow }: { path: string; flow: Flow }) {
   );
 }
 
+const NEW_DESIGN = ":new-design";
+
 function MessagePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const { t } = useT();
   const names = useMessageNames();
@@ -215,23 +207,19 @@ function MessagePicker({ value, onChange }: { value: string; onChange: (v: strin
   const known = !value || names.includes(value);
   return (
     <div className="flex gap-1">
-      <select
-        className={selectCls}
+      <Select
         value={value}
-        onChange={(e) => {
-          if (e.target.value === "\u0000new") set({ newFlowOpen: "message" });
-          else onChange(e.target.value);
+        options={[
+          { value: "", label: t("properties.noDesign") },
+          ...names.map((n) => ({ value: n, label: n })),
+          ...(known ? [] : [{ value, label: value }]),
+          { value: NEW_DESIGN, label: t("properties.newDesign"), divider: true },
+        ]}
+        onChange={(v) => {
+          if (v === NEW_DESIGN) set({ newFlowOpen: "message" });
+          else onChange(v);
         }}
-      >
-        <option value="">{t("properties.noDesign")}</option>
-        {names.map((n) => (
-          <option key={n} value={n}>
-            {n}
-          </option>
-        ))}
-        {!known && <option value={value}>{value}</option>}
-        <option value={"\u0000new"}>{t("properties.newDesign")}</option>
-      </select>
+      />
       <IconButton
         label={t("properties.openDesign")}
         disabled={!value || !known}
@@ -240,6 +228,40 @@ function MessagePicker({ value, onChange }: { value: string; onChange: (v: strin
         <ExternalLink size={14} strokeWidth={1.5} />
       </IconButton>
     </div>
+  );
+}
+
+function TimeInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [draft, setDraft] = useState(value);
+  const [seen, setSeen] = useState(value);
+  if (seen !== value) {
+    setSeen(value);
+    setDraft(value);
+  }
+  const valid = (v: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
+  return (
+    <Input
+      className={cn("w-20 font-mono tabular-nums", !valid(draft) && "border-bad/60")}
+      value={draft}
+      maxLength={5}
+      placeholder="09:00"
+      inputMode="numeric"
+      onChange={(e) => {
+        let v = e.target.value.replace(/[^\d:]/g, "");
+        if (/^\d{3,4}$/.test(v)) v = `${v.slice(0, 2)}:${v.slice(2)}`;
+        setDraft(v);
+        if (valid(v)) onChange(v);
+      }}
+      onBlur={() => {
+        const m = draft.match(/^(\d{1,2}):?(\d{0,2})$/);
+        if (!m) return setDraft(value);
+        const fixed = `${m[1]!.padStart(2, "0")}:${(m[2] || "0").padEnd(2, "0")}`;
+        if (valid(fixed)) {
+          setDraft(fixed);
+          onChange(fixed);
+        } else setDraft(value);
+      }}
+    />
   );
 }
 
@@ -252,22 +274,17 @@ function ScheduleField({ path, schedule }: { path: string; schedule: Schedule | 
   return (
     <Field label={t("properties.schedule")} hint={t("properties.scheduleHint")}>
       <div className="flex gap-2">
-        <select
-          className={`${selectCls} w-36`}
+        <Select
+          className="w-36 shrink-0"
           value={mode}
-          onChange={(e) =>
-            setSchedule(e.target.value === "daily" ? { dailyAt: "09:00" } : { everyMinutes: 60 })
-          }
-        >
-          <option value="every">{t("properties.scheduleEvery")}</option>
-          <option value="daily">{t("properties.scheduleDaily")}</option>
-        </select>
+          options={[
+            { value: "every", label: t("properties.scheduleEvery") },
+            { value: "daily", label: t("properties.scheduleDaily") },
+          ]}
+          onChange={(m) => setSchedule(m === "daily" ? { dailyAt: "09:00" } : { everyMinutes: 60 })}
+        />
         {schedule && "dailyAt" in schedule ? (
-          <Input
-            type="time"
-            value={schedule.dailyAt}
-            onChange={(e) => e.target.value && setSchedule({ dailyAt: e.target.value })}
-          />
+          <TimeInput value={schedule.dailyAt} onChange={(dailyAt) => setSchedule({ dailyAt })} />
         ) : (
           <div className="flex flex-1 items-center gap-2">
             <Input

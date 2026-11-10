@@ -7,7 +7,9 @@ import {
 } from "@makecord/spec";
 import { ChevronDown, ChevronRight, ChevronUp, Plus, Trash2, X } from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
-import { Button, cn, Field, IconButton, Input, selectCls } from "@/components/ui";
+import { ColorSwatch } from "@/components/ColorSwatch";
+import { Select } from "@/components/Select";
+import { Button, cn, Field, IconButton, Input } from "@/components/ui";
 import { useT } from "@/i18n";
 import { newButton, newSelect, type RowItem, removeAt, replaceAt } from "./model";
 
@@ -77,14 +79,13 @@ export function ColorInput({
   const [draft, setDraft] = useDraft(value, (v) => v ?? "");
   return (
     <div className="flex items-center gap-2">
-      <input
-        type="color"
-        value={value ?? "#1e1f22"}
-        onChange={(e) => {
-          setDraft(e.target.value, e.target.value);
-          onChange(e.target.value);
+      <ColorSwatch
+        value={value}
+        label={t("message.pickColor")}
+        onChange={(c) => {
+          setDraft(c, c);
+          onChange(c);
         }}
-        className="h-7 w-9 shrink-0 cursor-pointer rounded-md border border-line bg-chrome p-0.5"
       />
       <Input
         className="font-mono"
@@ -214,24 +215,20 @@ export function ButtonForm({
           />
         </Field>
         <Field label={t("message.style")}>
-          <select
-            className={selectCls}
+          <Select
             value={value.style}
-            onChange={(e) => {
-              const style = e.target.value as MessageButton["style"];
+            options={ButtonStyle.options.map((s) => ({
+              value: s,
+              label: t(`message.styles.${s}`),
+            }))}
+            onChange={(style) =>
               set(
                 style === "link"
                   ? { style, url: value.url ?? "https://", customId: undefined }
                   : { style, customId: value.customId ?? "button", url: undefined },
-              );
-            }}
-          >
-            {ButtonStyle.options.map((s) => (
-              <option key={s} value={s}>
-                {t(`message.styles.${s}`)}
-              </option>
-            ))}
-          </select>
+              )
+            }
+          />
         </Field>
       </div>
       <div className="grid grid-cols-[1fr_5rem] gap-2">
@@ -328,17 +325,14 @@ export function SelectForm({
         </Field>
       </div>
       <Field label={t("message.menuType")}>
-        <select
-          className={selectCls}
+        <Select
           value={value.menuType}
-          onChange={(e) => set({ menuType: e.target.value as MessageSelect["menuType"] })}
-        >
-          {SelectMenuType.options.map((m) => (
-            <option key={m} value={m}>
-              {t(`message.menuTypes.${m}`)}
-            </option>
-          ))}
-        </select>
+          options={SelectMenuType.options.map((m) => ({
+            value: m,
+            label: t(`message.menuTypes.${m}`),
+          }))}
+          onChange={(menuType) => set({ menuType })}
+        />
       </Field>
       {value.menuType === "string" && (
         <Field label={t("message.options")} hint={t("message.optionsHint")}>

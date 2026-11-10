@@ -8,7 +8,8 @@ import {
   type SectionBlock,
 } from "@makecord/spec";
 import { Plus, Trash2 } from "lucide-react";
-import { Button, Field, IconButton, Input, selectCls } from "@/components/ui";
+import { Select } from "@/components/Select";
+import { Button, Field, IconButton, Input } from "@/components/ui";
 import { type MessageKey, useT } from "@/i18n";
 import { type BlockType, move, newBlock, newButton, removeAt, replaceAt } from "./model";
 import { ButtonForm, Card, Check, ColorInput, optional, RowForm, TextArea } from "./parts";
@@ -76,22 +77,20 @@ function SectionForm({ b, onChange }: { b: SectionBlock; onChange: (b: SectionBl
         </Button>
       )}
       <Field label={t("message.accessory")}>
-        <select
-          className={selectCls}
+        <Select
           value={acc.type}
-          onChange={(e) =>
+          options={[
+            { value: "button", label: t("message.button") },
+            { value: "thumbnail", label: t("message.thumbnail") },
+          ]}
+          onChange={(type) =>
             onChange({
               ...b,
               accessory:
-                e.target.value === "button"
-                  ? newButton()
-                  : { type: "thumbnail", url: "{{user.avatar}}" },
+                type === "button" ? newButton() : { type: "thumbnail", url: "{{user.avatar}}" },
             })
           }
-        >
-          <option value="button">{t("message.button")}</option>
-          <option value="thumbnail">{t("message.thumbnail")}</option>
-        </select>
+        />
       </Field>
       {acc.type === "button" ? (
         <ButtonForm value={acc} onChange={(accessory) => onChange({ ...b, accessory })} />
@@ -200,14 +199,14 @@ function ChildForm({ b, onChange }: { b: ContainerChild; onChange: (b: Container
             checked={b.divider}
             onChange={(divider) => onChange({ ...b, divider })}
           />
-          <select
-            className={selectCls}
+          <Select
             value={b.spacing}
-            onChange={(e) => onChange({ ...b, spacing: e.target.value as "small" | "large" })}
-          >
-            <option value="small">{t("message.spacingSmall")}</option>
-            <option value="large">{t("message.spacingLarge")}</option>
-          </select>
+            options={[
+              { value: "small", label: t("message.spacingSmall") },
+              { value: "large", label: t("message.spacingLarge") },
+            ]}
+            onChange={(spacing) => onChange({ ...b, spacing })}
+          />
         </div>
       );
     case "row":

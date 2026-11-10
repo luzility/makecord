@@ -6,7 +6,8 @@ import { api } from "@/lib/api";
 import { openFile } from "@/lib/dock";
 import { useStore } from "@/lib/store";
 import { newCommandFlow, newEventFlow, toJson } from "@/lib/templates";
-import { Button, cn, Dialog, Field, selectCls } from "./ui";
+import { Select } from "./Select";
+import { Button, cn, Dialog, Field } from "./ui";
 
 async function freePath(base: string) {
   for (let n = 1; n < 100; n++) {
@@ -115,28 +116,28 @@ export function NewFlowDialog() {
               </div>
             </Field>
             <Field label={t("message.format")} hint={t("newFlow.formatHint")}>
-              <select
+              <Select
                 value={messageKind}
-                onChange={(e) => setMessageKind(e.target.value as "classic" | "componentsV2")}
-                className={selectCls}
-              >
-                <option value="componentsV2">{t("message.componentsV2")}</option>
-                <option value="classic">{t("message.classic")}</option>
-              </select>
+                options={[
+                  { value: "componentsV2", label: t("message.componentsV2") },
+                  { value: "classic", label: t("message.classic") },
+                ]}
+                onChange={setMessageKind}
+              />
             </Field>
           </>
         ) : kind === "command" ? (
           <>
             <Field label={t("newFlow.commandType")}>
-              <select
+              <Select
                 value={commandType}
-                onChange={(e) => setCommandType(e.target.value as CommandType)}
-                className={selectCls}
-              >
-                <option value="chatInput">{t("properties.typeSlash")}</option>
-                <option value="user">{t("properties.typeUser")}</option>
-                <option value="message">{t("properties.typeMessage")}</option>
-              </select>
+                options={[
+                  { value: "chatInput", label: t("properties.typeSlash") },
+                  { value: "user", label: t("properties.typeUser") },
+                  { value: "message", label: t("properties.typeMessage") },
+                ]}
+                onChange={setCommandType}
+              />
             </Field>
             <Field
               label={t("newFlow.commandName")}
@@ -167,17 +168,11 @@ export function NewFlowDialog() {
           </>
         ) : (
           <Field label={t("newFlow.eventLabel")}>
-            <select
+            <Select
               value={event}
-              onChange={(e) => setEvent(e.target.value as FlowEventName)}
-              className={selectCls}
-            >
-              {FlowEventName.options.map((ev) => (
-                <option key={ev} value={ev}>
-                  {t(`events.${ev}`)}
-                </option>
-              ))}
-            </select>
+              options={FlowEventName.options.map((ev) => ({ value: ev, label: t(`events.${ev}`) }))}
+              onChange={setEvent}
+            />
           </Field>
         )}
         {kind === "event" && interaction && (
