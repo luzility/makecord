@@ -14,6 +14,7 @@ const manifests = [
   "packages/runtime/package.json",
   "packages/templates/package.json",
   "plugins/core/package.json",
+  "plugins/ai/package.json",
 ];
 
 for (const file of manifests) {
@@ -30,9 +31,15 @@ const replace = (file, pattern, next) => {
 
 replace("packages/runtime/src/version.ts", /"[^"]+"/, `"${version}"`);
 replace("plugins/core/src/index.ts", /version: "[^"]+"/, `version: "${version}"`);
+replace("plugins/ai/src/index.ts", /version: "[^"]+"/, `version: "${version}"`);
+replace(
+  "packages/templates/starter/makecord.json",
+  /"runtime": "[^"]+"/,
+  `"runtime": "^${version}"`,
+);
 const starter = "packages/templates/starter/package.json";
 const project = JSON.parse(readFileSync(starter, "utf8"));
 project.dependencies["@makecord/runtime"] = `^${version}`;
 writeFileSync(starter, `${JSON.stringify(project, null, 2)}\n`);
 
-console.log(`Set version ${version} in ${manifests.length + 3} files`);
+console.log(`Set version ${version} in ${manifests.length + 5} files`);

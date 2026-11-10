@@ -1,0 +1,55 @@
+{
+  "name": "@makecord/plugin-ai",
+  "version": "0.2.0",
+  "license": "Apache-2.0",
+  "description": "AI blocks for Makecord: generate text, run agents that call your functions, extract data and check messages",
+  "keywords": [
+    "makecord",
+    "makecord-plugin",
+    "discord",
+    "discord-bot",
+    "ai",
+    "claude",
+    "openai"
+  ],
+  "homepage": "https://makecord.luzili.tech/docs/ai/",
+  "bugs": "https://github.com/luzility/makecord/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luzility/makecord.git",
+    "directory": "plugins/ai"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.test.*",
+    "!dist/**/*.map"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test dist/**/*.test.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.4.0",
+    "@makecord/plugin-sdk": "workspace:*",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@makecord/config": "workspace:*",
+    "discord.js": "14.28.1"
+  },
+  "peerDependencies": {
+    "discord.js": "^14.20.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
