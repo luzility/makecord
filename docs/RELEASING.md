@@ -36,7 +36,6 @@ Installed apps on Windows and Linux AppImage check GitHub Releases every few hou
 ## Known limitations
 
 - The macOS build isn't signed or notarized. macOS says the app "is damaged" until it's opened once with right-click › Open, or after `xattr -cr /Applications/Makecord.app`. Updates on macOS have to be downloaded by hand.
-- AppImages need FUSE 2. On distributions without it (`libfuse2`), run the AppImage with `APPIMAGE_EXTRACT_AND_RUN=1` or install the .deb.
 - The .deb doesn't update itself.
 
 ## Checking a build locally
