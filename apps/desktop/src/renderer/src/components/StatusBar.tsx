@@ -2,11 +2,36 @@ import { AlertTriangle, CircleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useT } from "@/i18n";
 import { api, type Metrics } from "@/lib/api";
-import { focusToolWindow } from "@/lib/dock";
+import { flushAll, focusToolWindow } from "@/lib/dock";
 import { runErrorKey } from "@/lib/runError";
 import { useStore } from "@/lib/store";
+import { resolveUnsaved } from "@/lib/unsaved";
 import { Led } from "./Logo";
 import { cn, Sep } from "./ui";
+
+function UpdateButton() {
+  const { t } = useT();
+  const [version, setVersion] = useState<string | null>(null);
+  useEffect(() => {
+    void api.app.pendingUpdate().then(setVersion);
+    return api.app.onUpdateReady(setVersion);
+  }, []);
+  if (!version) return null;
+  return (
+    <button
+      type="button"
+      title={t("update.hint")}
+      onClick={async () => {
+        if (!(await resolveUnsaved())) return;
+        await flushAll();
+        await api.app.installUpdate();
+      }}
+      className="rounded px-1.5 text-ok transition-colors duration-150 hover:bg-hover"
+    >
+      {t("update.ready", { version })}
+    </button>
+  );
+}
 
 function SaveState() {
   const { t } = useT();
@@ -118,6 +143,7 @@ export function StatusBar() {
         </span>
       )}
       <div className="flex-1" />
+      <UpdateButton />
       <SaveState />
       {metrics && (
         <span className="flex items-center gap-2 font-mono tabular-nums" title={t("status.memory")}>

@@ -193,6 +193,10 @@ export const en = {
     logs: "Open log folder",
     report: "Report on GitHub",
   },
+  update: {
+    ready: "Update to %{version}: restart",
+    hint: "A new version was downloaded. Restart Makecord to install it",
+  },
   tools: { hide: "Hide" },
   files: {
     open: "Open",

@@ -194,6 +194,10 @@ export const tr: Messages = {
     logs: "Log klasörünü aç",
     report: "GitHub'da bildir",
   },
+  update: {
+    ready: "%{version} sürümüne güncelle: yeniden başlat",
+    hint: "Yeni bir sürüm indirildi. Kurmak için Makecord'u yeniden başlat",
+  },
   tools: { hide: "Gizle" },
   files: {
     open: "Aç",

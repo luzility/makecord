@@ -98,6 +98,9 @@ export interface MakecordApi {
     logError(text: string): Promise<void>;
     openLogs(): Promise<void>;
     version(): Promise<string>;
+    installUpdate(): Promise<void>;
+    pendingUpdate(): Promise<string | null>;
+    onUpdateReady(cb: (version: string) => void): () => void;
     closeHold(): Promise<void>;
     closeCancel(): Promise<void>;
   };

@@ -23,6 +23,7 @@ import {
 import { installCrashLogging, logsDir, writeLog } from "./logs";
 import { installPlugin, searchMarketplace, uninstallPlugin } from "./plugin-manager";
 import { readSettings, writeSettings } from "./settings";
+import { installUpdate, setupUpdates } from "./updater";
 
 const RUNTIME_VERSION_FALLBACK = "0.1.0";
 
@@ -341,6 +342,7 @@ function registerIpc() {
     await shell.openPath(logsDir());
   });
   handle("app:version", () => app.getVersion());
+  handle("app:installUpdate", () => installUpdate());
   handle("app:closeHold", () => holdClose());
   handle("app:closeCancel", () => cancelClose());
   handle("app:quit", () => app.quit());
@@ -369,6 +371,12 @@ function setupAppMenu() {
 installCrashLogging();
 
 app.whenReady().then(() => {
+  let readyVersion: string | null = null;
+  setupUpdates((version) => {
+    readyVersion = version;
+    if (win && !win.isDestroyed()) win.webContents.send("app:updateReady", version);
+  });
+  ipcMain.handle("app:pendingUpdate", () => readyVersion);
   setupAppMenu();
   registerIpc();
   createWindow();
