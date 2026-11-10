@@ -11,10 +11,11 @@ import { isFlowFile, isMessageFile, useStore } from "@/lib/store";
 export function EditorPanel({ params }: IDockviewPanelProps<{ path: string }>) {
   const { t } = useT();
   const missing = useStore((s) => s.docs[params.path]?.missing === true);
+  const loaded = useStore((s) => params.path in s.docs);
 
   useEffect(() => {
-    void useStore.getState().loadDoc(params.path);
-  }, [params.path]);
+    if (!loaded) void useStore.getState().loadDoc(params.path);
+  }, [params.path, loaded]);
 
   if (missing) {
     return (

@@ -9,7 +9,9 @@ export function EditorTab({ api, params }: IDockviewPanelHeaderProps<{ path?: st
   const { t } = useT();
   const path = params.path ?? "";
   const [title, setTitle] = useState(api.title ?? "");
-  const dirty = useStore((s) => s.isDirty(path));
+  const autoSave = useStore((s) => s.settings.autoSave);
+  const failed = useStore((s) => s.notice?.key === "saveFailed" && s.notice.file === path);
+  const dirty = useStore((s) => s.isDirty(path)) && (!autoSave || failed);
   const invalid = useStore((s) => Boolean(s.docs[path]?.invalid || s.docs[path]?.parseError));
   const [hover, setHover] = useState(false);
 
@@ -25,7 +27,7 @@ export function EditorTab({ api, params }: IDockviewPanelHeaderProps<{ path?: st
 
   return (
     <div
-      className="flex h-full items-center gap-1.5 pr-1 pl-3"
+      className="flex h-full items-center gap-1"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       onAuxClick={(e) => {
@@ -44,7 +46,7 @@ export function EditorTab({ api, params }: IDockviewPanelHeaderProps<{ path?: st
           e.stopPropagation();
           void close();
         }}
-        className="flex size-5 shrink-0 items-center justify-center rounded text-faint hover:bg-hover hover:text-fg"
+        className="-mr-1.5 flex size-5 shrink-0 items-center justify-center rounded text-faint hover:bg-hover hover:text-fg"
       >
         {(dirty || invalid) && !hover ? (
           <span className={cn("size-2 rounded-full", invalid ? "bg-warn" : "bg-fg/70")} />

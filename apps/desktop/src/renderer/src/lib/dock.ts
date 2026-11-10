@@ -47,6 +47,7 @@ export function openStart() {
   dock.addPanel({
     id: EDITOR_GROUP_ANCHOR,
     component: "start",
+    tabComponent: "editor",
     title: translate(useStore.getState().locale, "panels.start"),
     position: dock.activeGroup ? { referenceGroup: dock.activeGroup } : undefined,
   });
@@ -88,7 +89,7 @@ export function retitle(api: DockviewApi) {
 }
 
 export function defaultLayout(api: DockviewApi) {
-  api.addPanel({ id: EDITOR_GROUP_ANCHOR, component: "start", title: "" });
+  api.addPanel({ id: EDITOR_GROUP_ANCHOR, component: "start", tabComponent: "editor", title: "" });
 }
 
 export function resetLayout() {

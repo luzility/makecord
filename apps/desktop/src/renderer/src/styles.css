@@ -192,7 +192,7 @@ html[data-modal] .mk-sash {
   pointer-events: none;
 }
 .mk-dock .dv-tab {
-  padding: 0 12px;
+  padding: 0 10px;
 }
 .mk-dock .dv-groupview.dv-active-group .dv-tab.dv-active-tab {
   box-shadow: inset 0 -1px 0 var(--color-fg);

@@ -84,7 +84,7 @@ async function restoreLayout(dock: DockviewApi): Promise<boolean> {
     if (data.editors) {
       const editors = data.editors as { panels?: Record<string, { tabComponent?: string }> };
       for (const [id, panel] of Object.entries(editors.panels ?? {})) {
-        if (id.startsWith("editor:")) panel.tabComponent = "editor";
+        if (id.startsWith("editor:") || id === EDITOR_GROUP_ANCHOR) panel.tabComponent = "editor";
       }
       dock.fromJSON(editors as Parameters<DockviewApi["fromJSON"]>[0]);
     }
