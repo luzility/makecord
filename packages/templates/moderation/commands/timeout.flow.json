@@ -1,0 +1,83 @@
+{
+  "specVersion": 1,
+  "kind": "command",
+  "command": {
+    "name": "timeout",
+    "description": "Times a member out",
+    "options": [
+      {
+        "name": "user",
+        "description": "Who to time out",
+        "type": "user",
+        "required": true
+      },
+      {
+        "name": "minutes",
+        "description": "How long, in minutes",
+        "type": "integer",
+        "required": true,
+        "minValue": 1,
+        "maxValue": 40320
+      },
+      {
+        "name": "reason",
+        "description": "Why",
+        "type": "string",
+        "required": false,
+        "maxLength": 400
+      }
+    ],
+    "permissions": ["ModerateMembers"]
+  },
+  "nodes": [
+    {
+      "id": "start",
+      "type": "core.trigger",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {}
+    },
+    {
+      "id": "timeout",
+      "type": "core.timeout",
+      "position": {
+        "x": 320,
+        "y": 0
+      },
+      "data": {
+        "userId": "{{options.user}}",
+        "minutes": "{{options.minutes}}",
+        "reason": "{{options.reason}}"
+      }
+    },
+    {
+      "id": "reply",
+      "type": "core.reply",
+      "position": {
+        "x": 640,
+        "y": 0
+      },
+      "data": {
+        "content": "<@{{options.user}}> is timed out for {{options.minutes}} minutes.",
+        "message": "",
+        "ephemeral": false
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "sourceHandle": "next",
+      "target": "timeout"
+    },
+    {
+      "id": "e2",
+      "source": "timeout",
+      "sourceHandle": "next",
+      "target": "reply"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "specVersion": 1,
+  "kind": "event",
+  "event": "guildMemberRemove",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "core.trigger",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {}
+    },
+    {
+      "id": "has-channel",
+      "type": "core.condition",
+      "position": {
+        "x": 320,
+        "y": 0
+      },
+      "data": {
+        "left": "{{guild.systemChannel}}",
+        "operator": "notEquals",
+        "right": ""
+      }
+    },
+    {
+      "id": "post",
+      "type": "core.sendMessage",
+      "position": {
+        "x": 640,
+        "y": 0
+      },
+      "data": {
+        "channelId": "{{guild.systemChannel}}",
+        "content": "{{user.mention}} left the server. We're now {{guild.memberCount}}.",
+        "message": ""
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "sourceHandle": "next",
+      "target": "has-channel"
+    },
+    {
+      "id": "e2",
+      "source": "has-channel",
+      "sourceHandle": "true",
+      "target": "post"
+    }
+  ]
+}

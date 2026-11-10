@@ -1,0 +1,66 @@
+{
+  "specVersion": 1,
+  "kind": "event",
+  "event": "function",
+  "function": {
+    "name": "roll_dice",
+    "description": "Rolls a die and returns the result. Use it whenever someone asks for a random roll.",
+    "params": [
+      {
+        "name": "sides",
+        "description": "How many sides the die has, 6 for a normal die",
+        "type": "number",
+        "required": true
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "start",
+      "type": "core.trigger",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {}
+    },
+    {
+      "id": "roll",
+      "type": "core.random",
+      "position": {
+        "x": 320,
+        "y": 0
+      },
+      "data": {
+        "min": "1",
+        "max": "{{args.sides}}",
+        "variable": "roll"
+      }
+    },
+    {
+      "id": "return",
+      "type": "core.return",
+      "position": {
+        "x": 640,
+        "y": 0
+      },
+      "data": {
+        "value": "{{vars.roll}}"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "sourceHandle": "next",
+      "target": "roll"
+    },
+    {
+      "id": "e2",
+      "source": "roll",
+      "sourceHandle": "next",
+      "target": "return"
+    }
+  ]
+}

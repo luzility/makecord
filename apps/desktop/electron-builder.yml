@@ -11,8 +11,8 @@ files:
   - package.json
   - "!**/*.map"
 extraResources:
-  - from: ../../packages/templates/starter
-    to: templates/starter
+  - from: ../../packages/templates
+    to: templates
   - from: ../../LICENSE
     to: LICENSE
 asar: true

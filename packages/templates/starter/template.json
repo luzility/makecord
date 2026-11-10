@@ -1,0 +1,16 @@
+{
+  "order": 0,
+  "title": {
+    "en": "Starter",
+    "tr": "Başlangıç"
+  },
+  "description": {
+    "en": "Two example commands to learn the basics",
+    "tr": "Temelleri öğrenmek için iki örnek komut"
+  },
+  "intents": [],
+  "plugins": [],
+  "secrets": [],
+  "dependencies": {},
+  "env": []
+}

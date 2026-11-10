@@ -1,0 +1,18 @@
+{
+  "order": 5,
+  "title": {
+    "en": "AI assistant",
+    "tr": "AI asistanı"
+  },
+  "description": {
+    "en": "Answers when mentioned, remembers each channel and calls your functions. Needs an AI API key",
+    "tr": "Etiketlenince cevap verir, her kanalı hatırlar ve fonksiyonlarını çağırır. Bir AI API anahtarı ister"
+  },
+  "intents": ["GuildMessages", "MessageContent"],
+  "plugins": ["@makecord/plugin-ai"],
+  "secrets": ["ANTHROPIC_API_KEY"],
+  "dependencies": {
+    "@makecord/plugin-ai": "^0.2.0"
+  },
+  "env": ["# console.anthropic.com > API keys", "ANTHROPIC_API_KEY="]
+}

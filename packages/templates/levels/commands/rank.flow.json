@@ -1,0 +1,147 @@
+{
+  "specVersion": 1,
+  "kind": "command",
+  "command": {
+    "name": "rank",
+    "description": "Shows the level of a member",
+    "options": [
+      {
+        "name": "user",
+        "description": "Whose level, yours if empty",
+        "type": "user",
+        "required": false
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "start",
+      "type": "core.trigger",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {}
+    },
+    {
+      "id": "who",
+      "type": "core.condition",
+      "position": {
+        "x": 320,
+        "y": 0
+      },
+      "data": {
+        "left": "{{options.user}}",
+        "operator": "notEquals",
+        "right": ""
+      }
+    },
+    {
+      "id": "other",
+      "type": "core.setVariable",
+      "position": {
+        "x": 640,
+        "y": -100
+      },
+      "data": {
+        "name": "target",
+        "value": "{{options.user}}"
+      }
+    },
+    {
+      "id": "self",
+      "type": "core.setVariable",
+      "position": {
+        "x": 640,
+        "y": 100
+      },
+      "data": {
+        "name": "target",
+        "value": "{{user.id}}"
+      }
+    },
+    {
+      "id": "xp",
+      "type": "core.storeGet",
+      "position": {
+        "x": 960,
+        "y": 0
+      },
+      "data": {
+        "key": "xp:{{guild.id}}:{{vars.target}}",
+        "fallback": "0",
+        "variable": "xp"
+      }
+    },
+    {
+      "id": "level",
+      "type": "core.storeGet",
+      "position": {
+        "x": 1280,
+        "y": 0
+      },
+      "data": {
+        "key": "level:{{guild.id}}:{{vars.target}}",
+        "fallback": "0",
+        "variable": "level"
+      }
+    },
+    {
+      "id": "reply",
+      "type": "core.reply",
+      "position": {
+        "x": 1600,
+        "y": 0
+      },
+      "data": {
+        "content": "<@{{vars.target}}> is level **{{vars.level}}** with {{vars.xp}} XP.",
+        "message": "",
+        "ephemeral": false
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "sourceHandle": "next",
+      "target": "who"
+    },
+    {
+      "id": "e2",
+      "source": "who",
+      "sourceHandle": "true",
+      "target": "other"
+    },
+    {
+      "id": "e3",
+      "source": "who",
+      "sourceHandle": "false",
+      "target": "self"
+    },
+    {
+      "id": "e4",
+      "source": "other",
+      "sourceHandle": "next",
+      "target": "xp"
+    },
+    {
+      "id": "e5",
+      "source": "self",
+      "sourceHandle": "next",
+      "target": "xp"
+    },
+    {
+      "id": "e6",
+      "source": "xp",
+      "sourceHandle": "next",
+      "target": "level"
+    },
+    {
+      "id": "e7",
+      "source": "level",
+      "sourceHandle": "next",
+      "target": "reply"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { AlertTriangle, CircleAlert } from "lucide-react";
+import { AlertTriangle, CircleAlert, LoaderCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useT } from "@/i18n";
 import { api, type Metrics } from "@/lib/api";
@@ -65,6 +65,7 @@ export function StatusBar() {
   const rawDetail = useStore((s) => s.statusDetail);
   const code = useStore((s) => s.statusCode);
   const notice = useStore((s) => s.notice);
+  const installing = useStore((s) => s.installing);
   const set = useStore((s) => s.set);
   const errorKey = runErrorKey(code);
   const detail = online
@@ -125,6 +126,12 @@ export function StatusBar() {
           {warnings}
         </span>
       </button>
+      {installing && (
+        <span className="flex min-w-0 items-center gap-2 text-faint">
+          <LoaderCircle size={12} strokeWidth={1.5} className="shrink-0 animate-spin" />
+          <span className="truncate">{t("notice.installing")}</span>
+        </span>
+      )}
       {notice && (
         <span className="flex min-w-0 items-center gap-2 text-bad">
           <span className="truncate">

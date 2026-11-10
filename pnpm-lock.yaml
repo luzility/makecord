@@ -344,6 +344,9 @@ importers:
       '@makecord/config':
         specifier: workspace:*
         version: link:../config
+      '@makecord/plugin-ai':
+        specifier: workspace:*
+        version: link:../../plugins/ai
       '@types/semver':
         specifier: ^7.8.0
         version: 7.8.0

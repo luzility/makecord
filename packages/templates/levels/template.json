@@ -1,0 +1,16 @@
+{
+  "order": 4,
+  "title": {
+    "en": "Levels",
+    "tr": "Seviyeler"
+  },
+  "description": {
+    "en": "Members earn XP by chatting and level up every 25 messages",
+    "tr": "Üyeler sohbet ederek XP kazanır ve her 25 mesajda seviye atlar"
+  },
+  "intents": ["GuildMessages"],
+  "plugins": [],
+  "secrets": [],
+  "dependencies": {},
+  "env": []
+}

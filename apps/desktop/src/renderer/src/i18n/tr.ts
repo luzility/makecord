@@ -20,6 +20,7 @@ export const tr: Messages = {
     language: "Dil",
   },
   newProject: {
+    template: "Şablon",
     title: "Yeni proje",
     botName: "Bot adı",
     defaultName: "Botum",
@@ -572,6 +573,7 @@ export const tr: Messages = {
     fixBelow: "Aşağıdaki dosyayı düzeltince akış editörü geri gelir",
   },
   notice: {
+    installing: "Eklentiler npm ile kuruluyor…",
     saveFailed: "%{file} kaydedilemedi",
     actionFailed: "Bir şeyler ters gitti: %{detail}",
     dismiss: "Kapat",

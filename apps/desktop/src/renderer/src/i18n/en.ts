@@ -18,6 +18,7 @@ export const en = {
     language: "Language",
   },
   newProject: {
+    template: "Template",
     title: "New project",
     botName: "Bot name",
     defaultName: "My bot",
@@ -570,6 +571,7 @@ export const en = {
     fixBelow: "Fix the file below and the flow editor comes back",
   },
   notice: {
+    installing: "Installing plugins with npm…",
     saveFailed: "Couldn't save %{file}",
     actionFailed: "Something went wrong: %{detail}",
     dismiss: "Dismiss",

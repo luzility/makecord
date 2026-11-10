@@ -1,0 +1,28 @@
+{
+  "specVersion": 1,
+  "kind": "componentsV2",
+  "components": [
+    {
+      "type": "container",
+      "accentColor": "#006F6F",
+      "components": [
+        {
+          "type": "text",
+          "content": "## Ticket for {{user.displayName}}\n{{user.mention}}, tell us what's going on. Staff will answer here."
+        },
+        {
+          "type": "row",
+          "components": [
+            {
+              "type": "button",
+              "style": "danger",
+              "label": "Close ticket",
+              "emoji": "🔒",
+              "customId": "ticket:close"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

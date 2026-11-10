@@ -1,0 +1,66 @@
+{
+  "specVersion": 1,
+  "kind": "command",
+  "command": {
+    "name": "clear-warnings",
+    "description": "Resets the warnings of a member",
+    "options": [
+      {
+        "name": "user",
+        "description": "The member",
+        "type": "user",
+        "required": true
+      }
+    ],
+    "permissions": ["ModerateMembers"]
+  },
+  "nodes": [
+    {
+      "id": "start",
+      "type": "core.trigger",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {}
+    },
+    {
+      "id": "clear",
+      "type": "core.storeDelete",
+      "position": {
+        "x": 320,
+        "y": 0
+      },
+      "data": {
+        "key": "warnings:{{guild.id}}:{{options.user}}"
+      }
+    },
+    {
+      "id": "reply",
+      "type": "core.reply",
+      "position": {
+        "x": 640,
+        "y": 0
+      },
+      "data": {
+        "content": "Cleared the warnings of <@{{options.user}}>.",
+        "message": "",
+        "ephemeral": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "sourceHandle": "next",
+      "target": "clear"
+    },
+    {
+      "id": "e2",
+      "source": "clear",
+      "sourceHandle": "next",
+      "target": "reply"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "order": 1,
+  "title": {
+    "en": "Welcome messages",
+    "tr": "Karşılama mesajları"
+  },
+  "description": {
+    "en": "Greets new members with a designed message and a DM, and says goodbye",
+    "tr": "Yeni üyeleri tasarlanmış bir mesaj ve DM ile karşılar, ayrılanları uğurlar"
+  },
+  "intents": ["GuildMembers"],
+  "plugins": [],
+  "secrets": [],
+  "dependencies": {},
+  "env": []
+}

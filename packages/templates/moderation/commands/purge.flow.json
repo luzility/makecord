@@ -1,0 +1,94 @@
+{
+  "specVersion": 1,
+  "kind": "command",
+  "command": {
+    "name": "purge",
+    "description": "Deletes recent messages in this channel",
+    "options": [
+      {
+        "name": "amount",
+        "description": "How many, up to 100",
+        "type": "integer",
+        "required": true,
+        "minValue": 1,
+        "maxValue": 100
+      },
+      {
+        "name": "user",
+        "description": "Only messages from this member",
+        "type": "user",
+        "required": false
+      }
+    ],
+    "permissions": ["ManageMessages"]
+  },
+  "nodes": [
+    {
+      "id": "start",
+      "type": "core.trigger",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {}
+    },
+    {
+      "id": "defer",
+      "type": "core.deferReply",
+      "position": {
+        "x": 320,
+        "y": 0
+      },
+      "data": {
+        "ephemeral": true
+      }
+    },
+    {
+      "id": "purge",
+      "type": "core.purgeMessages",
+      "position": {
+        "x": 640,
+        "y": 0
+      },
+      "data": {
+        "channelId": "{{channel.id}}",
+        "amount": "{{options.amount}}",
+        "fromUser": "{{options.user}}",
+        "variable": "deleted"
+      }
+    },
+    {
+      "id": "reply",
+      "type": "core.reply",
+      "position": {
+        "x": 960,
+        "y": 0
+      },
+      "data": {
+        "content": "Deleted {{vars.deleted}} messages.",
+        "message": "",
+        "ephemeral": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "sourceHandle": "next",
+      "target": "defer"
+    },
+    {
+      "id": "e2",
+      "source": "defer",
+      "sourceHandle": "next",
+      "target": "purge"
+    },
+    {
+      "id": "e3",
+      "source": "purge",
+      "sourceHandle": "next",
+      "target": "reply"
+    }
+  ]
+}

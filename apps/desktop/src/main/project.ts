@@ -11,6 +11,7 @@ import type {
   FindResult,
   FunctionSummary,
   ProjectInfo,
+  ProjectTemplate,
 } from "../shared/api";
 import { TEMPLATES_DIR } from "./bundled";
 import { findIn } from "./find";
@@ -180,7 +181,54 @@ const slugify = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "") || "bot";
 
-export async function createProject(parentDir: string, name: string): Promise<string> {
+interface TemplateManifest {
+  order: number;
+  title: Record<string, string>;
+  description: Record<string, string>;
+  intents: string[];
+  plugins: string[];
+  secrets: string[];
+  dependencies: Record<string, string>;
+  env: string[];
+}
+
+const BASE_TEMPLATE = "starter";
+const MANIFEST = "template.json";
+
+async function readManifest(dir: string): Promise<TemplateManifest | null> {
+  try {
+    return JSON.parse(await readFile(join(dir, MANIFEST), "utf8")) as TemplateManifest;
+  } catch {
+    return null;
+  }
+}
+
+export async function listTemplates(): Promise<ProjectTemplate[]> {
+  const out: (ProjectTemplate & { order: number })[] = [];
+  for (const e of await readdir(TEMPLATES_DIR, { withFileTypes: true }).catch(() => [])) {
+    if (!e.isDirectory()) continue;
+    const m = await readManifest(join(TEMPLATES_DIR, e.name));
+    if (m)
+      out.push({
+        id: e.name,
+        title: m.title,
+        description: m.description,
+        plugins: m.plugins,
+        order: m.order,
+      });
+  }
+  return out.sort((a, b) => a.order - b.order).map(({ order: _, ...t }) => t);
+}
+
+const union = (a: unknown, b: readonly string[]) => [
+  ...new Set([...(Array.isArray(a) ? (a as string[]) : []), ...b]),
+];
+
+export async function createProject(
+  parentDir: string,
+  name: string,
+  templateId = BASE_TEMPLATE,
+): Promise<string> {
   const slug = slugify(name);
   const root = join(parentDir, slug);
   if (
@@ -191,9 +239,37 @@ export async function createProject(parentDir: string, name: string): Promise<st
   )
     throw new Error(`${root} already exists`);
 
-  const template = join(TEMPLATES_DIR, "starter");
-  await cp(template, root, { recursive: true });
+  const id = /^[a-z0-9-]+$/.test(templateId) ? templateId : BASE_TEMPLATE;
+  const overlay = join(TEMPLATES_DIR, id);
+  const manifest = await readManifest(overlay);
+  if (!manifest) throw new Error(`There's no template called ${id}`);
+
+  await cp(join(TEMPLATES_DIR, BASE_TEMPLATE), root, { recursive: true });
+  if (id !== BASE_TEMPLATE) {
+    for (const dir of ["commands", "events"])
+      await rm(join(root, dir), { recursive: true, force: true });
+    await cp(overlay, root, { recursive: true });
+  }
+  await rm(join(root, MANIFEST), { force: true });
   await rename(join(root, "gitignore.template"), join(root, ".gitignore"));
+
+  const configPath = join(root, PROJECT_FILE);
+  const config = JSON.parse(await readFile(configPath, "utf8"));
+  config.intents = union(config.intents, manifest.intents);
+  config.plugins = union(config.plugins, manifest.plugins);
+  config.secrets = union(config.secrets, manifest.secrets);
+  await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`);
+
+  const pkgPath = join(root, "package.json");
+  const pkg = JSON.parse(await readFile(pkgPath, "utf8"));
+  pkg.dependencies = { ...pkg.dependencies, ...manifest.dependencies };
+  await writeFile(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
+
+  if (manifest.env.length) {
+    const envPath = join(root, ".env.example");
+    const env = await readFile(envPath, "utf8").catch(() => "");
+    await writeFile(envPath, `${env.trimEnd()}\n\n${manifest.env.join("\n")}\n`);
+  }
 
   for (const file of [PROJECT_FILE, "package.json", "README.md"]) {
     const p = join(root, file);

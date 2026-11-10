@@ -1,0 +1,61 @@
+{
+  "specVersion": 1,
+  "kind": "command",
+  "command": {
+    "name": "ticket-panel",
+    "description": "Posts the button that opens tickets in this channel",
+    "options": [],
+    "permissions": ["ManageGuild"]
+  },
+  "nodes": [
+    {
+      "id": "start",
+      "type": "core.trigger",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {}
+    },
+    {
+      "id": "post",
+      "type": "core.sendMessage",
+      "position": {
+        "x": 320,
+        "y": 0
+      },
+      "data": {
+        "channelId": "{{channel.id}}",
+        "content": "",
+        "message": "ticket-panel"
+      }
+    },
+    {
+      "id": "reply",
+      "type": "core.reply",
+      "position": {
+        "x": 640,
+        "y": 0
+      },
+      "data": {
+        "content": "Posted the ticket panel.",
+        "message": "",
+        "ephemeral": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "sourceHandle": "next",
+      "target": "post"
+    },
+    {
+      "id": "e2",
+      "source": "post",
+      "sourceHandle": "next",
+      "target": "reply"
+    }
+  ]
+}

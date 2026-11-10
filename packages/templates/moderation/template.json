@@ -1,0 +1,16 @@
+{
+  "order": 2,
+  "title": {
+    "en": "Moderation",
+    "tr": "Moderasyon"
+  },
+  "description": {
+    "en": "Ban, kick, timeout, purge and a warning system",
+    "tr": "Ban, at, susturma, toplu silme ve uyarı sistemi"
+  },
+  "intents": [],
+  "plugins": [],
+  "secrets": [],
+  "dependencies": {},
+  "env": []
+}

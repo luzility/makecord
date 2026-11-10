@@ -102,6 +102,7 @@ interface State {
   inviteOpen: boolean;
   searchOpen: boolean;
   findOpen: boolean;
+  installing: boolean;
   recentOpen: boolean;
   recentFiles: string[];
   newFlowOpen: false | "command" | "event" | "function" | "message";
@@ -291,6 +292,7 @@ export const useStore = create<State>((set, get) => {
     inviteOpen: false,
     searchOpen: false,
     findOpen: false,
+    installing: false,
     recentOpen: false,
     recentFiles: [],
     newFlowOpen: false,

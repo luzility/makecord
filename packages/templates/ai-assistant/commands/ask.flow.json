@@ -1,0 +1,93 @@
+{
+  "specVersion": 1,
+  "kind": "command",
+  "command": {
+    "name": "ask",
+    "description": "Ask the AI a question",
+    "options": [
+      {
+        "name": "question",
+        "description": "What you want to know",
+        "type": "string",
+        "required": true,
+        "maxLength": 1000
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "start",
+      "type": "core.trigger",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {}
+    },
+    {
+      "id": "generate",
+      "type": "ai.generate",
+      "position": {
+        "x": 320,
+        "y": 0
+      },
+      "data": {
+        "prompt": "{{options.question}}",
+        "system": "You are {{client.tag}}, a friendly assistant in the Discord server {{guild.name}}. Keep answers short. Use your functions when they help.",
+        "fitDiscord": true,
+        "provider": "anthropic",
+        "model": "",
+        "baseUrl": "",
+        "effort": "low",
+        "maxTokens": 16000,
+        "variable": "answer"
+      }
+    },
+    {
+      "id": "answer",
+      "type": "core.reply",
+      "position": {
+        "x": 640,
+        "y": -100
+      },
+      "data": {
+        "content": "{{vars.answer}}",
+        "message": "",
+        "ephemeral": false
+      }
+    },
+    {
+      "id": "error",
+      "type": "core.reply",
+      "position": {
+        "x": 640,
+        "y": 120
+      },
+      "data": {
+        "content": "Couldn't answer: {{vars.answerError}}",
+        "message": "",
+        "ephemeral": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "sourceHandle": "next",
+      "target": "generate"
+    },
+    {
+      "id": "e2",
+      "source": "generate",
+      "sourceHandle": "next",
+      "target": "answer"
+    },
+    {
+      "id": "e3",
+      "source": "generate",
+      "sourceHandle": "failed",
+      "target": "error"
+    }
+  ]
+}

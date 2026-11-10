@@ -21,7 +21,12 @@ import {
   stopLanguageService,
 } from "./language-client";
 import { installCrashLogging, logsDir, writeLog } from "./logs";
-import { installPlugin, searchMarketplace, uninstallPlugin } from "./plugin-manager";
+import {
+  installDependencies,
+  installPlugin,
+  searchMarketplace,
+  uninstallPlugin,
+} from "./plugin-manager";
 import { readSettings, writeSettings } from "./settings";
 import { installUpdate, setupUpdates } from "./updater";
 
@@ -36,6 +41,7 @@ import {
   findInProject,
   functions,
   inspect,
+  listTemplates,
   openProject,
   projectPath,
   readTree,
@@ -244,9 +250,10 @@ function registerIpc() {
     });
     return res.canceled ? null : (res.filePaths[0] ?? null);
   });
-  handle("project:create", async (parent: string, name: string) =>
-    open(await createProject(parent, name)),
+  handle("project:create", async (parent: string, name: string, template?: string) =>
+    open(await createProject(parent, name, template)),
   );
+  handle("project:templates", () => listTemplates());
   handle("project:close", async () => {
     await stopBot();
     stopLanguageService();
@@ -268,6 +275,11 @@ function registerIpc() {
     const installed = await installPlugin(root, String(spec), await packageNameOf(String(spec)));
     await reloadPlugins(root);
     return installed;
+  });
+  handle("plugins:installDependencies", async () => {
+    const { root } = requireProject();
+    await installDependencies(root);
+    await reloadPlugins(root);
   });
   handle("plugins:installFromFolder", async () => {
     const { root } = requireProject();

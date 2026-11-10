@@ -39,6 +39,7 @@ const SERVER = [
   "guild.icon",
   "guild.ownerId",
   "guild.boosts",
+  "guild.systemChannel",
 ];
 const CHANNEL = ["channel.mention", "channel.name", "channel.id"];
 const MESSAGE = [

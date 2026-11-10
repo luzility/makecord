@@ -1,0 +1,100 @@
+{
+  "specVersion": 1,
+  "kind": "command",
+  "command": {
+    "name": "warn",
+    "description": "Warns a member and counts it",
+    "options": [
+      {
+        "name": "user",
+        "description": "Who to warn",
+        "type": "user",
+        "required": true
+      },
+      {
+        "name": "reason",
+        "description": "Why",
+        "type": "string",
+        "required": true,
+        "maxLength": 400
+      }
+    ],
+    "permissions": ["ModerateMembers"]
+  },
+  "nodes": [
+    {
+      "id": "start",
+      "type": "core.trigger",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {}
+    },
+    {
+      "id": "count",
+      "type": "core.storeIncrement",
+      "position": {
+        "x": 320,
+        "y": 0
+      },
+      "data": {
+        "key": "warnings:{{guild.id}}:{{options.user}}",
+        "by": "1",
+        "variable": "total"
+      }
+    },
+    {
+      "id": "dm",
+      "type": "core.sendDM",
+      "position": {
+        "x": 640,
+        "y": 0
+      },
+      "data": {
+        "userId": "{{options.user}}",
+        "content": "You were warned in **{{guild.name}}**: {{options.reason}}",
+        "message": ""
+      }
+    },
+    {
+      "id": "reply",
+      "type": "core.reply",
+      "position": {
+        "x": 960,
+        "y": 0
+      },
+      "data": {
+        "content": "Warned <@{{options.user}}>. They have {{vars.total}} warnings now.",
+        "message": "",
+        "ephemeral": false
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "sourceHandle": "next",
+      "target": "count"
+    },
+    {
+      "id": "e2",
+      "source": "count",
+      "sourceHandle": "next",
+      "target": "dm"
+    },
+    {
+      "id": "e3",
+      "source": "dm",
+      "sourceHandle": "next",
+      "target": "reply"
+    },
+    {
+      "id": "e4",
+      "source": "dm",
+      "sourceHandle": "failed",
+      "target": "reply"
+    }
+  ]
+}

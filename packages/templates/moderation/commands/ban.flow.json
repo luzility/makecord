@@ -1,0 +1,75 @@
+{
+  "specVersion": 1,
+  "kind": "command",
+  "command": {
+    "name": "ban",
+    "description": "Bans a member",
+    "options": [
+      {
+        "name": "user",
+        "description": "Who to ban",
+        "type": "user",
+        "required": true
+      },
+      {
+        "name": "reason",
+        "description": "Why",
+        "type": "string",
+        "required": false,
+        "maxLength": 400
+      }
+    ],
+    "permissions": ["BanMembers"]
+  },
+  "nodes": [
+    {
+      "id": "start",
+      "type": "core.trigger",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {}
+    },
+    {
+      "id": "ban",
+      "type": "core.ban",
+      "position": {
+        "x": 320,
+        "y": 0
+      },
+      "data": {
+        "userId": "{{options.user}}",
+        "reason": "{{options.reason}}",
+        "deleteMessageHours": "0"
+      }
+    },
+    {
+      "id": "reply",
+      "type": "core.reply",
+      "position": {
+        "x": 640,
+        "y": 0
+      },
+      "data": {
+        "content": "Banned <@{{options.user}}>.",
+        "message": "",
+        "ephemeral": false
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "sourceHandle": "next",
+      "target": "ban"
+    },
+    {
+      "id": "e2",
+      "source": "ban",
+      "sourceHandle": "next",
+      "target": "reply"
+    }
+  ]
+}

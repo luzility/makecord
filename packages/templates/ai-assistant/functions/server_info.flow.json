@@ -1,0 +1,40 @@
+{
+  "specVersion": 1,
+  "kind": "event",
+  "event": "function",
+  "function": {
+    "name": "server_info",
+    "description": "Facts about this Discord server: its name, member count, boost count and owner.",
+    "params": []
+  },
+  "nodes": [
+    {
+      "id": "start",
+      "type": "core.trigger",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {}
+    },
+    {
+      "id": "return",
+      "type": "core.return",
+      "position": {
+        "x": 320,
+        "y": 0
+      },
+      "data": {
+        "value": "{\"name\": \"{{guild.name}}\", \"members\": {{guild.memberCount}}, \"boosts\": {{guild.boosts}}, \"owner\": \"<@{{guild.ownerId}}>\"}"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "sourceHandle": "next",
+      "target": "return"
+    }
+  ]
+}

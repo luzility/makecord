@@ -1,0 +1,32 @@
+{
+  "specVersion": 1,
+  "kind": "componentsV2",
+  "components": [
+    {
+      "type": "container",
+      "accentColor": "#006F6F",
+      "components": [
+        {
+          "type": "section",
+          "texts": [
+            "## Welcome, {{user.displayName}}!",
+            "{{user.mention}} just joined **{{guild.name}}**. You're member number {{guild.memberCount}}."
+          ],
+          "accessory": {
+            "type": "thumbnail",
+            "url": "{{user.avatar}}"
+          }
+        },
+        {
+          "type": "separator",
+          "divider": true,
+          "spacing": "small"
+        },
+        {
+          "type": "text",
+          "content": "-# Read the rules and say hi"
+        }
+      ]
+    }
+  ]
+}

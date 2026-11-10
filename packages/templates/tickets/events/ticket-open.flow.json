@@ -1,0 +1,135 @@
+{
+  "specVersion": 1,
+  "kind": "event",
+  "event": "buttonClick",
+  "customId": "ticket:open",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "core.trigger",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {}
+    },
+    {
+      "id": "cooldown",
+      "type": "core.cooldown",
+      "position": {
+        "x": 320,
+        "y": 0
+      },
+      "data": {
+        "seconds": "120",
+        "key": "{{user.id}}",
+        "variable": "remaining"
+      }
+    },
+    {
+      "id": "wait-msg",
+      "type": "core.reply",
+      "position": {
+        "x": 640,
+        "y": 160
+      },
+      "data": {
+        "content": "You just opened a ticket. Try again in {{vars.remaining}} seconds.",
+        "message": "",
+        "ephemeral": true
+      }
+    },
+    {
+      "id": "defer",
+      "type": "core.deferReply",
+      "position": {
+        "x": 640,
+        "y": 0
+      },
+      "data": {
+        "ephemeral": true
+      }
+    },
+    {
+      "id": "channel",
+      "type": "core.createChannel",
+      "position": {
+        "x": 960,
+        "y": 0
+      },
+      "data": {
+        "name": "ticket-{{user.username}}",
+        "kind": "text",
+        "parentId": "",
+        "topic": "Ticket for {{user.username}} ({{user.id}})",
+        "private": true,
+        "allow": "{{user.id}}",
+        "variable": "channelId"
+      }
+    },
+    {
+      "id": "welcome",
+      "type": "core.sendMessage",
+      "position": {
+        "x": 1280,
+        "y": 0
+      },
+      "data": {
+        "channelId": "{{vars.channelId}}",
+        "content": "",
+        "message": "ticket-welcome"
+      }
+    },
+    {
+      "id": "reply",
+      "type": "core.reply",
+      "position": {
+        "x": 1600,
+        "y": 0
+      },
+      "data": {
+        "content": "Your ticket is open: <#{{vars.channelId}}>",
+        "message": "",
+        "ephemeral": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "sourceHandle": "next",
+      "target": "cooldown"
+    },
+    {
+      "id": "e2",
+      "source": "cooldown",
+      "sourceHandle": "next",
+      "target": "defer"
+    },
+    {
+      "id": "e3",
+      "source": "cooldown",
+      "sourceHandle": "cooling",
+      "target": "wait-msg"
+    },
+    {
+      "id": "e4",
+      "source": "defer",
+      "sourceHandle": "next",
+      "target": "channel"
+    },
+    {
+      "id": "e5",
+      "source": "channel",
+      "sourceHandle": "next",
+      "target": "welcome"
+    },
+    {
+      "id": "e6",
+      "source": "welcome",
+      "sourceHandle": "next",
+      "target": "reply"
+    }
+  ]
+}

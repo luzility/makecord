@@ -587,6 +587,14 @@ export default definePlugin({
           ? [
               { id: guild.roles.everyone.id, deny: ["ViewChannel"] },
               { id: ctx.client.user.id, allow: ["ViewChannel", "SendMessages", "ManageChannels"] },
+              ...data.allow
+                .split(",")
+                .map((id) => id.trim())
+                .filter((id) => /^\d{17,20}$/.test(id))
+                .map((id) => ({
+                  id,
+                  allow: ["ViewChannel", "SendMessages", "ReadMessageHistory", "AttachFiles"],
+                })),
             ]
           : undefined,
       } as Parameters<typeof guild.channels.create>[0]);

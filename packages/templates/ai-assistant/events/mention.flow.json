@@ -1,0 +1,108 @@
+{
+  "specVersion": 1,
+  "kind": "event",
+  "event": "messageCreate",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "core.trigger",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {}
+    },
+    {
+      "id": "mentioned",
+      "type": "core.condition",
+      "position": {
+        "x": 320,
+        "y": 0
+      },
+      "data": {
+        "left": "{{message.mentions}}",
+        "operator": "contains",
+        "right": "{{client.id}}"
+      }
+    },
+    {
+      "id": "agent",
+      "type": "ai.agent",
+      "position": {
+        "x": 640,
+        "y": 0
+      },
+      "data": {
+        "prompt": "{{user.displayName}}: {{message.content}}",
+        "system": "You are {{client.tag}}, a friendly assistant in the Discord server {{guild.name}}. Keep answers short. Use your functions when they help.",
+        "tools": "server_info, roll_dice",
+        "memory": "{{channel.id}}",
+        "memoryTurns": 10,
+        "maxSteps": 6,
+        "fitDiscord": true,
+        "provider": "anthropic",
+        "model": "",
+        "baseUrl": "",
+        "effort": "low",
+        "maxTokens": 16000,
+        "variable": "answer"
+      }
+    },
+    {
+      "id": "answer",
+      "type": "core.replyToMessage",
+      "position": {
+        "x": 960,
+        "y": -100
+      },
+      "data": {
+        "channelId": "{{channel.id}}",
+        "messageId": "{{message.id}}",
+        "content": "{{vars.answer}}",
+        "message": "",
+        "mention": false
+      }
+    },
+    {
+      "id": "error",
+      "type": "core.replyToMessage",
+      "position": {
+        "x": 960,
+        "y": 120
+      },
+      "data": {
+        "channelId": "{{channel.id}}",
+        "messageId": "{{message.id}}",
+        "content": "Sorry, I couldn't answer that: {{vars.answerError}}",
+        "message": "",
+        "mention": false
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "sourceHandle": "next",
+      "target": "mentioned"
+    },
+    {
+      "id": "e2",
+      "source": "mentioned",
+      "sourceHandle": "true",
+      "target": "agent"
+    },
+    {
+      "id": "e3",
+      "source": "agent",
+      "sourceHandle": "next",
+      "target": "answer"
+    },
+    {
+      "id": "e4",
+      "source": "agent",
+      "sourceHandle": "failed",
+      "target": "error"
+    }
+  ]
+}

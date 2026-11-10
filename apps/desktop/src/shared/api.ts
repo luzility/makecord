@@ -3,6 +3,13 @@ import type { FunctionSignature } from "@makecord/spec";
 
 export type FunctionSummary = FunctionSignature & { file: string };
 
+export interface ProjectTemplate {
+  id: string;
+  title: Record<string, string>;
+  description: Record<string, string>;
+  plugins: string[];
+}
+
 export interface FindOptions {
   caseSensitive: boolean;
   regex: boolean;
@@ -75,7 +82,8 @@ export interface MakecordApi {
     recent(): Promise<string[]>;
     open(root?: string): Promise<ProjectInfo | null>;
     chooseDirectory(): Promise<string | null>;
-    create(parentDir: string, name: string): Promise<ProjectInfo>;
+    create(parentDir: string, name: string, template?: string): Promise<ProjectInfo>;
+    templates(): Promise<ProjectTemplate[]>;
     close(): Promise<void>;
     tree(): Promise<FileNode>;
     inspect(): Promise<Problem[]>;
@@ -88,6 +96,7 @@ export interface MakecordApi {
     search(query: string): Promise<MarketplacePlugin[]>;
     install(name: string): Promise<string>;
     installFromFolder(): Promise<string | null>;
+    installDependencies(): Promise<void>;
     uninstall(name: string): Promise<void>;
     onCatalogChange(cb: () => void): () => void;
   };

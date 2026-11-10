@@ -1,0 +1,68 @@
+{
+  "specVersion": 1,
+  "kind": "command",
+  "command": {
+    "name": "warnings",
+    "description": "Shows how many warnings a member has",
+    "options": [
+      {
+        "name": "user",
+        "description": "The member",
+        "type": "user",
+        "required": true
+      }
+    ],
+    "permissions": ["ModerateMembers"]
+  },
+  "nodes": [
+    {
+      "id": "start",
+      "type": "core.trigger",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {}
+    },
+    {
+      "id": "get",
+      "type": "core.storeGet",
+      "position": {
+        "x": 320,
+        "y": 0
+      },
+      "data": {
+        "key": "warnings:{{guild.id}}:{{options.user}}",
+        "fallback": "0",
+        "variable": "value"
+      }
+    },
+    {
+      "id": "reply",
+      "type": "core.reply",
+      "position": {
+        "x": 640,
+        "y": 0
+      },
+      "data": {
+        "content": "<@{{options.user}}> has {{vars.value}} warnings.",
+        "message": "",
+        "ephemeral": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "sourceHandle": "next",
+      "target": "get"
+    },
+    {
+      "id": "e2",
+      "source": "get",
+      "sourceHandle": "next",
+      "target": "reply"
+    }
+  ]
+}

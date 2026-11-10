@@ -1,0 +1,42 @@
+{
+  "specVersion": 1,
+  "kind": "command",
+  "command": {
+    "name": "welcome-preview",
+    "description": "Shows the welcome message as new members see it",
+    "options": [],
+    "permissions": ["ManageGuild"]
+  },
+  "nodes": [
+    {
+      "id": "start",
+      "type": "core.trigger",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {}
+    },
+    {
+      "id": "reply",
+      "type": "core.reply",
+      "position": {
+        "x": 320,
+        "y": 0
+      },
+      "data": {
+        "content": "",
+        "message": "welcome",
+        "ephemeral": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "sourceHandle": "next",
+      "target": "reply"
+    }
+  ]
+}

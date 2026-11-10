@@ -82,6 +82,10 @@ export async function installPlugin(
   return name;
 }
 
+export async function installDependencies(root: string): Promise<void> {
+  await npm(root, ["install", "--no-fund", "--no-audit"]);
+}
+
 export async function uninstallPlugin(root: string, name: string): Promise<void> {
   await updatePlugins(root, (names) => names.filter((n) => n !== name));
   await npm(root, ["uninstall", "--no-fund", "--no-audit", name]);

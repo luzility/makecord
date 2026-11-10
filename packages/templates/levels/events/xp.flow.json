@@ -1,0 +1,173 @@
+{
+  "specVersion": 1,
+  "kind": "event",
+  "event": "messageCreate",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "core.trigger",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {}
+    },
+    {
+      "id": "in-server",
+      "type": "core.condition",
+      "position": {
+        "x": 320,
+        "y": 0
+      },
+      "data": {
+        "left": "{{guild.id}}",
+        "operator": "notEquals",
+        "right": ""
+      }
+    },
+    {
+      "id": "cooldown",
+      "type": "core.cooldown",
+      "position": {
+        "x": 640,
+        "y": 0
+      },
+      "data": {
+        "seconds": "30",
+        "key": "{{guild.id}}:{{user.id}}",
+        "variable": "remaining"
+      }
+    },
+    {
+      "id": "xp",
+      "type": "core.storeIncrement",
+      "position": {
+        "x": 960,
+        "y": 0
+      },
+      "data": {
+        "key": "xp:{{guild.id}}:{{user.id}}",
+        "by": "1",
+        "variable": "xp"
+      }
+    },
+    {
+      "id": "rest",
+      "type": "core.math",
+      "position": {
+        "x": 1280,
+        "y": 0
+      },
+      "data": {
+        "left": "{{vars.xp}}",
+        "operator": "modulo",
+        "right": "25",
+        "variable": "rest"
+      }
+    },
+    {
+      "id": "level-up",
+      "type": "core.condition",
+      "position": {
+        "x": 1600,
+        "y": 0
+      },
+      "data": {
+        "left": "{{vars.rest}}",
+        "operator": "equals",
+        "right": "0"
+      }
+    },
+    {
+      "id": "level",
+      "type": "core.math",
+      "position": {
+        "x": 1920,
+        "y": 0
+      },
+      "data": {
+        "left": "{{vars.xp}}",
+        "operator": "divide",
+        "right": "25",
+        "variable": "level"
+      }
+    },
+    {
+      "id": "save",
+      "type": "core.storeSet",
+      "position": {
+        "x": 2240,
+        "y": 0
+      },
+      "data": {
+        "key": "level:{{guild.id}}:{{user.id}}",
+        "value": "{{vars.level}}"
+      }
+    },
+    {
+      "id": "announce",
+      "type": "core.replyToMessage",
+      "position": {
+        "x": 2560,
+        "y": 0
+      },
+      "data": {
+        "channelId": "{{channel.id}}",
+        "messageId": "{{message.id}}",
+        "content": "{{user.mention}} reached level **{{vars.level}}**!",
+        "message": "",
+        "mention": false
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "sourceHandle": "next",
+      "target": "in-server"
+    },
+    {
+      "id": "e2",
+      "source": "in-server",
+      "sourceHandle": "true",
+      "target": "cooldown"
+    },
+    {
+      "id": "e3",
+      "source": "cooldown",
+      "sourceHandle": "next",
+      "target": "xp"
+    },
+    {
+      "id": "e4",
+      "source": "xp",
+      "sourceHandle": "next",
+      "target": "rest"
+    },
+    {
+      "id": "e5",
+      "source": "rest",
+      "sourceHandle": "next",
+      "target": "level-up"
+    },
+    {
+      "id": "e6",
+      "source": "level-up",
+      "sourceHandle": "true",
+      "target": "level"
+    },
+    {
+      "id": "e7",
+      "source": "level",
+      "sourceHandle": "next",
+      "target": "save"
+    },
+    {
+      "id": "e8",
+      "source": "save",
+      "sourceHandle": "next",
+      "target": "announce"
+    }
+  ]
+}

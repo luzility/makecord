@@ -1,0 +1,73 @@
+{
+  "specVersion": 1,
+  "kind": "event",
+  "event": "buttonClick",
+  "customId": "ticket:close",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "core.trigger",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {}
+    },
+    {
+      "id": "reply",
+      "type": "core.reply",
+      "position": {
+        "x": 320,
+        "y": 0
+      },
+      "data": {
+        "content": "{{user.mention}} closed this ticket. Deleting the channel in 5 seconds.",
+        "message": "",
+        "ephemeral": false
+      }
+    },
+    {
+      "id": "wait",
+      "type": "core.wait",
+      "position": {
+        "x": 640,
+        "y": 0
+      },
+      "data": {
+        "seconds": "5"
+      }
+    },
+    {
+      "id": "delete",
+      "type": "core.deleteChannel",
+      "position": {
+        "x": 960,
+        "y": 0
+      },
+      "data": {
+        "channelId": "{{channel.id}}",
+        "reason": "Ticket closed by {{user.username}}"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "sourceHandle": "next",
+      "target": "reply"
+    },
+    {
+      "id": "e2",
+      "source": "reply",
+      "sourceHandle": "next",
+      "target": "wait"
+    },
+    {
+      "id": "e3",
+      "source": "wait",
+      "sourceHandle": "next",
+      "target": "delete"
+    }
+  ]
+}

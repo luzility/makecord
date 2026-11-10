@@ -1,0 +1,93 @@
+{
+  "specVersion": 1,
+  "kind": "event",
+  "event": "guildMemberAdd",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "core.trigger",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {}
+    },
+    {
+      "id": "has-channel",
+      "type": "core.condition",
+      "position": {
+        "x": 320,
+        "y": 0
+      },
+      "data": {
+        "left": "{{guild.systemChannel}}",
+        "operator": "notEquals",
+        "right": ""
+      }
+    },
+    {
+      "id": "post",
+      "type": "core.sendMessage",
+      "position": {
+        "x": 640,
+        "y": -100
+      },
+      "data": {
+        "channelId": "{{guild.systemChannel}}",
+        "content": "",
+        "message": "welcome"
+      }
+    },
+    {
+      "id": "dm",
+      "type": "core.sendDM",
+      "position": {
+        "x": 960,
+        "y": -100
+      },
+      "data": {
+        "userId": "{{user.id}}",
+        "content": "Welcome to **{{guild.name}}**, {{user.displayName}}! Glad to have you.",
+        "message": ""
+      }
+    },
+    {
+      "id": "no-channel",
+      "type": "core.log",
+      "position": {
+        "x": 640,
+        "y": 120
+      },
+      "data": {
+        "level": "warn",
+        "message": "{{guild.name}} has no system channel. Pick one in Server Settings > Overview"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "start",
+      "sourceHandle": "next",
+      "target": "has-channel"
+    },
+    {
+      "id": "e2",
+      "source": "has-channel",
+      "sourceHandle": "true",
+      "target": "post"
+    },
+    {
+      "id": "e3",
+      "source": "post",
+      "sourceHandle": "next",
+      "target": "dm"
+    },
+    {
+      "id": "e4",
+      "source": "has-channel",
+      "sourceHandle": "false",
+      "target": "no-channel"
+    }
+  ]
+}

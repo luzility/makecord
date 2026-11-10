@@ -1,0 +1,16 @@
+{
+  "order": 3,
+  "title": {
+    "en": "Support tickets",
+    "tr": "Destek biletleri"
+  },
+  "description": {
+    "en": "A button that opens a private channel per ticket, and closes it again",
+    "tr": "Her bilet için özel bir kanal açan ve sonra kapatan bir buton"
+  },
+  "intents": [],
+  "plugins": [],
+  "secrets": [],
+  "dependencies": {},
+  "env": []
+}

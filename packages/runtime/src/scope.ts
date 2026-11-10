@@ -49,6 +49,7 @@ const guild = (g: Guild) => ({
   icon: g.iconURL() ?? "",
   ownerId: g.ownerId,
   boosts: g.premiumSubscriptionCount ?? 0,
+  systemChannel: g.systemChannelId ?? "",
 });
 
 const roleRef = (r: Role) => ({

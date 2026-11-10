@@ -1145,6 +1145,10 @@ export const createChannel = defineNodeMeta({
     parentId: line("Category ID", "Optional").default(""),
     topic: line("Topic", "Optional").default(""),
     private: z.boolean().default(false).meta({ title: "Hide from @everyone" }),
+    allow: line(
+      "Still visible to",
+      "For hidden channels: user or role IDs separated by commas, like {{user.id}}",
+    ).default(""),
     variable: variable("channelId"),
   }),
   locales: {
@@ -1157,6 +1161,11 @@ export const createChannel = defineNodeMeta({
         parentId: { title: "Kategori ID", description: "İsteğe bağlı" },
         topic: { title: "Konu", description: "İsteğe bağlı" },
         private: { title: "@everyone'dan gizle" },
+        allow: {
+          title: "Yine de görebilenler",
+          description:
+            "Gizli kanallar için: virgülle ayrılmış kullanıcı veya rol ID'leri, {{user.id}} gibi",
+        },
         variable: variableTr,
       },
     },
