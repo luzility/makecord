@@ -1,0 +1,45 @@
+appId: tech.luzili.makecord
+productName: Makecord
+executableName: makecord
+copyright: Copyright © 2026 Luzi
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**
+  - resources/**
+  - package.json
+  - "!**/*.map"
+extraResources:
+  - from: ../../packages/templates/starter
+    to: templates/starter
+  - from: ../../LICENSE
+    to: LICENSE
+asar: true
+npmRebuild: false
+nodeGypRebuild: false
+artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+publish:
+  provider: github
+  owner: luzility
+  repo: makecord
+linux:
+  executableName: makecord
+  syncDesktopName: true
+  target:
+    - AppImage
+    - deb
+  category: Development
+  synopsis: An IDE for building Discord bots visually
+  maintainer: Luzi <firatbirer03@gmail.com>
+win:
+  target:
+    - nsis
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+mac:
+  target:
+    - dmg
+  category: public.app-category.developer-tools

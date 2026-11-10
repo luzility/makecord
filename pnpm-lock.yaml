@@ -180,19 +180,6 @@ importers:
         version: 7.0.2
 
   apps/desktop:
-    dependencies:
-      '@makecord/plugin-core':
-        specifier: workspace:*
-        version: link:../../plugins/core
-      '@makecord/runtime':
-        specifier: workspace:*
-        version: link:../../packages/runtime
-      '@makecord/spec':
-        specifier: workspace:*
-        version: link:../../packages/spec
-      '@makecord/templates':
-        specifier: workspace:*
-        version: link:../../packages/templates
     devDependencies:
       '@fontsource-variable/geist':
         specifier: 5.3.0
@@ -203,9 +190,21 @@ importers:
       '@makecord/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@makecord/plugin-core':
+        specifier: workspace:*
+        version: link:../../plugins/core
       '@makecord/plugin-sdk':
         specifier: workspace:*
         version: link:../../packages/plugin-sdk
+      '@makecord/runtime':
+        specifier: workspace:*
+        version: link:../../packages/runtime
+      '@makecord/spec':
+        specifier: workspace:*
+        version: link:../../packages/spec
+      '@makecord/templates':
+        specifier: workspace:*
+        version: link:../../packages/templates
       '@tailwindcss/vite':
         specifier: 4.3.5
         version: 4.3.5(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))

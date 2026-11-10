@@ -1,6 +1,6 @@
-import { createRequire } from "node:module";
 import type { HostMessage, RuntimeMessage } from "@makecord/runtime/protocol";
 import { type UtilityProcess, utilityProcess } from "electron";
+import { RUNTIME_CLI } from "./bundled";
 import { decryptSecrets } from "./secrets";
 import { readSettings } from "./settings";
 
@@ -45,13 +45,7 @@ async function launch(root: string, send: Send): Promise<void> {
     return;
   }
 
-  let cli: string;
-  try {
-    cli = createRequire(import.meta.url).resolve("@makecord/runtime/cli");
-  } catch (e) {
-    send(status({ status: "error", detail: `Couldn't find the runtime: ${(e as Error).message}` }));
-    return;
-  }
+  const cli = RUNTIME_CLI;
 
   const env: Record<string, string> = { NODE_ENV: "development" };
   for (const key of PASSTHROUGH_ENV) {

@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "license": "Apache-2.0",
   "private": true,
-  "description": "Makecord IDE — build Discord bots visually",
+  "description": "An open-source IDE for building Discord bots visually",
   "type": "module",
   "main": "./out/main/index.js",
   "scripts": {
@@ -14,17 +14,15 @@
     "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.web.json --noEmit",
     "package": "electron-vite build && electron-builder"
   },
-  "dependencies": {
-    "@makecord/plugin-core": "workspace:*",
-    "@makecord/runtime": "workspace:*",
-    "@makecord/spec": "workspace:*",
-    "@makecord/templates": "workspace:*"
-  },
   "devDependencies": {
     "@fontsource-variable/geist": "5.3.0",
     "@fontsource-variable/jetbrains-mono": "5.3.0",
     "@makecord/config": "workspace:*",
+    "@makecord/plugin-core": "workspace:*",
     "@makecord/plugin-sdk": "workspace:*",
+    "@makecord/runtime": "workspace:*",
+    "@makecord/spec": "workspace:*",
+    "@makecord/templates": "workspace:*",
     "@tailwindcss/vite": "4.3.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
@@ -45,5 +43,11 @@
     "vite": "8.3.6",
     "zod": "4.6.7",
     "zustand": "5.1.0"
-  }
+  },
+  "author": {
+    "name": "Luzi",
+    "email": "firatbirer03@gmail.com"
+  },
+  "homepage": "https://makecord.luzili.tech",
+  "desktopName": "makecord.desktop"
 }

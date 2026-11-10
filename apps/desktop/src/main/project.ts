@@ -1,12 +1,12 @@
 import { type FSWatcher, watch } from "node:fs";
 import { cp, mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
-import { createRequire } from "node:module";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { coreNodeMetas } from "@makecord/plugin-core/meta";
 import { inspectProject, type Problem } from "@makecord/runtime/inspect";
 import { loadProject } from "@makecord/runtime/project";
 import { PROJECT_FILE, ProjectConfig } from "@makecord/spec";
 import type { FileNode, ProjectInfo } from "../shared/api";
+import { TEMPLATES_DIR } from "./bundled";
 import { appState } from "./state";
 
 const IGNORED = new Set(["node_modules", ".git", ".makecord", "dist", ".DS_Store"]);
@@ -162,8 +162,7 @@ export async function createProject(parentDir: string, name: string): Promise<st
   )
     throw new Error(`${root} already exists`);
 
-  const req = createRequire(import.meta.url);
-  const template = join(dirname(req.resolve("@makecord/templates/package.json")), "starter");
+  const template = join(TEMPLATES_DIR, "starter");
   await cp(template, root, { recursive: true });
   await rename(join(root, "gitignore.template"), join(root, ".gitignore"));
 

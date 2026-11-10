@@ -23,8 +23,9 @@ export interface PluginStatus {
   error?: string;
 }
 
-const runtimeVersion: string = createRequire(import.meta.url)("../package.json").version;
-export const RUNTIME_VERSION = runtimeVersion;
+export { RUNTIME_VERSION } from "./version.js";
+
+import { RUNTIME_VERSION } from "./version.js";
 
 function isPlugin(value: unknown): value is PluginDefinition {
   const p = value as PluginDefinition | undefined;
@@ -32,7 +33,7 @@ function isPlugin(value: unknown): value is PluginDefinition {
 }
 
 const compatible = (range: string | undefined) =>
-  !range || semver.satisfies(runtimeVersion, range, { includePrerelease: true });
+  !range || semver.satisfies(RUNTIME_VERSION, range, { includePrerelease: true });
 
 export async function loadPlugins(
   projectDir: string,
@@ -58,7 +59,7 @@ export async function loadPlugins(
     const ok = compatible(plugin.engines?.makecord);
     if (!ok) {
       errors.push(
-        `${name} supports runtime ${plugin.engines.makecord}, but this is ${runtimeVersion}. It may not work as expected.`,
+        `${name} supports runtime ${plugin.engines.makecord}, but this is ${RUNTIME_VERSION}. It may not work as expected.`,
       );
     }
     plugins.push({

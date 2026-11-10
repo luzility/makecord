@@ -1,7 +1,7 @@
-import { createRequire } from "node:module";
 import type { Problem } from "@makecord/runtime/inspect";
 import type { Catalog } from "@makecord/runtime/language-service";
 import { type UtilityProcess, utilityProcess } from "electron";
+import { LANGUAGE_SERVICE } from "./bundled";
 
 let proc: UtilityProcess | null = null;
 let openDir: string | null = null;
@@ -9,8 +9,7 @@ let nextId = 1;
 const pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
 
 function spawn(): UtilityProcess {
-  const entry = createRequire(import.meta.url).resolve("@makecord/runtime/language-service");
-  const p = utilityProcess.fork(entry, [], {
+  const p = utilityProcess.fork(LANGUAGE_SERVICE, [], {
     serviceName: "Makecord Language Service",
     stdio: "pipe",
   });
