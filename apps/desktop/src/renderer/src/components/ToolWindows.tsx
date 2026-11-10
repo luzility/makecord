@@ -10,6 +10,7 @@ import { ProblemsPanel } from "@/panels/ProblemsPanel";
 import { ProjectPanel } from "@/panels/ProjectPanel";
 import { PropertiesPanel } from "@/panels/PropertiesPanel";
 import { RunPanel } from "@/panels/RunPanel";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { cn, IconButton } from "./ui";
 
 const VIEWS: Record<ToolId, ComponentType> = {
@@ -178,7 +179,9 @@ export function ToolArea({ area }: { area: Area }) {
             const View = VIEWS[x.id];
             return (
               <div key={x.id} className={cn("absolute inset-0", state.active !== x.id && "hidden")}>
-                <View />
+                <ErrorBoundary level="panel" name={x.id}>
+                  <View />
+                </ErrorBoundary>
               </div>
             );
           })}

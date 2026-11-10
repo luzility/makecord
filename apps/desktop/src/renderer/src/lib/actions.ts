@@ -18,13 +18,11 @@ import type { MessageKey } from "@/i18n/locale";
 import { LOCALES, type Locale } from "@/i18n/locale";
 import { api } from "./api";
 import { flushAll, resetLayout } from "./dock";
+import { DOCS_URL, ISSUES_URL } from "./links";
 import type { Shortcut } from "./shortcuts";
 import { cleanError, isFlowFile, useStore } from "./store";
 import { resolveUnsaved } from "./unsaved";
 import { isRunning, startBot, stopBot } from "./useRun";
-
-export const DOCS_URL = "https://makecord.luzili.tech/docs/";
-export const ISSUES_URL = "https://github.com/luzility/makecord/issues";
 
 export interface Action {
   id: string;
@@ -318,6 +316,12 @@ export const actions: Action[] = [
     global: true,
     run: () => api.app.openExternal(ISSUES_URL),
   },
+  {
+    id: "help.logs",
+    label: "actions.openLogs",
+    global: true,
+    run: () => api.app.openLogs(),
+  },
 ];
 
 export const actionById = new Map(actions.map((a) => [a.id, a]));
@@ -381,5 +385,5 @@ export const MENU: { label: MessageKey; items: string[] }[] = [
       "run.invite",
     ],
   },
-  { label: "menu.help", items: ["help.docs", "help.issue"] },
+  { label: "menu.help", items: ["help.docs", "help.issue", "-", "help.logs"] },
 ];

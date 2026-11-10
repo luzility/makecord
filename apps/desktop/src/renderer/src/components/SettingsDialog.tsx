@@ -5,13 +5,14 @@ import { useT } from "@/i18n";
 import { actions } from "@/lib/actions";
 import { api, type MarketplacePlugin } from "@/lib/api";
 import { UI_FONTS } from "@/lib/fonts";
+import { DOCS_PLUGINS_URL } from "@/lib/links";
 import { keysOf } from "@/lib/shortcuts";
 import { cleanError, type SettingsPage, useStore } from "@/lib/store";
 import { toJson } from "@/lib/templates";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { Button, cn, Dialog, Field, Input, Kbd } from "./ui";
 
-const DOCS_PLUGINS = "https://makecord.luzili.tech/docs/writing-plugins/";
+const DOCS_PLUGINS = DOCS_PLUGINS_URL;
 
 const PRIVILEGED = new Set<string>(PRIVILEGED_INTENTS);
 

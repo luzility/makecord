@@ -179,6 +179,20 @@ export const en = {
     saveAll: "Save all",
     discard: "Don't save",
   },
+  crash: {
+    appTitle: "Something went wrong",
+    appBody:
+      "Makecord ran into an error it couldn't recover from. Your files were saved as you worked, so reloading picks up where you left off.",
+    panelTitle: "This panel stopped working",
+    panelBody:
+      "The rest of Makecord is fine. Try again, and if it keeps happening, please report it.",
+    reload: "Reload",
+    retry: "Try again",
+    copy: "Copy details",
+    copied: "Copied",
+    logs: "Open log folder",
+    report: "Report on GitHub",
+  },
   tools: { hide: "Hide" },
   files: {
     open: "Open",
@@ -536,6 +550,7 @@ export const en = {
     resetLayout: "Reset layout",
     docs: "Documentation",
     reportIssue: "Report an issue",
+    openLogs: "Open log folder",
     invite: "Invite bot to a server…",
     saveAll: "Save all",
   },

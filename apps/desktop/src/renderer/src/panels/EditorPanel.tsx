@@ -1,5 +1,6 @@
 import type { IDockviewPanelProps } from "dockview-react";
 import { useEffect } from "react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Button, Empty } from "@/components/ui";
 import { FlowEditor } from "@/editors/FlowEditor";
 import { MessageEditor } from "@/editors/message/MessageEditor";
@@ -8,7 +9,7 @@ import { useT } from "@/i18n";
 import { closeFile } from "@/lib/dock";
 import { isFlowFile, isMessageFile, useStore } from "@/lib/store";
 
-export function EditorPanel({ params }: IDockviewPanelProps<{ path: string }>) {
+function EditorContent({ params }: IDockviewPanelProps<{ path: string }>) {
   const { t } = useT();
   const missing = useStore((s) => s.docs[params.path]?.missing === true);
   const loaded = useStore((s) => params.path in s.docs);
@@ -31,4 +32,12 @@ export function EditorPanel({ params }: IDockviewPanelProps<{ path: string }>) {
   if (isFlowFile(params.path)) return <FlowEditor path={params.path} />;
   if (isMessageFile(params.path)) return <MessageEditor path={params.path} />;
   return <TextEditor path={params.path} />;
+}
+
+export function EditorPanel(props: IDockviewPanelProps<{ path: string }>) {
+  return (
+    <ErrorBoundary level="panel" name={`editor ${props.params.path}`}>
+      <EditorContent {...props} />
+    </ErrorBoundary>
+  );
 }

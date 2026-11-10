@@ -20,6 +20,7 @@ import {
   openLanguageService,
   stopLanguageService,
 } from "./language-client";
+import { installCrashLogging, logsDir, writeLog } from "./logs";
 import { installPlugin, searchMarketplace, uninstallPlugin } from "./plugin-manager";
 import { readSettings, writeSettings } from "./settings";
 
@@ -122,6 +123,24 @@ function createWindow() {
   };
   current.on("closed", () => {
     if (win === current) win = null;
+  });
+
+  current.webContents.on("render-process-gone", async (_e, details) => {
+    writeLog("renderer", `Window process gone: ${details.reason} (exit ${details.exitCode})`);
+    if (details.reason === "clean-exit" || current.isDestroyed()) return;
+    const { response } = await dialog.showMessageBox(current, {
+      type: "error",
+      title: "Makecord",
+      message: "Makecord's window stopped working",
+      detail:
+        "Your files were saved as you worked, so reloading picks up where you left off. The details are in the log folder.",
+      buttons: ["Reload", "Quit"],
+      defaultId: 0,
+      cancelId: 1,
+    });
+    if (current.isDestroyed()) return;
+    if (response === 0) current.reload();
+    else app.quit();
   });
 
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -317,6 +336,11 @@ function registerIpc() {
     return { ideMB: Math.round(ide / 1024), botMB: bot === null ? null : Math.round(bot / 1024) };
   });
   handle("app:closeReady", () => readyToClose());
+  handle("app:logError", (text: string) => writeLog("renderer", String(text).slice(0, 20_000)));
+  handle("app:openLogs", async () => {
+    await shell.openPath(logsDir());
+  });
+  handle("app:version", () => app.getVersion());
   handle("app:closeHold", () => holdClose());
   handle("app:closeCancel", () => cancelClose());
   handle("app:quit", () => app.quit());
@@ -341,6 +365,8 @@ function setupAppMenu() {
     ]),
   );
 }
+
+installCrashLogging();
 
 app.whenReady().then(() => {
   setupAppMenu();

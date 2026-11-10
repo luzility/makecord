@@ -95,6 +95,9 @@ export interface MakecordApi {
     onBeforeClose(cb: () => void): () => void;
     quit(): Promise<void>;
     closeReady(): Promise<void>;
+    logError(text: string): Promise<void>;
+    openLogs(): Promise<void>;
+    version(): Promise<string>;
     closeHold(): Promise<void>;
     closeCancel(): Promise<void>;
   };

@@ -181,6 +181,19 @@ export const tr: Messages = {
     saveAll: "Tümünü kaydet",
     discard: "Kaydetme",
   },
+  crash: {
+    appTitle: "Bir şeyler ters gitti",
+    appBody:
+      "Makecord kurtaramadığı bir hatayla karşılaştı. Dosyaların çalışırken kaydedildi, yeniden yüklemek kaldığın yerden devam eder.",
+    panelTitle: "Bu panel çalışmayı durdurdu",
+    panelBody: "Makecord'un geri kalanı çalışıyor. Tekrar dene, sorun devam ederse lütfen bildir.",
+    reload: "Yeniden yükle",
+    retry: "Tekrar dene",
+    copy: "Ayrıntıları kopyala",
+    copied: "Kopyalandı",
+    logs: "Log klasörünü aç",
+    report: "GitHub'da bildir",
+  },
   tools: { hide: "Gizle" },
   files: {
     open: "Aç",
@@ -540,6 +553,7 @@ export const tr: Messages = {
     resetLayout: "Yerleşimi sıfırla",
     docs: "Dokümantasyon",
     reportIssue: "Sorun bildir",
+    openLogs: "Log klasörünü aç",
     invite: "Botu bir sunucuya davet et…",
     saveAll: "Tümünü kaydet",
   },
