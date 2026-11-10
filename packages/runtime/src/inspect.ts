@@ -56,6 +56,7 @@ export const EVENT_INTENTS: Record<EventFlow["event"], IntentName[]> = {
   modalSubmit: [],
   schedule: [],
   function: [],
+  beforeCommand: [],
 };
 
 const READS_CONTENT = new Set<EventFlow["event"]>([

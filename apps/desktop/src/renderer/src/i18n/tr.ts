@@ -226,6 +226,9 @@ export const tr: Messages = {
     deleteFolder: "%{path} ve içindeki her şey diskten silinecek. Geri al ile geri getirilemez",
   },
   properties: {
+    commandFilter: "Sadece şu komutlar için",
+    commandFilterHint:
+      "ban gibi komut adları ya da mod ile başlayan her komut için mod*. Boşsa tüm komutlardan önce çalışır",
     functionTitle: "Fonksiyon",
     functionName: "Ad",
     functionNameHint: "Fonksiyon Çağır blokları ve AI ajanları bu adı kullanır",
@@ -429,6 +432,7 @@ export const tr: Messages = {
     modalSubmit: "Form gönderildiğinde",
     schedule: "Zamanlanmış",
     function: "Fonksiyon",
+    beforeCommand: "Bir komut çalışmadan önce",
     messageReactionRemove: "Tepki kaldırıldığında",
     messagePollVoteAdd: "Ankette oy verildiğinde",
     guildMemberUpdate: "Üye değiştiğinde (rol, takma ad, boost)",

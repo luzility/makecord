@@ -173,6 +173,24 @@ function FlowSettings({ path, flow }: { path: string; flow: Flow }) {
             onChange={(event) => updateFlow(path, (f) => ({ ...f, event }))}
           />
         </Field>
+        {flow.event === "beforeCommand" && (
+          <Field label={t("properties.commandFilter")} hint={t("properties.commandFilterHint")}>
+            <Input
+              className="font-mono"
+              maxLength={100}
+              value={flow.customId ?? ""}
+              placeholder="mod*"
+              onChange={(e) => {
+                const customId = e.target.value;
+                updateFlow(
+                  path,
+                  (f) => (f.kind === "event" ? { ...f, customId: customId || undefined } : f),
+                  "event:customId",
+                );
+              }}
+            />
+          </Field>
+        )}
         {CUSTOM_ID_EVENTS.includes(flow.event) && (
           <Field
             label={t(

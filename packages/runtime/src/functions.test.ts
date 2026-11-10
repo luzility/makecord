@@ -163,3 +163,58 @@ test("inspection checks function names and arguments", () => {
   assert.ok(codes.includes("functions/unnamed.flow.json:missing-function-name"));
   assert.ok(!codes.some((c) => c.startsWith("functions/double.flow.json")));
 });
+
+test("Stop Command ends a beforeCommand flow with the stop marker", async () => {
+  const { STOP_COMMAND } = await import("@makecord/plugin-sdk");
+  const { registry } = await loadPlugins(process.cwd(), []);
+  const replies: unknown[] = [];
+  const flow: Flow = {
+    specVersion: 1,
+    kind: "event",
+    event: "beforeCommand",
+    customId: "mod*",
+    nodes: [
+      { id: "start", type: "core.trigger", position: { x: 0, y: 0 }, data: {} },
+      {
+        id: "reply",
+        type: "core.reply",
+        position: { x: 0, y: 0 },
+        data: { content: "Not here", ephemeral: true },
+      },
+      { id: "stop", type: "core.stopCommand", position: { x: 0, y: 0 }, data: {} },
+    ],
+    edges: [
+      { id: "e1", source: "start", sourceHandle: "next", target: "reply" },
+      { id: "e2", source: "reply", sourceHandle: "next", target: "stop" },
+    ],
+  };
+  const res = await executeFlow({
+    file: "events/guard.flow.json",
+    flow,
+    registry,
+    base: {
+      client: {} as any,
+      interaction: {
+        replied: false,
+        deferred: false,
+        reply: async (r: unknown) => void replies.push(r),
+      } as any,
+      eventArgs: [],
+      scope: {},
+      store,
+    },
+    env: {},
+    emit: () => {},
+  });
+  assert.equal(res.ok, true);
+  assert.equal(res.result, STOP_COMMAND);
+  assert.equal(replies.length, 1);
+  const project: LoadedProject = {
+    dir: "",
+    config: { specVersion: 1, name: "t", intents: ["Guilds"], plugins: [], cache: {} } as any,
+    flows: [{ file: "events/guard.flow.json", flow }],
+    messages: new Map(),
+    problems: [],
+  };
+  assert.deepEqual(inspectProject(project, coreNodeMetas), []);
+});

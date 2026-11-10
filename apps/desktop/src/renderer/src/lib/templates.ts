@@ -34,7 +34,9 @@ export function newEventFlow(event: FlowEventName, customId?: string): EventFlow
     specVersion: 1,
     kind: "event",
     event,
-    ...(CUSTOM_ID_EVENTS.includes(event) && customId ? { customId } : {}),
+    ...((CUSTOM_ID_EVENTS.includes(event) || event === "beforeCommand") && customId
+      ? { customId }
+      : {}),
     ...(event === "schedule" ? { schedule: { everyMinutes: 60 } } : {}),
     nodes: [{ id: "start", type: "core.trigger", position: { x: 0, y: 0 }, data: {} }],
     edges: [],

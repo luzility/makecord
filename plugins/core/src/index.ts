@@ -3,6 +3,7 @@ import {
   defineNode,
   definePlugin,
   type NodeContext,
+  STOP_COMMAND,
 } from "@makecord/plugin-sdk";
 import * as m from "./meta.js";
 
@@ -280,6 +281,10 @@ export default definePlugin({
         ctx.log("warn", (e as Error).message);
         return "failed";
       }
+    }),
+
+    defineNode(m.stopCommand, (ctx) => {
+      ctx.setResult(STOP_COMMAND);
     }),
 
     defineNode(m.returnValue, (ctx, data) => {

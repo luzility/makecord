@@ -206,6 +206,17 @@ export function NewFlowDialog() {
             />
           </Field>
         )}
+        {kind === "event" && event === "beforeCommand" && (
+          <Field label={t("properties.commandFilter")} hint={t("properties.commandFilterHint")}>
+            <input
+              value={customId}
+              maxLength={100}
+              onChange={(e) => setCustomId(e.target.value)}
+              placeholder="mod*"
+              className="h-7 w-full rounded-md border border-line bg-chrome px-2 font-mono text-label outline-none focus:border-fg/40 focus-visible:outline-none placeholder:text-faint"
+            />
+          </Field>
+        )}
         {kind === "event" && interaction && (
           <Field label={t("properties.customId")} hint={t("properties.customIdHint")}>
             <input

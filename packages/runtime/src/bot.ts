@@ -1,4 +1,5 @@
 import { watch } from "node:fs";
+import { STOP_COMMAND } from "@makecord/plugin-sdk";
 import {
   BASE_BOT_PERMISSIONS,
   type CacheConfig,
@@ -266,14 +267,31 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
 
   client.on(Events.InteractionCreate, (i) => {
     if (i.isChatInputCommand() || i.isContextMenuCommand()) {
-      const entry = commands.get(routeKey(i));
+      const key = routeKey(i);
+      const entry = commands.get(key);
       if (!entry) return;
-      void run(entry.file, entry.flow, {
+      const base = {
         client: i.client,
         interaction: i,
         eventArgs: [i],
         scope: i.isChatInputCommand() ? commandScope(i) : contextMenuScope(i),
-      });
+      };
+      void (async () => {
+        for (const mw of eventFlows("beforeCommand")) {
+          if (!matchesCustomId(mw.flow.customId, key)) continue;
+          const res = await run(mw.file, mw.flow, base);
+          if (!res.ok || res.result === STOP_COMMAND) {
+            emit({
+              type: "log",
+              level: "debug",
+              message: `${mw.file} stopped ${key}`,
+              source: "commands",
+            });
+            return;
+          }
+        }
+        await run(entry.file, entry.flow, base);
+      })();
     } else if (i.isAutocomplete()) {
       const focused = i.options.getFocused(true);
       const id = `${routeKey(i)}.${focused.name}`.replace(/ /g, ".");

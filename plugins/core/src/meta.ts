@@ -1495,6 +1495,22 @@ export const returnValue = defineNodeMeta({
   },
 });
 
+export const stopCommand = defineNodeMeta({
+  type: "core.stopCommand",
+  title: "Stop Command",
+  description: "Keeps the command from running. Reply first to tell the person why.",
+  category: "logic",
+  outputs: [],
+  events: ["beforeCommand"],
+  fields: z.object({}),
+  locales: {
+    tr: {
+      title: "Komutu Durdur",
+      description: "Komutun çalışmasını engeller. Nedenini söylemek için önce yanıt ver.",
+    },
+  },
+});
+
 export const coreNodeMetas = [
   trigger,
   reply,
@@ -1552,4 +1568,5 @@ export const coreNodeMetas = [
   suggest,
   callFunction,
   returnValue,
+  stopCommand,
 ];

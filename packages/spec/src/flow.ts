@@ -188,6 +188,7 @@ export const FlowEventName = z.enum([
   "autocomplete",
   "schedule",
   "function",
+  "beforeCommand",
 ]);
 export type FlowEventName = z.infer<typeof FlowEventName>;
 
@@ -245,7 +246,9 @@ export function matchesCustomId(pattern: string | undefined, id: string): boolea
 }
 
 export const isInteractionFlow = (flow: Flow) =>
-  flow.kind === "command" || INTERACTION_EVENTS.includes(flow.event);
+  flow.kind === "command" ||
+  INTERACTION_EVENTS.includes(flow.event) ||
+  flow.event === "beforeCommand";
 
 export function commandKey(
   c: Pick<SlashCommand, "type" | "name" | "group" | "subcommand">,

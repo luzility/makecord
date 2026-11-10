@@ -156,6 +156,7 @@ export const EVENT_VARIABLES: Record<FlowEventName, string[]> = {
   ],
   schedule: ["now.date", "now.time", "now.weekday", "now.unix", "now.iso"],
   function: PEOPLE,
+  beforeCommand: [...PEOPLE, "command.name", "command.subcommand", "command.group"],
 };
 
 function groupOf(path: string): VarGroup {

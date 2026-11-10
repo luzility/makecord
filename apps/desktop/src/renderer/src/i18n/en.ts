@@ -226,6 +226,9 @@ export const en = {
       "%{path} and everything in it will be deleted from disk. Undo can't bring it back",
   },
   properties: {
+    commandFilter: "Only for commands",
+    commandFilterHint:
+      "Command names like ban, or mod* for every command that starts with mod. Empty runs before all commands",
     functionTitle: "Function",
     functionName: "Name",
     functionNameHint: "Call Function blocks and AI agents use this name",
@@ -428,6 +431,7 @@ export const en = {
     modalSubmit: "When a form is submitted",
     schedule: "On a schedule",
     function: "Function",
+    beforeCommand: "Before a command runs",
     messageReactionRemove: "When someone removes a reaction",
     messagePollVoteAdd: "When someone votes in a poll",
     guildMemberUpdate: "When a member changes (roles, nickname, boost)",
