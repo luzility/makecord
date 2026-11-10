@@ -15,9 +15,9 @@ export default defineConfig({
       description: "How to build, run and host Discord bots with Makecord.",
       logo: { src: "./src/assets/logo.svg", alt: "Makecord" },
       favicon: "/favicon.svg",
-      social: [{ icon: "github", label: "GitHub", href: "https://github.com/makecord/makecord" }],
+      social: [{ icon: "github", label: "GitHub", href: "https://github.com/luzility/makecord" }],
       customCss: ["./src/styles/docs.css"],
-      editLink: { baseUrl: "https://github.com/makecord/makecord/edit/main/apps/web/" },
+      editLink: { baseUrl: "https://github.com/luzility/makecord/edit/main/apps/web/" },
       lastUpdated: false,
       expressiveCode: {
         themes: ["github-dark-default", "github-light-default"],

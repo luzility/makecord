@@ -24,7 +24,7 @@ import { resolveUnsaved } from "./unsaved";
 import { isRunning, startBot, stopBot } from "./useRun";
 
 export const DOCS_URL = "https://makecord.app/docs/";
-export const ISSUES_URL = "https://github.com/makecord/makecord/issues";
+export const ISSUES_URL = "https://github.com/luzility/makecord/issues";
 
 export interface Action {
   id: string;

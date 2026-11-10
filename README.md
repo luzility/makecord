@@ -82,7 +82,7 @@ npm start               # or: docker compose up -d
 You need Node 22.12 or newer and pnpm 12.
 
 ```bash
-git clone https://github.com/makecord/makecord.git
+git clone https://github.com/luzility/makecord.git
 cd makecord
 pnpm install
 pnpm dev:desktop
