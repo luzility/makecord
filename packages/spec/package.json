@@ -1,9 +1,9 @@
 {
   "name": "@makecord/spec",
   "version": "0.1.0",
+  "license": "Apache-2.0",
   "description": "Makecord project and flow file schemas",
   "type": "module",
-  "license": "MIT",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

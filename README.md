@@ -170,3 +170,9 @@ Design decisions and how the pieces fit together are written up in [`docs/ARCHIT
 ## Status
 
 Makecord is young and is developed on Linux. Windows and macOS builds haven't been tested yet, and no bot built with it has run in production. Expect rough edges, and please report what you find.
+
+## License
+
+Makecord is licensed under the [Apache License 2.0](LICENSE). Bots you build with it are yours, under whatever license you choose.
+
+The Makecord name and logo aren't covered by the license. Please don't use them for forks or other projects in a way that suggests they're the official Makecord.

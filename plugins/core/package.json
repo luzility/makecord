@@ -1,9 +1,9 @@
 {
   "name": "@makecord/plugin-core",
   "version": "0.1.0",
+  "license": "Apache-2.0",
   "description": "Built-in Makecord nodes: triggers, messages, logic, variables",
   "type": "module",
-  "license": "MIT",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

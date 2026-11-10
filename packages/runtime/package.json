@@ -1,9 +1,9 @@
 {
   "name": "@makecord/runtime",
   "version": "0.1.0",
-  "description": "Headless engine that runs Makecord projects \u2014 inside the IDE or on any server",
+  "license": "Apache-2.0",
+  "description": "Headless engine that runs Makecord projects — inside the IDE or on any server",
   "type": "module",
-  "license": "MIT",
   "bin": {
     "makecord": "./dist/cli.js"
   },

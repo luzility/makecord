@@ -1,5 +1,6 @@
 {
   "name": "makecord",
+  "license": "Apache-2.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@12.17.0",
