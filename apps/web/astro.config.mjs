@@ -3,7 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 
 export default defineConfig({
-  site: "https://makecord.app",
+  site: "https://makecord.luzili.tech",
   i18n: {
     defaultLocale: "en",
     locales: ["en", "tr"],

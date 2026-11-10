@@ -11,7 +11,7 @@ import { toJson } from "@/lib/templates";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { Button, cn, Dialog, Field, Input, Kbd } from "./ui";
 
-const DOCS_PLUGINS = "https://makecord.app/docs/writing-plugins/";
+const DOCS_PLUGINS = "https://makecord.luzili.tech/docs/writing-plugins/";
 
 const PRIVILEGED = new Set<string>(PRIVILEGED_INTENTS);
 

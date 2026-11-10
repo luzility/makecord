@@ -1,6 +1,6 @@
 # {{name}}
 
-Built with [Makecord](https://makecord.app).
+Built with [Makecord](https://makecord.luzili.tech).
 
 ## Run it on a server
 

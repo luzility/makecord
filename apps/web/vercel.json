@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "astro",
+  "installCommand": "npm install -g pnpm@12.17.0 && cd ../.. && pnpm install --frozen-lockfile --filter @makecord/web...",
+  "buildCommand": "cd ../.. && pnpm turbo run build --filter=@makecord/web",
+  "outputDirectory": "dist"
+}
