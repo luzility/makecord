@@ -10,6 +10,7 @@ export interface Settings {
   openRunOnStart: boolean;
   botMemoryMB: number;
   uiFont: string;
+  autoSave: boolean;
 }
 
 export interface MarketplacePlugin {

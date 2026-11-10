@@ -6,6 +6,7 @@ import {
   themeDark,
 } from "dockview-react";
 import { useEffect, useState } from "react";
+import { EditorTab } from "@/editors/EditorTab";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import {
@@ -66,6 +67,8 @@ function EmptyEditors() {
   );
 }
 
+const tabComponents = { editor: EditorTab };
+
 const theme = { ...themeDark, className: `${themeDark.className} mk-dock` };
 
 const WORKSPACE_FILE = ".makecord/workspace.json";
@@ -78,7 +81,13 @@ async function restoreLayout(dock: DockviewApi): Promise<boolean> {
     const data = JSON.parse(text) as { version?: number; tools?: unknown; editors?: unknown };
     if (data.version !== WORKSPACE_VERSION) return false;
     useStore.getState().set({ tools: sanitizeTools(data.tools) });
-    if (data.editors) dock.fromJSON(data.editors as Parameters<DockviewApi["fromJSON"]>[0]);
+    if (data.editors) {
+      const editors = data.editors as { panels?: Record<string, { tabComponent?: string }> };
+      for (const [id, panel] of Object.entries(editors.panels ?? {})) {
+        if (id.startsWith("editor:")) panel.tabComponent = "editor";
+      }
+      dock.fromJSON(editors as Parameters<DockviewApi["fromJSON"]>[0]);
+    }
     return true;
   } catch {
     return false;
@@ -227,6 +236,7 @@ export function Workbench() {
           <div className="min-h-0 flex-1">
             <DockviewReact
               components={components}
+              tabComponents={tabComponents}
               watermarkComponent={EmptyEditors}
               onReady={({ api: dockApi }: DockviewReadyEvent) => {
                 void buildLayout(dockApi).then((saver) => setDock({ api: dockApi, saver }));

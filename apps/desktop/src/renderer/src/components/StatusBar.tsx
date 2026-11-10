@@ -8,6 +8,31 @@ import { useStore } from "@/lib/store";
 import { Led } from "./Logo";
 import { cn, Sep } from "./ui";
 
+function SaveState() {
+  const { t } = useT();
+  const savedAt = useStore((s) => s.savedAt);
+  const autoSave = useStore((s) => s.settings.autoSave);
+  const unsaved = useStore((s) => Object.keys(s.docs).filter((p) => s.isDirty(p)).length);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!savedAt) return;
+    setNow(Date.now());
+    const id = setTimeout(() => setNow(Date.now()), 2100);
+    return () => clearTimeout(id);
+  }, [savedAt]);
+  if (savedAt && now - savedAt < 2000) {
+    return <span className="text-muted">{t("status.saved")}</span>;
+  }
+  if (!autoSave && unsaved > 0) {
+    return (
+      <span className="text-muted" title={t("status.unsavedHint")}>
+        {t("status.unsaved", { count: unsaved })}
+      </span>
+    );
+  }
+  return null;
+}
+
 export function StatusBar() {
   const { t, tn } = useT();
   const status = useStore((s) => s.status);
@@ -93,6 +118,7 @@ export function StatusBar() {
         </span>
       )}
       <div className="flex-1" />
+      <SaveState />
       {metrics && (
         <span className="flex items-center gap-2 font-mono tabular-nums" title={t("status.memory")}>
           <span>{t("status.ide", { mb: metrics.ideMB })}</span>

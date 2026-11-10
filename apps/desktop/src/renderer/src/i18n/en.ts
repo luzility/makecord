@@ -418,6 +418,9 @@ export const en = {
     online_other: "%{tag} is online in %{count} servers",
     memory: "Memory in use (PSS)",
     ide: "IDE %{mb} MB",
+    saved: "Saved",
+    unsaved: "%{count} unsaved",
+    unsavedHint: "Press Ctrl+S to save",
     bot: "Bot %{mb} MB",
   },
   problems: {
@@ -484,6 +487,8 @@ export const en = {
     viewPreview: "Preview",
     missing: "This file no longer exists",
     noneOpen: "No files are open",
+    unsavedTab: "Not saved yet",
+    invalidTab: "Has an error, so it can't be saved. Fix it or undo",
     closeTab: "Close tab",
     fixBelow: "Fix the file below and the flow editor comes back",
   },
@@ -522,6 +527,7 @@ export const en = {
     docs: "Documentation",
     reportIssue: "Report an issue",
     invite: "Invite bot to a server…",
+    saveAll: "Save all",
   },
   settings: {
     title: "Settings",
@@ -540,6 +546,11 @@ export const en = {
     uiFont: "Interface font",
     uiFontHint:
       "Code, logs and the editor stay in JetBrains Mono, which keeps 0 and O, l and I apart",
+    autoSave: "Save automatically",
+    autoSaveOnHint:
+      "Changes are written to disk as you work, and a running bot picks them up right away",
+    autoSaveOffHint:
+      "Changes are saved when you press Ctrl+S, close the tab or quit. A running bot only sees saved changes",
     snapToGrid: "Snap blocks to the grid",
     snapToGridHint: "Blocks line up on a 20px grid while you drag them",
     run: "Run",

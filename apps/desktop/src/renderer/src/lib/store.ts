@@ -116,6 +116,10 @@ interface State {
   dropDoc(path: string): void;
   setText(path: string, text: string): void;
   flushSaves(): Promise<void>;
+  saveAll(): Promise<number>;
+  savePath(path: string): Promise<void>;
+  isDirty(path: string): boolean;
+  savedAt: number;
   updateFlow(path: string, fn: (flow: Flow) => Flow, mergeKey?: string): void;
   updateMessage(
     path: string,
@@ -251,6 +255,8 @@ export const useStore = create<State>((set, get) => {
 
   const scheduleSave = (path: string) => {
     clearTimeout(timers.get(path));
+    timers.delete(path);
+    if (!get().settings.autoSave) return;
     timers.set(
       path,
       setTimeout(() => void saveNow(path), SAVE_DELAY),
@@ -280,7 +286,14 @@ export const useStore = create<State>((set, get) => {
     runBusy: false,
     notice: null,
     catalog: null,
-    settings: { snapToGrid: true, openRunOnStart: true, botMemoryMB: 512, uiFont: "beacon" },
+    settings: {
+      snapToGrid: true,
+      openRunOnStart: true,
+      botMemoryMB: 512,
+      uiFont: "beacon",
+      autoSave: true,
+    },
+    savedAt: 0,
     settingsPage: null,
 
     async refreshCatalog() {
@@ -296,6 +309,7 @@ export const useStore = create<State>((set, get) => {
 
     async updateSettings(patch) {
       set((s) => ({ settings: { ...s.settings, ...patch } }));
+      if (patch.autoSave) void get().flushSaves();
       try {
         set({ settings: await api.settings.set(patch) });
       } catch (e) {
@@ -380,9 +394,26 @@ export const useStore = create<State>((set, get) => {
     },
 
     async flushSaves() {
-      const pending = [...timers.keys()];
-      for (const path of pending) clearTimeout(timers.get(path));
-      await Promise.all(pending.map(saveNow));
+      for (const t of timers.values()) clearTimeout(t);
+      const dirty = Object.keys(get().docs).filter((p) => get().isDirty(p));
+      await Promise.all(dirty.map(saveNow));
+    },
+
+    async saveAll() {
+      const dirty = Object.keys(get().docs).filter((p) => get().isDirty(p));
+      await get().flushSaves();
+      set({ savedAt: Date.now() });
+      return dirty.length;
+    },
+
+    async savePath(path) {
+      clearTimeout(timers.get(path));
+      await saveNow(path);
+    },
+
+    isDirty(path) {
+      const doc = get().docs[path];
+      return Boolean(doc && !doc.missing && doc.text !== doc.savedText);
     },
 
     setText(path, text) {

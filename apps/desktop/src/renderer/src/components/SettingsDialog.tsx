@@ -104,6 +104,12 @@ function EditorPage() {
   return (
     <Section title={t("settings.editor")}>
       <Toggle
+        label={t("settings.autoSave")}
+        hint={t(settings.autoSave ? "settings.autoSaveOnHint" : "settings.autoSaveOffHint")}
+        checked={settings.autoSave}
+        onChange={(v) => void update({ autoSave: v })}
+      />
+      <Toggle
         label={t("settings.snapToGrid")}
         hint={t("settings.snapToGridHint")}
         checked={settings.snapToGrid}

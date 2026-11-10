@@ -30,6 +30,7 @@ export async function openFile(path: string, nodeId?: string) {
   dock.addPanel({
     id,
     component: "editor",
+    tabComponent: "editor",
     title: titleOf(path),
     params: { path },
     position: group ? { referenceGroup: group } : undefined,

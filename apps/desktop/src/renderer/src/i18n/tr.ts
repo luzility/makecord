@@ -420,6 +420,9 @@ export const tr: Messages = {
     online_other: "%{tag}, %{count} sunucuda çevrimiçi",
     memory: "Kullanılan bellek (PSS)",
     ide: "IDE %{mb} MB",
+    saved: "Kaydedildi",
+    unsaved: "%{count} kaydedilmemiş",
+    unsavedHint: "Kaydetmek için Ctrl+S'ye bas",
     bot: "Bot %{mb} MB",
   },
   problems: {
@@ -488,6 +491,8 @@ export const tr: Messages = {
     viewPreview: "Önizleme",
     missing: "Bu dosya artık yok",
     noneOpen: "Açık dosya yok",
+    unsavedTab: "Henüz kaydedilmedi",
+    invalidTab: "Bir hata var, bu yüzden kaydedilemiyor. Düzelt ya da geri al",
     closeTab: "Sekmeyi kapat",
     fixBelow: "Aşağıdaki dosyayı düzeltince akış editörü geri gelir",
   },
@@ -526,6 +531,7 @@ export const tr: Messages = {
     docs: "Dokümantasyon",
     reportIssue: "Sorun bildir",
     invite: "Botu bir sunucuya davet et…",
+    saveAll: "Tümünü kaydet",
   },
   settings: {
     title: "Ayarlar",
@@ -543,6 +549,10 @@ export const tr: Messages = {
     editor: "Akış editörü",
     uiFont: "Arayüz fontu",
     uiFontHint: "Kod, log'lar ve editör JetBrains Mono'da kalır, 0 ile O'yu, l ile I'yı ayırt eder",
+    autoSave: "Otomatik kaydet",
+    autoSaveOnHint: "Değişiklikler çalışırken diske yazılır, çalışan bot onları hemen alır",
+    autoSaveOffHint:
+      "Değişiklikler Ctrl+S'ye bastığında, sekmeyi kapattığında ya da çıkarken kaydedilir. Çalışan bot sadece kaydedilenleri görür",
     snapToGrid: "Blokları ızgaraya hizala",
     snapToGridHint: "Bloklar sürüklenirken 20px'lik bir ızgaraya oturur",
     run: "Çalıştırma",
