@@ -22,6 +22,8 @@ pnpm publish-packages
 
 This publishes `@makecord/spec`, `@makecord/plugin-sdk`, `@makecord/plugin-core`, `@makecord/plugin-ai` and `@makecord/runtime` with public access. Projects made from the AI assistant template depend on `@makecord/plugin-ai` too. pnpm replaces the `workspace:*` dependencies with the real version.
 
+The command checks that you're logged in to npm before it publishes anything. That matters: npm keeps a version number reserved once a publish of it was attempted, even when the attempt failed, for example with an expired login. If a package answers `Cannot publish over previously staged version`, that number is gone. Raise the version of that one package in its `package.json` (the packages that depend on it pick the new number up when they're published), run `pnpm build` and publish again.
+
 ## 3. Build the app
 
 ```bash

@@ -17,7 +17,7 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "set-version": "node scripts/set-version.mjs",
-    "publish-packages": "pnpm --filter @makecord/spec --filter @makecord/plugin-sdk --filter @makecord/plugin-core --filter @makecord/plugin-ai --filter @makecord/runtime publish --access public"
+    "publish-packages": "npm whoami && pnpm --filter @makecord/spec --filter @makecord/plugin-sdk --filter @makecord/plugin-core --filter @makecord/plugin-ai --filter @makecord/runtime publish --access public"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.6",
