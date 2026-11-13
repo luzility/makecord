@@ -5,6 +5,12 @@ import { PROJECT_FILE, ProjectConfig } from "@makecord/spec";
 import type { MarketplacePlugin } from "../shared/api";
 
 export const MARKETPLACE_KEYWORD = "makecord-plugin";
+const NOT_PLUGINS = new Set([
+  "@makecord/plugin-sdk",
+  "@makecord/plugin-core",
+  "@makecord/runtime",
+  "@makecord/spec",
+]);
 
 export async function searchMarketplace(query: string): Promise<MarketplacePlugin[]> {
   const text = `keywords:${MARKETPLACE_KEYWORD} ${query}`.trim();
@@ -16,12 +22,14 @@ export async function searchMarketplace(query: string): Promise<MarketplacePlugi
       package: { name: string; version: string; description?: string; links?: { npm?: string } };
     }[];
   };
-  return body.objects.map(({ package: p }) => ({
-    name: p.name,
-    version: p.version,
-    description: p.description ?? "",
-    url: p.links?.npm ?? `https://www.npmjs.com/package/${p.name}`,
-  }));
+  return body.objects
+    .filter(({ package: p }) => !NOT_PLUGINS.has(p.name))
+    .map(({ package: p }) => ({
+      name: p.name,
+      version: p.version,
+      description: p.description ?? "",
+      url: p.links?.npm ?? `https://www.npmjs.com/package/${p.name}`,
+    }));
 }
 
 function npm(root: string, args: string[]): Promise<string> {

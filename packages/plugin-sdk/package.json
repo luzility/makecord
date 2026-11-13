@@ -5,7 +5,6 @@
   "description": "Build Makecord plugins: add your own blocks to the Makecord IDE",
   "keywords": [
     "makecord",
-    "makecord-plugin",
     "discord",
     "discord-bot",
     "sdk"
