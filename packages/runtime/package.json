@@ -1,6 +1,6 @@
 {
   "name": "@makecord/runtime",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "license": "Apache-2.0",
   "description": "Runs Makecord bots, inside the IDE or on any server",
   "keywords": [

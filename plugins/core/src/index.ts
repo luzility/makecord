@@ -167,7 +167,7 @@ function parseInputs(spec: string) {
 
 export default definePlugin({
   id: "core",
-  version: "0.2.0",
+  version: "0.2.2",
   engines: { makecord: "^0.2.0" },
   nodes: [
     defineNode(m.trigger, () => "next"),

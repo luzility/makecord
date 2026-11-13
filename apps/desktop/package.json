@@ -1,7 +1,7 @@
 {
   "name": "@makecord/desktop",
   "productName": "Makecord",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "license": "Apache-2.0",
   "private": true,
   "description": "An open-source IDE for building Discord bots visually",

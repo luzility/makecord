@@ -187,7 +187,7 @@ const schemaFor = (fields: ReturnType<typeof parseFieldList>) => ({
 
 export default definePlugin({
   id: "@makecord/plugin-ai",
-  version: "0.2.0",
+  version: "0.2.2",
   engines: { makecord: "^0.2.0" },
   permissions: Object.values(PROVIDERS)
     .map((p) => p.secret)

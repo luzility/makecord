@@ -1,6 +1,6 @@
 {
   "name": "@makecord/plugin-ai",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "license": "Apache-2.0",
   "description": "AI blocks for Makecord: generate text, run agents that call your functions, extract data and check messages",
   "keywords": [
