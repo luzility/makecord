@@ -25,15 +25,45 @@
       "data": {}
     },
     {
-      "id": "generate",
-      "type": "ai.generate",
+      "id": "cooldown",
+      "type": "core.cooldown",
       "position": {
         "x": 320,
         "y": 0
       },
       "data": {
+        "seconds": "15",
+        "key": "{{user.id}}",
+        "variable": "remaining"
+      }
+    },
+    {
+      "id": "wait",
+      "type": "core.reply",
+      "position": {
+        "x": 640,
+        "y": 200
+      },
+      "data": {
+        "content": "Slow down a little. Ask again in {{vars.remaining}} seconds.",
+        "message": "",
+        "ephemeral": true
+      }
+    },
+    {
+      "id": "agent",
+      "type": "ai.agent",
+      "position": {
+        "x": 640,
+        "y": 0
+      },
+      "data": {
         "prompt": "{{options.question}}",
         "system": "You are {{client.tag}}, a friendly assistant in the Discord server {{guild.name}}. Keep answers short. Use your functions when they help.",
+        "tools": "server_info, roll_dice",
+        "memory": "",
+        "memoryTurns": 10,
+        "maxSteps": 4,
         "fitDiscord": true,
         "provider": "anthropic",
         "model": "",
@@ -47,7 +77,7 @@
       "id": "answer",
       "type": "core.reply",
       "position": {
-        "x": 640,
+        "x": 960,
         "y": -100
       },
       "data": {
@@ -60,7 +90,7 @@
       "id": "error",
       "type": "core.reply",
       "position": {
-        "x": 640,
+        "x": 960,
         "y": 120
       },
       "data": {
@@ -75,17 +105,29 @@
       "id": "e1",
       "source": "start",
       "sourceHandle": "next",
-      "target": "generate"
+      "target": "cooldown"
+    },
+    {
+      "id": "e4",
+      "source": "cooldown",
+      "sourceHandle": "next",
+      "target": "agent"
+    },
+    {
+      "id": "e5",
+      "source": "cooldown",
+      "sourceHandle": "cooling",
+      "target": "wait"
     },
     {
       "id": "e2",
-      "source": "generate",
+      "source": "agent",
       "sourceHandle": "next",
       "target": "answer"
     },
     {
       "id": "e3",
-      "source": "generate",
+      "source": "agent",
       "sourceHandle": "failed",
       "target": "error"
     }

@@ -30,6 +30,7 @@ export interface FindResult {
   matches: FindMatch[];
   truncated: boolean;
   error?: string;
+  timedOut?: boolean;
 }
 
 import type { Catalog } from "@makecord/runtime/language-service";

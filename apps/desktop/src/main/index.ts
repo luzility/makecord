@@ -187,7 +187,10 @@ async function readPluginList(root: string): Promise<string> {
 }
 
 async function reloadPlugins(root: string) {
-  servicePlugins = await readPluginList(root);
+  if (currentProject()?.root !== root) return;
+  const list = await readPluginList(root);
+  if (currentProject()?.root !== root) return;
+  servicePlugins = list;
   await openLanguageService(root).catch(() => {});
   send("catalog:changed", null);
 }

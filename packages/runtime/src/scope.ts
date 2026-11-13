@@ -154,9 +154,11 @@ export function commandScope(i: ChatInputCommandInteraction): Scope {
 export function contextMenuScope(
   i: UserContextMenuCommandInteraction | MessageContextMenuCommandInteraction,
 ): Scope {
+  const command = { name: i.commandName, group: "", subcommand: "" };
   if (i.isUserContextMenuCommand()) {
     return {
       ...actor(i),
+      command,
       target: user(i.targetUser),
       targetMember:
         i.targetMember && "joinedAt" in i.targetMember ? member(i.targetMember) : undefined,
@@ -165,6 +167,7 @@ export function contextMenuScope(
   const msg = (i as MessageContextMenuCommandInteraction).targetMessage;
   return {
     ...actor(i),
+    command,
     message: message(msg),
     target: user(msg.author),
   };

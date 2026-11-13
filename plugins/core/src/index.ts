@@ -1,5 +1,6 @@
 import {
   type BuiltMessage,
+  DEBUG_STOP,
   defineNode,
   definePlugin,
   type NodeContext,
@@ -55,12 +56,37 @@ async function messageOf(ctx: NodeContext, channelId: string, messageId: string)
   return channel.messages.fetch(messageId);
 }
 
+const PLACEHOLDER = /\{\{\s*[\w.]+\s*\}\}/g;
 const EPHEMERAL = 1 << 6;
 const COMPONENTS_V2 = 1 << 15;
 
 function payloadOf(ctx: NodeContext, data: { content: string; message: string }): BuiltMessage {
   if (data.message.trim()) return ctx.message(data.message);
   return { content: data.content };
+}
+
+const PING_ALL = { parse: ["users", "roles", "everyone"] as ("users" | "roles" | "everyone")[] };
+
+function withPings<T extends object>(payload: T, ping: boolean): T {
+  return ping ? { ...payload, allowedMentions: PING_ALL } : payload;
+}
+
+type Guild = Awaited<ReturnType<typeof guildOf>>;
+
+async function checkOutranks(ctx: NodeContext, guild: Guild, targetId: string, verb: string) {
+  const i = ctx.interaction;
+  if (!i || i.guildId !== guild.id) return;
+  if (i.user.id === guild.ownerId) return;
+  if (targetId === i.user.id) throw new Error(`You can't ${verb} yourself`);
+  if (targetId === guild.ownerId) throw new Error(`You can't ${verb} the server owner`);
+  const target = await guild.members.fetch(targetId).catch(() => null);
+  if (!target) return;
+  const actor = await guild.members.fetch(i.user.id);
+  if (target.roles.highest.comparePositionTo(actor.roles.highest) >= 0) {
+    throw new Error(
+      `You can't ${verb} ${target.displayName}: their highest role isn't below yours`,
+    );
+  }
 }
 
 function withFlags(payload: BuiltMessage, extra: number): BuiltMessage {
@@ -148,8 +174,15 @@ export default definePlugin({
 
     defineNode(m.reply, async (ctx, data) => {
       const i = requireInteraction(ctx);
-      const payload = withFlags(payloadOf(ctx, data), data.ephemeral ? EPHEMERAL : 0);
-      if (i.deferred && !i.replied) {
+      const payload = withPings(
+        withFlags(payloadOf(ctx, data), data.ephemeral ? EPHEMERAL : 0),
+        data.pingEveryone,
+      );
+      if (i.deferred && !i.replied && data.ephemeral && i.ephemeral === false) {
+        await i.deleteReply().catch(() => {});
+        await i.followUp(payload);
+        Object.assign(i, { replied: true });
+      } else if (i.deferred && !i.replied) {
         const { flags, ...rest } = payload;
         await i.editReply({ ...rest, flags: flags && flags & ~EPHEMERAL });
       } else if (i.replied) await i.followUp(payload);
@@ -164,7 +197,9 @@ export default definePlugin({
     }),
 
     defineNode(m.sendMessage, async (ctx, data) => {
-      await (await sendableChannel(ctx, data.channelId)).send(payloadOf(ctx, data));
+      await (await sendableChannel(ctx, data.channelId)).send(
+        withPings(payloadOf(ctx, data), data.pingEveryone),
+      );
     }),
 
     defineNode(m.sendDM, async (ctx, data) => {
@@ -207,12 +242,14 @@ export default definePlugin({
     }),
 
     defineNode(m.kick, async (ctx, data) => {
+      await checkOutranks(ctx, await guildOf(ctx), data.userId, "kick");
       await (await memberOf(ctx, data.userId)).kick(data.reason || undefined);
     }),
 
     defineNode(m.ban, async (ctx, data) => {
       const hours = Math.min(168, Math.max(0, toNumber(data.deleteMessageHours, "Hours")));
       const guild = await guildOf(ctx);
+      await checkOutranks(ctx, guild, data.userId, "ban");
       await guild.members.ban(data.userId, {
         reason: data.reason || undefined,
         deleteMessageSeconds: Math.round(hours * 3600),
@@ -221,6 +258,7 @@ export default definePlugin({
 
     defineNode(m.timeout, async (ctx, data) => {
       const minutes = Math.min(40320, Math.max(0, toNumber(data.minutes, "Minutes")));
+      await checkOutranks(ctx, await guildOf(ctx), data.userId, "time out");
       const member = await memberOf(ctx, data.userId);
       await member.timeout(minutes === 0 ? null : minutes * 60_000, data.reason || undefined);
     }),
@@ -277,6 +315,7 @@ export default definePlugin({
         ctx.vars.set(`${data.variable}Error`, "");
         return "next";
       } catch (e) {
+        if ((e as { code?: unknown }).code === DEBUG_STOP) throw e;
         ctx.vars.set(`${data.variable}Error`, (e as Error).message);
         ctx.log("warn", (e as Error).message);
         return "failed";
@@ -288,14 +327,32 @@ export default definePlugin({
     }),
 
     defineNode(m.returnValue, (ctx, data) => {
-      const raw = data.value.trim();
-      let value: unknown = data.value;
-      if (/^[[{]/.test(raw)) {
-        try {
-          value = JSON.parse(raw);
-        } catch {}
+      const single = data.value.match(/^\s*\{\{\s*([\w.]+)\s*\}\}\s*$/);
+      if (single) {
+        let value: unknown = ctx.scope;
+        for (const key of single[1]!.split(".")) {
+          value =
+            value && typeof value === "object"
+              ? (value as Record<string, unknown>)[key]
+              : undefined;
+        }
+        ctx.setResult(value ?? "");
+        return;
       }
-      ctx.setResult(value);
+      if (!/^[[{]/.test(data.value.replace(PLACEHOLDER, "").trim())) {
+        ctx.setResult(ctx.render(data.value));
+        return;
+      }
+      const json = ctx.render(data.value, "json");
+      try {
+        ctx.setResult(JSON.parse(json));
+      } catch (e) {
+        ctx.log(
+          "warn",
+          `The value looks like JSON but isn't valid, so it's returned as text: ${(e as Error).message}`,
+        );
+        ctx.setResult(ctx.render(data.value));
+      }
     }),
 
     defineNode(m.setVariable, (ctx, data) => {
@@ -388,7 +445,9 @@ export default definePlugin({
       const msg = await messageOf(ctx, data.channelId, data.messageId);
       await msg.reply({
         ...payloadOf(ctx, data),
-        allowedMentions: { repliedUser: data.mention },
+        allowedMentions: data.pingEveryone
+          ? { ...PING_ALL, repliedUser: data.mention }
+          : { parse: ["users"], repliedUser: data.mention },
       });
     }),
 
@@ -598,6 +657,7 @@ export default definePlugin({
                 .filter((id) => /^\d{17,20}$/.test(id))
                 .map((id) => ({
                   id,
+                  type: guild.roles.cache.has(id) ? 0 : 1,
                   allow: ["ViewChannel", "SendMessages", "ReadMessageHistory", "AttachFiles"],
                 })),
             ]

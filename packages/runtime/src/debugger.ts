@@ -1,3 +1,4 @@
+import { debugStopError } from "./executor.js";
 import type { Emit } from "./reporter.js";
 
 export type ResumeMode = "continue" | "step" | "stop";
@@ -72,7 +73,7 @@ export function createDebugger(emit: Emit) {
       emit({ type: "debug", phase: "resumed", runId: p.runId });
       if (mode === "stop") {
         stepping.delete(p.runId);
-        throw new Error("Stopped in the debugger");
+        throw debugStopError();
       }
       if (mode === "step") stepping.add(p.runId);
       else stepping.delete(p.runId);

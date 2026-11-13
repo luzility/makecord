@@ -19,6 +19,12 @@ Click a problem to open the flow and select the block.
 | `needs-interaction` | Error | A block that answers someone, like **Reply** or **Show Form**, is in a flow nobody can be answered in, such as a member joining. | Use **Send Message** or **Send DM** instead. |
 | `missing-message` | Error | A block uses a message design that doesn't exist. | Create the design in `messages/`, or pick another one. |
 | `unhandled-component` | Warning | A button or menu in a design has a custom ID that no event flow handles. | Add a button or menu event flow with that custom ID, or a pattern like `vote:*`. |
+| `missing-function-name` | Error | A function flow has no name. | Open the function and give it a name in Properties. |
+| `duplicate-function` | Error | Two function flows have the same name. | Rename one of them. |
+| `duplicate-param` | Error | A function has two arguments with the same name. | Rename one of the arguments. |
+| `missing-function` | Error | A **Call Function** block names a function that doesn't exist. | Pick an existing function, or create it. |
+| `missing-argument` | Error | A **Call Function** block leaves a required argument empty. | Select the block and fill in the argument. |
+| `function-needs-interaction` | Warning | A function uses a block that answers someone, like **Reply**, and is called from a flow with nobody to answer, such as a message event or an AI agent in one. | Use **Send Message** in the function, or only call it from commands and buttons. |
 | `missing-schedule` | Error | A schedule flow doesn't say when it runs. | Pick the flow's Start block and set the time in Properties. |
 | `invalid-field` | Error | A block setting is missing or out of range. | Select the block and fill in the setting. |
 | `dangling-edge` | Error | A connection points to a block that no longer exists. | Delete the connection. |

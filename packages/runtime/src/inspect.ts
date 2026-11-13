@@ -1,11 +1,13 @@
 import {
   FUNCTION_ARGS_FIELD_FORMAT,
   FUNCTION_FIELD_FORMAT,
+  FUNCTION_LIST_FIELD_FORMAT,
   MESSAGE_FIELD_FORMAT,
   type NodeMeta,
 } from "@makecord/plugin-sdk";
 import {
   type EventFlow,
+  type Flow,
   type IntentName,
   isInteractionFlow,
   type LayoutBlock,
@@ -83,6 +85,57 @@ function fieldsWithFormat(meta: NodeMeta, format: string): string[] {
 }
 
 const messageFields = (meta: NodeMeta) => fieldsWithFormat(meta, MESSAGE_FIELD_FORMAT);
+
+function calledFunctions(
+  flow: Flow,
+  byType: ReadonlyMap<string, NodeMeta>,
+  all: readonly string[],
+): string[] {
+  const out = new Set<string>();
+  for (const node of flow.nodes) {
+    const meta = byType.get(node.type);
+    if (!meta) continue;
+    for (const key of fieldsWithFormat(meta, FUNCTION_FIELD_FORMAT)) {
+      const name = String(node.data[key] ?? "").trim();
+      if (name) out.add(name);
+    }
+    for (const key of fieldsWithFormat(meta, FUNCTION_LIST_FIELD_FORMAT)) {
+      const names = String(node.data[key] ?? "")
+        .split(",")
+        .map((n) => n.trim())
+        .filter(Boolean);
+      for (const name of names.includes("*") ? all : names) out.add(name);
+    }
+  }
+  return [...out];
+}
+
+function functionsWithoutInteraction(
+  project: LoadedProject,
+  byType: ReadonlyMap<string, NodeMeta>,
+): Map<string, string> {
+  const fns = new Map<string, Flow>();
+  for (const { flow } of project.flows) {
+    if (flow.kind === "event" && flow.event === "function" && flow.function) {
+      if (!fns.has(flow.function.name)) fns.set(flow.function.name, flow);
+    }
+  }
+  const all = [...fns.keys()];
+  const reached = new Map<string, string>();
+  const queue: [string, string][] = [];
+  for (const { file, flow } of project.flows) {
+    if (isInteractionFlow(flow) || (flow.kind === "event" && flow.event === "function")) continue;
+    for (const name of calledFunctions(flow, byType, all)) queue.push([name, file]);
+  }
+  while (queue.length) {
+    const [name, from] = queue.shift()!;
+    const flow = fns.get(name);
+    if (!flow || reached.has(name)) continue;
+    reached.set(name, from);
+    for (const next of calledFunctions(flow, byType, all)) queue.push([next, from]);
+  }
+  return reached;
+}
 
 type Interactive = { event: "buttonClick" | "selectMenu"; customId: string; label: string };
 
@@ -218,7 +271,21 @@ export function inspectProject(project: LoadedProject, metas: readonly NodeMeta[
         message: `A function named "${name}" already exists in ${first}`,
       });
     } else functionFiles.set(name, file);
+    const seenParams = new Set<string>();
+    for (const p of flow.function.params) {
+      if (seenParams.has(p.name)) {
+        problems.push({
+          severity: "error",
+          file,
+          code: "duplicate-param",
+          params: { name, param: p.name },
+          message: `"${name}" has more than one parameter named "${p.name}"`,
+        });
+      }
+      seenParams.add(p.name);
+    }
   }
+  const noInteraction = functionsWithoutInteraction(project, byType);
   const signatures = new Map(
     project.flows.flatMap(({ flow }) =>
       flow.kind === "event" && flow.event === "function" && flow.function
@@ -252,6 +319,20 @@ export function inspectProject(project: LoadedProject, metas: readonly NodeMeta[
           code: "needs-interaction",
           message: `"${meta.title}" needs a command, button, menu or form to answer`,
           params: { type: node.type },
+        });
+      }
+      const caller =
+        meta.needsInteraction && isFunction && flow.function
+          ? noInteraction.get(flow.function.name)
+          : undefined;
+      if (caller) {
+        problems.push({
+          severity: "warning",
+          file,
+          nodeId: node.id,
+          code: "function-needs-interaction",
+          message: `"${meta.title}" needs a command, button, menu or form to answer, but ${caller} calls this function without one`,
+          params: { type: node.type, caller },
         });
       }
       if (meta.events && !(flow.kind === "event" && meta.events.includes(flow.event))) {

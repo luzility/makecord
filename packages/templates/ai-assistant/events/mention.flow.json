@@ -26,10 +26,38 @@
       }
     },
     {
+      "id": "cooldown",
+      "type": "core.cooldown",
+      "position": {
+        "x": 640,
+        "y": 0
+      },
+      "data": {
+        "seconds": "15",
+        "key": "{{user.id}}",
+        "variable": "remaining"
+      }
+    },
+    {
+      "id": "wait",
+      "type": "core.replyToMessage",
+      "position": {
+        "x": 960,
+        "y": 200
+      },
+      "data": {
+        "channelId": "{{channel.id}}",
+        "messageId": "{{message.id}}",
+        "content": "Slow down a little. Ask again in {{vars.remaining}} seconds.",
+        "message": "",
+        "mention": false
+      }
+    },
+    {
       "id": "agent",
       "type": "ai.agent",
       "position": {
-        "x": 640,
+        "x": 960,
         "y": 0
       },
       "data": {
@@ -52,7 +80,7 @@
       "id": "answer",
       "type": "core.replyToMessage",
       "position": {
-        "x": 960,
+        "x": 1280,
         "y": -100
       },
       "data": {
@@ -67,7 +95,7 @@
       "id": "error",
       "type": "core.replyToMessage",
       "position": {
-        "x": 960,
+        "x": 1280,
         "y": 120
       },
       "data": {
@@ -90,7 +118,19 @@
       "id": "e2",
       "source": "mentioned",
       "sourceHandle": "true",
+      "target": "cooldown"
+    },
+    {
+      "id": "e5",
+      "source": "cooldown",
+      "sourceHandle": "next",
       "target": "agent"
+    },
+    {
+      "id": "e6",
+      "source": "cooldown",
+      "sourceHandle": "cooling",
+      "target": "wait"
     },
     {
       "id": "e3",

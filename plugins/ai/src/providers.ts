@@ -55,7 +55,7 @@ export interface AgentResult {
   toolCalls: ToolCall[];
   inputTokens: number;
   outputTokens: number;
-  truncated: boolean;
+  truncated: false | "max_tokens" | "max_steps";
 }
 
 export class AiError extends Error {}
@@ -87,8 +87,8 @@ async function runAnthropic(req: AgentRequest): Promise<AgentResult> {
   const client = new Anthropic({
     apiKey: req.apiKey,
     baseURL: req.baseUrl?.trim() || undefined,
-    timeout: 120_000,
-    maxRetries: 2,
+    timeout: 600_000,
+    maxRetries: 1,
     fetch: req.fetch,
   });
   const model = resolveModel("anthropic", req.model);
@@ -141,7 +141,7 @@ async function runAnthropic(req: AgentRequest): Promise<AgentResult> {
       (b): b is Anthropic.Beta.BetaToolUseBlock => b.type === "tool_use",
     );
     if (res.stop_reason !== "tool_use" || !uses.length) {
-      result.truncated = res.stop_reason === "max_tokens";
+      result.truncated = res.stop_reason === "max_tokens" ? "max_tokens" : false;
       return result;
     }
     const calls = await Promise.all(uses.map((u) => runTool(req.tools, u.name, u.input)));
@@ -156,7 +156,7 @@ async function runAnthropic(req: AgentRequest): Promise<AgentResult> {
       })),
     });
   }
-  result.truncated = true;
+  result.truncated = "max_steps";
   return result;
 }
 
@@ -171,6 +171,15 @@ interface ChatResponse {
   choices?: { message: ChatMessage; finish_reason: string }[];
   usage?: { prompt_tokens?: number; completion_tokens?: number };
   error?: { message?: string } | string;
+}
+
+const COMPATIBLE_TIMEOUT = 300_000;
+
+export function reasoningModel(model: string): boolean {
+  const name = model.trim().toLowerCase().split("/").pop() ?? "";
+  if (/^o\d/.test(name)) return true;
+  const gpt = name.match(/^gpt-(\d+)/);
+  return gpt ? Number(gpt[1]) >= 5 : false;
 }
 
 function parseArguments(raw: string): Record<string, unknown> {
@@ -217,25 +226,35 @@ async function runCompatible(req: AgentRequest): Promise<AgentResult> {
       [req.provider === "openai" ? "max_completion_tokens" : "max_tokens"]: req.maxTokens,
     };
     if (tools.length) body.tools = tools;
-    if (req.effort !== "default" && req.provider === "openai") body.reasoning_effort = req.effort;
+    if (req.effort !== "default" && req.provider === "openai" && reasoningModel(model)) {
+      body.reasoning_effort = req.effort;
+    }
     if (req.schema) {
       body.response_format = {
         type: "json_schema",
         json_schema: { name: "result", schema: req.schema, strict: true },
       };
     }
-    const res = await doFetch(`${base}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        ...(req.apiKey ? { authorization: `Bearer ${req.apiKey}` } : {}),
-      },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(120_000),
-    });
-    const data = (await res.json().catch(() => ({}))) as ChatResponse;
-    if (!res.ok) {
+    const send = async () => {
+      const res = await doFetch(`${base}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          ...(req.apiKey ? { authorization: `Bearer ${req.apiKey}` } : {}),
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(COMPATIBLE_TIMEOUT),
+      });
+      const data = (await res.json().catch(() => ({}))) as ChatResponse;
       const detail = typeof data.error === "string" ? data.error : data.error?.message;
+      return { res, data, detail };
+    };
+    let { res, data, detail } = await send();
+    if (res.status === 400 && "reasoning_effort" in body && /reasoning/i.test(detail ?? "")) {
+      delete body.reasoning_effort;
+      ({ res, data, detail } = await send());
+    }
+    if (!res.ok) {
       throw new AiError(`${preset.label} answered ${res.status}${detail ? `: ${detail}` : ""}`);
     }
     result.inputTokens += data.usage?.prompt_tokens ?? 0;
@@ -246,7 +265,7 @@ async function runCompatible(req: AgentRequest): Promise<AgentResult> {
     if (msg.content?.trim()) result.text = msg.content.trim();
     messages.push({ role: "assistant", content: msg.content ?? null, tool_calls: msg.tool_calls });
     if (!msg.tool_calls?.length) {
-      result.truncated = choice.finish_reason === "length";
+      result.truncated = choice.finish_reason === "length" ? "max_tokens" : false;
       return result;
     }
     const calls = await Promise.all(
@@ -259,7 +278,7 @@ async function runCompatible(req: AgentRequest): Promise<AgentResult> {
       messages.push({ role: "tool", tool_call_id: c.id, content: calls[i]!.output });
     });
   }
-  result.truncated = true;
+  result.truncated = "max_steps";
   return result;
 }
 

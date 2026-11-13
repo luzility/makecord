@@ -508,6 +508,9 @@ export const tr: Messages = {
     missingIntent: "%{event} için %{intent} intent'i gerekli",
     missingFunctionName: "Bu fonksiyona bir ad ver",
     duplicateFunction: "%{name} adında başka bir fonksiyon zaten var (%{file})",
+    duplicateParam: "%{name} fonksiyonunda %{param} adında iki argüman var",
+    functionNeedsInteraction:
+      "%{node} yanıt verebilmek için bir komut, buton, menü veya forma ihtiyaç duyar, ama %{caller} bu fonksiyonu bunlar olmadan çağırıyor",
     missingFunction: "%{node}, olmayan %{name} fonksiyonunu çağırıyor",
     missingArgument: "%{node}: %{name} için %{arg} argümanı gerekli",
   },
@@ -530,6 +533,7 @@ export const tr: Messages = {
     count: "%{files} dosyada %{matches} eşleşme",
     countTruncated: "%{files} dosyada ilk %{matches} eşleşme",
     badRegex: "Geçersiz düzenli ifade: %{error}",
+    tooLong: "Arama çok uzun sürdü. Daha basit bir desen dene",
     note: "Not",
   },
   recent: {

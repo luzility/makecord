@@ -18,6 +18,8 @@ In the Properties panel, with the Start block or empty canvas selected:
 
 End the flow with a **Return** block. Its value is handed back to the caller. It can be text, a variable like `{{vars.total}}`, or JSON such as `{"level": {{vars.level}}}`, which the caller can then read field by field.
 
+When the value starts with `{` or `[`, Return fills in the variables as JSON. Text is escaped for you, so a name with quotes or backslashes can't break the object or add fields to it. Placeholders work both inside quotes and without them. Inside quotes the value becomes part of the text, so `{"name": "{{user.displayName}}"}` always gives text. Without quotes it goes in with its own type: `{"level": {{vars.level}}}` gives a number when the variable holds one, and a list or object stays a list or object, and a variable that doesn't exist becomes `null`. If the result still isn't valid JSON, Return hands back the text as it is and the Run log shows a warning.
+
 A function sees the server, channel and user of the flow that called it, so `{{user.mention}}` and `{{guild.name}}` work as you'd expect, and it can **Reply** when it was called from a command or a button.
 
 ## Call a function
@@ -57,3 +59,5 @@ Start → Read Value (maintenance) → Condition (= on)
 ```
 
 If the flow ends without **Stop Command**, the command runs as usual. A flow that fails also stops the command, so a broken check never lets everything through.
+
+The check runs inside the command's 3 seconds. If it does something slow, like an **HTTP Request** or an AI block, start it with **Defer Reply**, and the command's **Reply** then edits that message.

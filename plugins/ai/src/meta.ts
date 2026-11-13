@@ -1,4 +1,8 @@
-import { defineNodeMeta, VARIABLE_FIELD_FORMAT } from "@makecord/plugin-sdk";
+import {
+  defineNodeMeta,
+  FUNCTION_LIST_FIELD_FORMAT,
+  VARIABLE_FIELD_FORMAT,
+} from "@makecord/plugin-sdk";
 import { z } from "zod";
 import { PROVIDER_IDS } from "./presets.js";
 
@@ -30,7 +34,8 @@ const model = {
   }),
   effort: z.enum(["default", "low", "medium", "high"]).default("default").meta({
     title: "Effort",
-    description: "How hard the model thinks before answering",
+    description:
+      "How hard the model thinks before answering. With OpenAI it only applies to reasoning models (o-series, gpt-5 and later)",
   }),
   maxTokens: z.coerce.number().int().min(16).max(64000).default(16000).meta({
     title: "Max tokens",
@@ -54,7 +59,8 @@ const modelTr = {
   },
   effort: {
     title: "Efor",
-    description: "Modelin cevaplamadan önce ne kadar düşüneceği",
+    description:
+      "Modelin cevaplamadan önce ne kadar düşüneceği. OpenAI'de sadece akıl yürüten modellerde (o serisi, gpt-5 ve sonrası) geçerlidir",
   },
   maxTokens: { title: "En fazla token", description: "Tek cevabın üst sınırı, düşünme dahil" },
 };
@@ -74,7 +80,6 @@ export const generate = defineNodeMeta({
   fields: z.object({
     prompt: z
       .string()
-      .min(1)
       .default("{{message.content}}")
       .meta({ title: "Prompt", description: "What to ask. Variables work here", multiline: true }),
     system: z.string().max(20000).default("").meta({
@@ -112,7 +117,6 @@ export const agent = defineNodeMeta({
   fields: z.object({
     prompt: z
       .string()
-      .min(1)
       .default("{{message.content}}")
       .meta({ title: "Message", description: "What the person said", multiline: true }),
     system: z
@@ -127,6 +131,7 @@ export const agent = defineNodeMeta({
     tools: z.string().max(2000).default("").meta({
       title: "Functions it may call",
       description: "Function names separated by commas, or * for all. Empty means none",
+      format: FUNCTION_LIST_FIELD_FORMAT,
     }),
     memory: z.string().max(200).default("{{channel.id}}").meta({
       title: "Remember by",
@@ -181,11 +186,7 @@ export const extract = defineNodeMeta({
   category: "data",
   outputs: ["next", "failed"],
   fields: z.object({
-    input: z
-      .string()
-      .min(1)
-      .default("{{message.content}}")
-      .meta({ title: "Text", multiline: true }),
+    input: z.string().default("{{message.content}}").meta({ title: "Text", multiline: true }),
     fields: z
       .string()
       .min(1)
@@ -223,11 +224,7 @@ export const check = defineNodeMeta({
   category: "logic",
   outputs: ["yes", "no", "failed"],
   fields: z.object({
-    input: z
-      .string()
-      .min(1)
-      .default("{{message.content}}")
-      .meta({ title: "Text", multiline: true }),
+    input: z.string().default("{{message.content}}").meta({ title: "Text", multiline: true }),
     question: z
       .string()
       .min(1)

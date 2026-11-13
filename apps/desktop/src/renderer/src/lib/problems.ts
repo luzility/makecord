@@ -22,6 +22,8 @@ const KEYS: Record<string, MessageKey> = {
   "plugin-incompatible": "problems.pluginIncompatible",
   "missing-function-name": "problems.missingFunctionName",
   "duplicate-function": "problems.duplicateFunction",
+  "duplicate-param": "problems.duplicateParam",
+  "function-needs-interaction": "problems.functionNeedsInteraction",
   "missing-function": "problems.missingFunction",
   "missing-argument": "problems.missingArgument",
 };

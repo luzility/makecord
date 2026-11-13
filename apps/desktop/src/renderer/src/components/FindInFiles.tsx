@@ -125,10 +125,10 @@ export function FindInFiles() {
     } else if (e.key === "Enter") {
       e.preventDefault();
       open(matches[index]);
-    } else if (e.altKey && e.key.toLowerCase() === "c") {
+    } else if (e.altKey && !e.ctrlKey && !e.metaKey && e.code === "KeyC") {
       e.preventDefault();
       setCaseSensitive((v) => !v);
-    } else if (e.altKey && e.key.toLowerCase() === "x") {
+    } else if (e.altKey && !e.ctrlKey && !e.metaKey && e.code === "KeyX") {
       e.preventDefault();
       setRegex((v) => !v);
     }
@@ -168,14 +168,16 @@ export function FindInFiles() {
           </Toggle>
         </div>
         <div className="flex h-7 items-center border-b border-line px-4 text-meta text-faint">
-          {result?.error
-            ? t("find.badRegex", { error: result.error })
-            : !query
-              ? t("find.hint")
-              : t(result?.truncated ? "find.countTruncated" : "find.count", {
-                  matches: String(matches.length),
-                  files: String(files),
-                })}
+          {result?.timedOut
+            ? t("find.tooLong")
+            : result?.error
+              ? t("find.badRegex", { error: result.error })
+              : !query
+                ? t("find.hint")
+                : t(result?.truncated ? "find.countTruncated" : "find.count", {
+                    matches: String(matches.length),
+                    files: String(files),
+                  })}
         </div>
         <div ref={list} className="max-h-[56vh] overflow-y-auto p-2">
           {query && result && !matches.length && !result.error && (
@@ -212,7 +214,9 @@ export function FindInFiles() {
                         ? m.line
                         : m.nodeType
                           ? `${nodeTitle(m.nodeType, locale)}`
-                          : t("find.note")}
+                          : m.field && m.field !== "note"
+                            ? m.field
+                            : t("find.note")}
                     </span>
                     <Highlight m={m} />
                   </button>

@@ -7,6 +7,12 @@ import { useStore } from "@/lib/store";
 
 const EMPTY: FunctionSignature = { name: "", description: "", params: [] };
 
+const freeParamName = (params: readonly FunctionParam[]) => {
+  let n = params.length + 1;
+  while (params.some((p) => p.name === `param${n}`)) n++;
+  return `param${n}`;
+};
+
 export function FunctionSettings({
   path,
   signature,
@@ -56,7 +62,7 @@ export function FunctionSettings({
                 params: [
                   ...sig.params,
                   {
-                    name: `param${sig.params.length + 1}`,
+                    name: freeParamName(sig.params),
                     description: "",
                     type: "string",
                     required: true,

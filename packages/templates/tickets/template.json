@@ -5,8 +5,8 @@
     "tr": "Destek biletleri"
   },
   "description": {
-    "en": "A button that opens a private channel per ticket, and closes it again",
-    "tr": "Her bilet için özel bir kanal açan ve sonra kapatan bir buton"
+    "en": "A button that opens a private channel per ticket, and closes it again. Paste your staff role ID into the ticket flow so staff can see tickets",
+    "tr": "Her bilet için özel bir kanal açan ve sonra kapatan bir buton. Yetkililerin biletleri görebilmesi için yetkili rol ID'sini bilet akışına yapıştır"
   },
   "intents": [],
   "plugins": [],

@@ -505,6 +505,9 @@ export const en = {
     missingIntent: "%{event} needs the %{intent} intent",
     missingFunctionName: "Give this function a name",
     duplicateFunction: "Another function is already named %{name} (%{file})",
+    duplicateParam: "%{name} has two arguments named %{param}",
+    functionNeedsInteraction:
+      "%{node} needs a command, button, menu or form to answer, but %{caller} calls this function without one",
     missingFunction: "%{node} calls %{name}, which doesn't exist",
     missingArgument: "%{node}: %{name} needs the argument %{arg}",
   },
@@ -527,6 +530,7 @@ export const en = {
     count: "%{matches} matches in %{files} files",
     countTruncated: "First %{matches} matches in %{files} files",
     badRegex: "Invalid regular expression: %{error}",
+    tooLong: "The search took too long. Try a simpler pattern",
     note: "Note",
   },
   recent: {

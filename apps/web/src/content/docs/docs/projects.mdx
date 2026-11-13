@@ -34,9 +34,9 @@ Flow files can live in any folder. The runtime loads every `*.flow.json` in the 
 | Starter | `/ping`, `/greet` and a log line when the bot is ready |
 | Welcome messages | A designed welcome message in the server's system channel, a welcome DM and a goodbye |
 | Moderation | `/ban`, `/kick`, `/timeout`, `/purge`, and `/warn` with a warning count per member |
-| Support tickets | A panel with a button that opens a private channel per ticket, and a button to close it |
-| Levels | XP for chatting, a level up every 25 messages and `/rank` |
-| AI assistant | Answers when mentioned, remembers each channel, `/ask`, and two functions it can call. Needs an [AI](/docs/ai/) key |
+| Support tickets | A panel with a button that opens a private channel per ticket, and a button to close it. Paste your staff role ID into the **Set Variable** block of the ticket flow, or only admins can see tickets |
+| Levels | 1 XP per message (at most once every 30 seconds), a level up every 25 XP and `/rank` |
+| AI assistant | Answers when mentioned and remembers each channel, plus `/ask`. Both can call two functions, and both have a 15 second cooldown per member. Needs an [AI](/docs/ai/) key |
 
 Templates add the intents and plugins they need to `makecord.json`. Some intents, like `GuildMembers` and `MessageContent`, also have to be turned on in the Developer Portal.
 

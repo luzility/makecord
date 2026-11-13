@@ -361,6 +361,8 @@ export const useStore = create<State>((set, get) => {
         catalog: null,
         tree: null,
         activePath: null,
+        recentFiles: [],
+        recentOpen: false,
       });
       if (project) {
         try {

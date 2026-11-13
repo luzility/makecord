@@ -87,14 +87,39 @@
       }
     },
     {
-      "id": "reply",
-      "type": "core.reply",
+      "id": "member",
+      "type": "core.getMember",
       "position": {
         "x": 1600,
         "y": 0
       },
       "data": {
-        "content": "<@{{vars.target}}> is level **{{vars.level}}** with {{vars.xp}} XP.",
+        "userId": "{{vars.target}}",
+        "variable": "member"
+      }
+    },
+    {
+      "id": "reply",
+      "type": "core.reply",
+      "position": {
+        "x": 1920,
+        "y": -100
+      },
+      "data": {
+        "content": "**{{vars.member.displayName}}** is level **{{vars.level}}** with {{vars.xp}} XP.",
+        "message": "",
+        "ephemeral": false
+      }
+    },
+    {
+      "id": "gone",
+      "type": "core.reply",
+      "position": {
+        "x": 1920,
+        "y": 120
+      },
+      "data": {
+        "content": "That member is level **{{vars.level}}** with {{vars.xp}} XP.",
         "message": "",
         "ephemeral": false
       }
@@ -141,7 +166,19 @@
       "id": "e7",
       "source": "level",
       "sourceHandle": "next",
+      "target": "member"
+    },
+    {
+      "id": "e8",
+      "source": "member",
+      "sourceHandle": "next",
       "target": "reply"
+    },
+    {
+      "id": "e9",
+      "source": "member",
+      "sourceHandle": "notFound",
+      "target": "gone"
     }
   ]
 }

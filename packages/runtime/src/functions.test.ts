@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { coreNodeMetas } from "@makecord/plugin-core/meta";
+import { DEBUG_STOP } from "@makecord/plugin-sdk";
 import type { EventFlow, Flow } from "@makecord/spec";
 import { type Caller, executeFlow, type FunctionHost } from "./executor.js";
 import { coerceArgs, functionInfo, functionsOf } from "./functions.js";
@@ -111,7 +112,7 @@ async function runCaller(fn: string, args: Record<string, string>) {
 test("a function returns a value to its caller", async () => {
   const { res, seen } = await runCaller("double", { n: "21" });
   assert.equal(res.ok, true);
-  assert.deepEqual(seen, ["42", ""]);
+  assert.deepEqual(seen, [42, ""]);
 });
 
 test("a missing argument takes the failed port", async () => {
@@ -137,6 +138,10 @@ test("arguments are coerced to their declared types", () => {
   assert.deepEqual(coerceArgs(sig, { a: "3.5", b: "yes" }), { a: 3.5, b: true });
   assert.deepEqual(coerceArgs(sig, { a: 1 }), { a: 1, b: false });
   assert.throws(() => coerceArgs(sig, { a: "x" }), /has to be a number/);
+  assert.deepEqual(coerceArgs(sig, { a: 1, b: "Evet" }), { a: 1, b: true });
+  assert.deepEqual(coerceArgs(sig, { a: 1, b: "HAYIR" }), { a: 1, b: false });
+  assert.deepEqual(coerceArgs(sig, { a: 1, b: "no" }), { a: 1, b: false });
+  assert.throws(() => coerceArgs(sig, { a: 1, b: "maybe" }), /has to be yes or no/);
 });
 
 test("inspection checks function names and arguments", () => {
@@ -217,4 +222,196 @@ test("Stop Command ends a beforeCommand flow with the stop marker", async () => 
     problems: [],
   };
   assert.deepEqual(inspectProject(project, coreNodeMetas), []);
+});
+
+const fn = (
+  name: string,
+  nodes: EventFlow["nodes"],
+  params = [] as { name: string }[],
+): EventFlow => ({
+  specVersion: 1,
+  kind: "event",
+  event: "function",
+  function: {
+    name,
+    description: "",
+    params: params.map((p) => ({ name: p.name, description: "", type: "string", required: false })),
+  },
+  nodes: [{ id: "start", type: "core.trigger", position: { x: 0, y: 0 }, data: {} }, ...nodes],
+  edges: nodes.map((n, i) => ({
+    id: `e${i}`,
+    source: i === 0 ? "start" : nodes[i - 1]!.id,
+    sourceHandle: "next",
+    target: n.id,
+  })),
+});
+
+async function callOnce(
+  target: EventFlow,
+  scope: Record<string, unknown>,
+  beforeNode?: () => Promise<void>,
+) {
+  const { registry } = await loadPlugins(process.cwd(), []);
+  const events: Parameters<Emit>[0][] = [];
+  const host: FunctionHost = {
+    list: () => [functionInfo(target.function!)],
+    call: async (_name, a, from, depth) => {
+      const res = await executeFlow({
+        file: "functions/f.flow.json",
+        flow: target,
+        registry,
+        base: { ...from, store, scope: { ...scope, args: a } },
+        env: {},
+        emit: (e) => events.push(e),
+        functions: host,
+        depth,
+        beforeNode,
+      });
+      if (res.stopped) throw Object.assign(new Error(res.error), { code: DEBUG_STOP });
+      if (!res.ok) throw new Error(res.error);
+      return res.result;
+    },
+  };
+  const seen: unknown[] = [];
+  const res = await executeFlow({
+    file: "events/ready.flow.json",
+    flow: caller(target.function!.name, {}),
+    registry,
+    base: { client: {} as any, eventArgs: [], scope: {}, store },
+    env: {},
+    emit: (e) => events.push(e),
+    functions: host,
+    beforeNode: async (id, state) => {
+      if (id === "save") seen.push(state.vars.get("result"), state.vars.get("resultError"));
+    },
+  });
+  return { res, seen, events };
+}
+
+test("Return escapes values put into JSON", async () => {
+  const ret = fn("info", [
+    {
+      id: "ret",
+      type: "core.return",
+      position: { x: 0, y: 0 },
+      data: {
+        value:
+          '{"isStaff": {{vars.staff}}, "name": "{{user.displayName}}", "guild": {{guild.name}}}',
+      },
+    },
+  ]);
+  const { seen } = await callOnce(ret, {
+    user: { displayName: 'x", "isStaff": true, "z": "' },
+    guild: { name: 'My "Best" Server' },
+  });
+  assert.deepEqual(seen[0], {
+    isStaff: null,
+    name: 'x", "isStaff": true, "z": "',
+    guild: 'My "Best" Server',
+  });
+});
+
+test("Return gives text back as text and warns about broken JSON", async () => {
+  const plain = fn("plain", [
+    {
+      id: "ret",
+      type: "core.return",
+      position: { x: 0, y: 0 },
+      data: { value: "hi {{user.name}}" },
+    },
+  ]);
+  assert.equal((await callOnce(plain, { user: { name: "Luzi" } })).seen[0], "hi Luzi");
+  const broken = fn("broken", [
+    {
+      id: "ret",
+      type: "core.return",
+      position: { x: 0, y: 0 },
+      data: { value: "{oops {{user.name}}" },
+    },
+  ]);
+  const { seen, events } = await callOnce(broken, { user: { name: "Luzi" } });
+  assert.equal(seen[0], "{oops Luzi");
+  assert.ok(
+    events.some((e) => e.type === "log" && e.level === "warn" && /isn't valid/.test(e.message)),
+  );
+});
+
+test("stopping in the debugger inside a function stops the caller too", async () => {
+  const target = fn("slow", [
+    { id: "ret", type: "core.return", position: { x: 0, y: 0 }, data: { value: "x" } },
+  ]);
+  const { res, seen } = await callOnce(target, {}, async () => {
+    throw Object.assign(new Error("Stopped in the debugger"), { code: DEBUG_STOP });
+  });
+  assert.equal(res.ok, false);
+  assert.equal(res.stopped, true);
+  assert.deepEqual(seen, []);
+});
+
+test("inspection: duplicate parameters and replies in functions called without an interaction", () => {
+  const replying = fn(
+    "notify",
+    [{ id: "reply", type: "core.reply", position: { x: 0, y: 0 }, data: { content: "hi" } }],
+    [{ name: "a" }, { name: "a" }],
+  );
+  const relay = fn("relay", [
+    {
+      id: "call",
+      type: "core.callFunction",
+      position: { x: 0, y: 0 },
+      data: { function: "notify", args: {}, variable: "result" },
+    },
+  ]);
+  const project = (flows: LoadedFlow[]): LoadedProject => ({
+    dir: "",
+    config: { specVersion: 1, name: "t", intents: ["Guilds"], plugins: [], cache: {} } as any,
+    flows,
+    messages: new Map(),
+    problems: [],
+  });
+  const fromEvent = inspectProject(
+    project([
+      { file: "functions/notify.flow.json", flow: replying },
+      { file: "functions/relay.flow.json", flow: relay },
+      { file: "events/ready.flow.json", flow: caller("relay", {}) },
+    ]),
+    coreNodeMetas,
+  );
+  const codes = fromEvent.map((p) => `${p.file}:${p.code}`);
+  assert.ok(codes.includes("functions/notify.flow.json:duplicate-param"));
+  const warning = fromEvent.find((p) => p.code === "function-needs-interaction");
+  assert.equal(warning?.file, "functions/notify.flow.json");
+  assert.equal(warning?.nodeId, "reply");
+  assert.equal(warning?.params?.caller, "events/ready.flow.json");
+
+  const command: Flow = {
+    specVersion: 1,
+    kind: "command",
+    command: { type: "chatInput", name: "ping", description: "Ping", options: [] },
+    nodes: caller("relay", {}).nodes,
+    edges: caller("relay", {}).edges,
+  } as Flow;
+  const fromCommand = inspectProject(
+    project([
+      { file: "functions/notify.flow.json", flow: replying },
+      { file: "functions/relay.flow.json", flow: relay },
+      { file: "commands/ping.flow.json", flow: command },
+    ]),
+    coreNodeMetas,
+  );
+  assert.ok(!fromCommand.some((p) => p.code === "function-needs-interaction"));
+});
+
+test("Return of a single placeholder or a sentence stays text", async () => {
+  const one = fn("one", [
+    {
+      id: "ret",
+      type: "core.return",
+      position: { x: 0, y: 0 },
+      data: { value: "{{user.name}} and {{user.name}}" },
+    },
+  ]);
+  const { seen, events } = await callOnce(one, { user: { name: "Luzi" } });
+  assert.equal(seen[0], "Luzi and Luzi");
+  assert.ok(!events.some((e) => e.type === "log" && e.level === "warn"));
 });

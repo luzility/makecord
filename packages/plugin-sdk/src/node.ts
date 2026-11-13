@@ -21,6 +21,7 @@ export interface NodeMeta<F extends z.ZodObject = z.ZodObject> {
   outputs: readonly string[];
   contexts?: readonly FlowKind[];
   needsInteraction?: boolean;
+  rawFields?: readonly string[];
   permissions?: readonly string[];
   events?: readonly string[];
   group?: string;

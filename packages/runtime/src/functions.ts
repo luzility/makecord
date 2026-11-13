@@ -4,6 +4,9 @@ import type { LoadedFlow } from "./project.js";
 
 export const MAX_FUNCTION_DEPTH = 8;
 
+const TRUE_WORDS = ["true", "yes", "1", "on", "evet"];
+const FALSE_WORDS = ["false", "no", "0", "off", "hayır", "hayir"];
+
 export type FunctionFlow = LoadedFlow & { flow: EventFlow & { function: FunctionSignature } };
 
 export function functionsOf(flows: readonly LoadedFlow[]): Map<string, FunctionFlow> {
@@ -40,10 +43,14 @@ export function coerceArgs(
       }
       out[p.name] = n;
     } else if (p.type === "boolean") {
-      out[p.name] =
-        typeof raw === "boolean"
-          ? raw
-          : ["true", "yes", "1", "on"].includes(String(raw).trim().toLowerCase());
+      if (typeof raw === "boolean") {
+        out[p.name] = raw;
+        continue;
+      }
+      const word = String(raw).trim().toLocaleLowerCase("tr");
+      if (TRUE_WORDS.includes(word)) out[p.name] = true;
+      else if (FALSE_WORDS.includes(word)) out[p.name] = false;
+      else throw new Error(`Argument "${p.name}" of "${sig.name}" has to be yes or no`);
     } else {
       out[p.name] = typeof raw === "string" ? raw : JSON.stringify(raw);
     }

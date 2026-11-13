@@ -1,10 +1,15 @@
-import type { FunctionInfo, LogLevel, NodeContext } from "@makecord/plugin-sdk";
+import {
+  DEBUG_STOP,
+  type FunctionInfo,
+  type LogLevel,
+  type NodeContext,
+} from "@makecord/plugin-sdk";
 import type { Flow, MessageDesign } from "@makecord/spec";
 import { TRIGGER_NODE_TYPE } from "@makecord/spec";
 import { buildMessage } from "./message.js";
 import type { NodeRegistry } from "./plugins.js";
 import type { Emit } from "./reporter.js";
-import { renderData } from "./templates.js";
+import { renderData, renderJsonTemplate, renderTemplate } from "./templates.js";
 
 const MAX_STEPS = 2000;
 
@@ -16,6 +21,7 @@ export type ExecutionBase = Omit<
   | "scope"
   | "nodeId"
   | "message"
+  | "render"
   | "functions"
   | "callFunction"
   | "setResult"
@@ -40,6 +46,14 @@ export interface FlowResult {
   ok: boolean;
   result?: unknown;
   error?: string;
+  stopped?: boolean;
+}
+
+export const isDebugStop = (e: unknown): boolean =>
+  (e as { code?: unknown } | null)?.code === DEBUG_STOP;
+
+export function debugStopError(message = "Stopped in the debugger"): Error {
+  return Object.assign(new Error(message), { code: DEBUG_STOP });
 }
 
 export async function executeFlow(opts: {
@@ -61,9 +75,10 @@ export async function executeFlow(opts: {
   const nodes = new Map(flow.nodes.map((n) => [n.id, n]));
   const vars = new Map<string, unknown>();
   let result: unknown;
+  let stopped = false;
   const fail = (error: string, nodeId?: string): FlowResult => {
     emit({ type: "flow", phase: "error", flow: file, nodeId, error });
-    return { ok: false, error };
+    return stopped ? { ok: false, error, stopped } : { ok: false, error };
   };
 
   let current = flow.nodes.find((n) => n.type === TRIGGER_NODE_TYPE);
@@ -85,6 +100,8 @@ export async function executeFlow(opts: {
         if (!design) throw new Error(`Message design "${name}" doesn't exist in messages/`);
         return buildMessage(design, { ...base.scope, vars: Object.fromEntries(vars) });
       },
+      render: (template, mode) =>
+        mode === "json" ? renderJsonTemplate(template, scope) : renderTemplate(template, scope),
       vars,
       nodeId: node.id,
       secret: (name) =>
@@ -95,12 +112,12 @@ export async function executeFlow(opts: {
       callFunction: (name, args) => {
         if (!functions) return Promise.reject(new Error("Functions aren't available here"));
         const { client, interaction, eventArgs } = base;
-        return functions.call(
-          name,
-          args,
-          { client, interaction, eventArgs, scope: base.scope },
-          depth + 1,
-        );
+        return functions
+          .call(name, args, { client, interaction, eventArgs, scope: base.scope }, depth + 1)
+          .catch((e: unknown) => {
+            if (isDebugStop(e)) stopped = true;
+            throw e;
+          });
       },
       setResult: (value) => {
         result = value;
@@ -109,7 +126,9 @@ export async function executeFlow(opts: {
         emit({ type: "log", level, message, source: `${file}#${node.id}` }),
     };
 
-    const parsed = entry.node.meta.fields.safeParse(renderData(node.data, scope));
+    const parsed = entry.node.meta.fields.safeParse(
+      renderData(node.data, scope, entry.node.meta.rawFields),
+    );
     if (!parsed.success) {
       const msg = parsed.error.issues
         .map((i: { path: PropertyKey[]; message: string }) => `${i.path.join(".")}: ${i.message}`)
@@ -123,8 +142,10 @@ export async function executeFlow(opts: {
       if (beforeNode) await beforeNode(node.id, { vars, scope });
       port = (await entry.node.run(ctx, parsed.data)) ?? "next";
     } catch (e) {
+      if (isDebugStop(e)) stopped = true;
       return fail((e as Error).message, node.id);
     }
+    if (stopped) return fail("Stopped in the debugger", node.id);
 
     const edge = flow.edges.find((e) => e.source === node.id && e.sourceHandle === port);
     current = edge ? nodes.get(edge.target) : undefined;

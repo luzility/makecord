@@ -24,7 +24,13 @@ import {
 } from "discord.js";
 import { buildCommands, routeKey } from "./commands.js";
 import type { Debugger } from "./debugger.js";
-import { type Caller, executeFlow, type FlowResult, type FunctionHost } from "./executor.js";
+import {
+  type Caller,
+  debugStopError,
+  executeFlow,
+  type FlowResult,
+  type FunctionHost,
+} from "./executor.js";
 import { coerceArgs, functionInfo, functionsOf, MAX_FUNCTION_DEPTH } from "./functions.js";
 import { watchGateway } from "./gateway.js";
 import { inspectProject } from "./inspect.js";
@@ -132,6 +138,7 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
       Partials.User,
       Partials.GuildMember,
     ],
+    allowedMentions: { parse: ["users"], repliedUser: true },
     makeCache: makeCache(config.cache),
     sweepers: config.cache.sweepIntervalSeconds
       ? {
@@ -182,6 +189,7 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
         { ...caller, scope: { ...scope, args: coerceArgs(entry.flow.function, args) } },
         depth,
       );
+      if (res.stopped) throw debugStopError();
       if (!res.ok) throw new Error(`Function "${name}" failed: ${res.error}`);
       return res.result;
     },
@@ -278,7 +286,11 @@ export async function startBot(opts: StartOptions): Promise<RunningBot> {
       };
       void (async () => {
         for (const mw of eventFlows("beforeCommand")) {
-          if (!matchesCustomId(mw.flow.customId, key)) continue;
+          if (
+            !matchesCustomId(mw.flow.customId, key) &&
+            !(i.isContextMenuCommand() && matchesCustomId(mw.flow.customId, i.commandName))
+          )
+            continue;
           const res = await run(mw.file, mw.flow, base);
           if (!res.ok || res.result === STOP_COMMAND) {
             emit({

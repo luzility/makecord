@@ -13,6 +13,11 @@ self.MonacoEnvironment = {
   },
 };
 
+monaco.editor.addKeybindingRule({
+  keybinding: monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyE,
+  command: "-actions.findWithSelection",
+});
+
 monaco.editor.defineTheme("makecord-dark", {
   base: "vs-dark",
   inherit: true,

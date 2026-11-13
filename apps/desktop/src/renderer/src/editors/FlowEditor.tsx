@@ -541,14 +541,17 @@ function Canvas({ path, flow }: { path: string; flow: Flow }) {
     focusNodes([id]);
   };
 
-  const firstFound = found[0];
+  const foundRef = useRef(found);
+  foundRef.current = found;
   useEffect(() => {
     setFindAt(0);
-    if (!firstFound) return;
-    setSelectedIds(new Set([firstFound]));
-    select({ path, nodeId: firstFound });
-    void fitView({ nodes: [{ id: firstFound }], maxZoom: 1.2, padding: 0.5, duration: 200 });
-  }, [firstFound, path, select, fitView]);
+    const first = finding?.trim() ? foundRef.current[0] : undefined;
+    if (!first) return;
+    setSelectedIds(new Set([first]));
+    select({ path, nodeId: first });
+    void fitView({ nodes: [{ id: first }], maxZoom: 1.2, padding: 0.5, duration: 200 });
+  }, [finding, path, select, fitView]);
+  const findIndex = Math.min(findAt, Math.max(0, found.length - 1));
 
   const zoomToSelection = () => focusNodes([...selectedIds]);
 
@@ -705,9 +708,11 @@ function Canvas({ path, flow }: { path: string; flow: Flow }) {
           <FindBar
             query={finding}
             count={found.length}
-            at={findAt}
+            at={findIndex}
             onChange={setFinding}
-            onStep={(step) => showFound((findAt + step + found.length) % Math.max(1, found.length))}
+            onStep={(step) =>
+              showFound((findIndex + step + found.length) % Math.max(1, found.length))
+            }
             onClose={() => {
               setFinding(null);
               wrapper.current?.focus();

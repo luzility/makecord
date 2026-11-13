@@ -8,7 +8,9 @@ function ctx(secrets: Record<string, string>) {
   const vars = new Map<string, unknown>();
   const calls: { name: string; args: Record<string, unknown> }[] = [];
   const logs: string[] = [];
+  const extra = { render: (template: string) => template };
   const c: NodeContext = {
+    ...extra,
     client: {} as never,
     eventArgs: [],
     scope: {},
@@ -57,10 +59,10 @@ function withFetch(answers: unknown[], fn: (bodies: any[]) => Promise<void>) {
   });
 }
 
-const chat = (content: string | null, tool_calls?: unknown[]) => ({
+const chat = (content: string | null, tool_calls?: unknown[], finish?: string) => ({
   choices: [
     {
-      finish_reason: tool_calls ? "tool_calls" : "stop",
+      finish_reason: finish ?? (tool_calls ? "tool_calls" : "stop"),
       message: { role: "assistant", content, tool_calls },
     },
   ],
@@ -140,4 +142,95 @@ test("extract fills a variable object and failures go to the failed port", async
 test("secrets are declared for every provider", () => {
   assert.ok(plugin.permissions?.includes("secrets:ANTHROPIC_API_KEY"));
   assert.ok(plugin.permissions?.includes("secrets:OPENROUTER_API_KEY"));
+});
+
+const callLevel = () =>
+  chat(null, [{ id: "1", type: "function", function: { name: "level_of", arguments: "{}" } }]);
+
+test("an answer cut off before any text leaves through failed and says why", async () => {
+  const { c, vars } = ctx({ GROQ_API_KEY: "k" });
+  const generate = node("ai.generate");
+  const fields = generate.meta.fields.parse({ prompt: "hi", provider: "groq", model: "m" });
+  await withFetch([chat(null, undefined, "length")], async () => {
+    assert.equal(await generate.run(c, fields), "failed");
+  });
+  assert.match(String(vars.get("answerError")), /Max tokens/);
+});
+
+test("a cut-off answer with some text is kept with a warning", async () => {
+  const { c, vars, logs } = ctx({ GROQ_API_KEY: "k" });
+  const generate = node("ai.generate");
+  const fields = generate.meta.fields.parse({ prompt: "hi", provider: "groq", model: "m" });
+  await withFetch([chat("Half an ans", undefined, "length")], async () => {
+    assert.equal(await generate.run(c, fields), "next");
+  });
+  assert.equal(vars.get("answer"), "Half an ans");
+  assert.ok(logs.some((l) => /Max tokens/.test(l)));
+});
+
+test("an agent that runs out of tool rounds fails and doesn't touch memory", async () => {
+  const { c, vars, data } = ctx({ GROQ_API_KEY: "k" });
+  const agent = node("ai.agent");
+  const fields = agent.meta.fields.parse({
+    prompt: "loop",
+    tools: "level_of",
+    provider: "groq",
+    model: "m",
+    memory: "chan",
+    maxSteps: 2,
+  });
+  await withFetch([callLevel(), callLevel()], async () => {
+    assert.equal(await agent.run(c, fields), "failed");
+  });
+  assert.match(String(vars.get("answerError")), /Max tool rounds/);
+  assert.equal(data.get("ai.memory:chan"), undefined);
+});
+
+test("two agent runs in one channel at once both stay in memory", async () => {
+  const { c, data } = ctx({ GROQ_API_KEY: "k" });
+  const agent = node("ai.agent");
+  const fields = agent.meta.fields.parse({ provider: "groq", model: "m", memory: "chan" });
+  const original = globalThis.fetch;
+  const waiting: ((r: Response) => void)[] = [];
+  globalThis.fetch = (() => new Promise<Response>((r) => waiting.push(r))) as typeof fetch;
+  try {
+    const a = agent.run(c, { ...fields, prompt: "from A" });
+    const b = agent.run(c, { ...fields, prompt: "from B" });
+    while (waiting.length < 2) await new Promise((r) => setImmediate(r));
+    const answer = (text: string) =>
+      new Response(JSON.stringify(chat(text)), { headers: { "content-type": "application/json" } });
+    waiting[0]!(answer("to A"));
+    assert.equal(await a, "next");
+    waiting[1]!(answer("to B"));
+    assert.equal(await b, "next");
+  } finally {
+    globalThis.fetch = original;
+  }
+  const turns = JSON.parse(String(data.get("ai.memory:chan"))) as { text: string }[];
+  assert.deepEqual(
+    turns.map((t) => t.text),
+    ["from A", "to A", "from B", "to B"],
+  );
+});
+
+test("check and extract handle a message with no text", async () => {
+  const { c, vars } = ctx({ OPENAI_API_KEY: "k" });
+  const check = node("ai.check");
+  const checkFields = check.meta.fields.parse({ input: "", provider: "openai", model: "m" });
+  assert.equal(await check.run(c, checkFields), "no");
+  assert.equal(vars.get("reason"), "No text to check");
+  const extract = node("ai.extract");
+  const extractFields = extract.meta.fields.parse({ input: " ", provider: "openai", model: "m" });
+  assert.equal(await extract.run(c, extractFields), "failed");
+  assert.equal(vars.get("dataError"), "No text to extract from");
+});
+
+test("extract names the token limit when the JSON was cut off", async () => {
+  const { c, vars } = ctx({ OPENAI_API_KEY: "k" });
+  const extract = node("ai.extract");
+  const fields = extract.meta.fields.parse({ input: "text", provider: "openai", model: "m" });
+  await withFetch([chat('{"summary":"half', undefined, "length")], async () => {
+    assert.equal(await extract.run(c, fields), "failed");
+  });
+  assert.match(String(vars.get("dataError")), /Max tokens before the JSON/);
 });

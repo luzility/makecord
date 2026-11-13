@@ -52,6 +52,9 @@ const designTr = {
   title: "Mesaj tasarımı",
   description: "Yukarıdaki metin yerine messages/ içindeki bir tasarımı gönderir",
 };
+const pingEveryone = () =>
+  z.boolean().default(false).meta({ title: "Let this message ping @everyone and roles" });
+const pingEveryoneTr = { title: "Bu mesaj @everyone ve rolleri etiketleyebilsin" };
 const contentOrDesign = <T extends { content: string; message: string }>(d: T) =>
   Boolean(d.content.trim() || d.message.trim());
 const contentOrDesignError = {
@@ -82,6 +85,7 @@ export const reply = defineNodeMeta({
       content: content(),
       message: design(),
       ephemeral: z.boolean().default(false).meta({ title: "Only visible to the user" }),
+      pingEveryone: pingEveryone(),
     })
     .refine(contentOrDesign, contentOrDesignError),
   locales: {
@@ -92,6 +96,7 @@ export const reply = defineNodeMeta({
         content: contentTr,
         message: designTr,
         ephemeral: { title: "Sadece kullanana göster" },
+        pingEveryone: pingEveryoneTr,
       },
     },
   },
@@ -128,6 +133,7 @@ export const sendMessage = defineNodeMeta({
       channelId: line("Channel ID", "For example {{channel.id}}").min(1),
       content: content(),
       message: design(),
+      pingEveryone: pingEveryone(),
     })
     .refine(contentOrDesign, contentOrDesignError),
   locales: {
@@ -138,6 +144,7 @@ export const sendMessage = defineNodeMeta({
         channelId: { title: "Kanal ID", description: "Örneğin {{channel.id}}" },
         content: contentTr,
         message: designTr,
+        pingEveryone: pingEveryoneTr,
       },
     },
   },
@@ -282,14 +289,16 @@ export const kick = defineNodeMeta({
   type: "core.kick",
   group: "members",
   title: "Kick Member",
-  description: "Removes a member from the server. They can join again with an invite.",
+  description:
+    "Removes a member from the server. They can join again with an invite. Refuses when the person who ran it doesn't rank above them.",
   category: "action",
   permissions: ["KickMembers"],
   fields: z.object({ userId: userId(), reason: reason() }),
   locales: {
     tr: {
       title: "Üyeyi At",
-      description: "Bir üyeyi sunucudan çıkarır. Davetle tekrar katılabilir.",
+      description:
+        "Bir üyeyi sunucudan çıkarır. Davetle tekrar katılabilir. Çalıştıran kişi hedefin üstünde değilse reddeder.",
       fields: { userId: userIdTr, reason: reasonTr },
     },
   },
@@ -299,7 +308,8 @@ export const ban = defineNodeMeta({
   type: "core.ban",
   group: "members",
   title: "Ban Member",
-  description: "Bans a user from the server.",
+  description:
+    "Bans a user from the server. Refuses when the person who ran it doesn't rank above them.",
   category: "action",
   permissions: ["BanMembers"],
   fields: z.object({
@@ -312,7 +322,8 @@ export const ban = defineNodeMeta({
   locales: {
     tr: {
       title: "Üyeyi Yasakla",
-      description: "Bir kullanıcıyı sunucudan yasaklar.",
+      description:
+        "Bir kullanıcıyı sunucudan yasaklar. Çalıştıran kişi hedefin üstünde değilse reddeder.",
       fields: {
         userId: userIdTr,
         reason: reasonTr,
@@ -329,7 +340,8 @@ export const timeout = defineNodeMeta({
   type: "core.timeout",
   group: "members",
   title: "Timeout Member",
-  description: "Mutes a member for a while. Use 0 minutes to lift a timeout.",
+  description:
+    "Mutes a member for a while. Use 0 minutes to lift a timeout. Refuses when the person who ran it doesn't rank above them.",
   category: "action",
   permissions: ["ModerateMembers"],
   fields: z.object({
@@ -340,7 +352,8 @@ export const timeout = defineNodeMeta({
   locales: {
     tr: {
       title: "Zaman Aşımı Ver",
-      description: "Bir üyeyi bir süreliğine susturur. Kaldırmak için 0 dakika gir.",
+      description:
+        "Bir üyeyi bir süreliğine susturur. Kaldırmak için 0 dakika gir. Çalıştıran kişi hedefin üstünde değilse reddeder.",
       fields: {
         userId: userIdTr,
         minutes: { title: "Dakika", description: "En fazla 40320 (28 gün)" },
@@ -728,6 +741,7 @@ export const replyToMessage = defineNodeMeta({
       content: content(),
       message: design(),
       mention: z.boolean().default(true).meta({ title: "Ping the author" }),
+      pingEveryone: pingEveryone(),
     })
     .refine(contentOrDesign, contentOrDesignError),
   locales: {
@@ -741,6 +755,7 @@ export const replyToMessage = defineNodeMeta({
         content: contentTr,
         message: designTr,
         mention: { title: "Yazarı etiketle" },
+        pingEveryone: pingEveryoneTr,
       },
     },
   },
@@ -1478,8 +1493,12 @@ export const returnValue = defineNodeMeta({
   category: "logic",
   outputs: [],
   events: ["function"],
+  rawFields: ["value"],
   fields: z.object({
-    value: text("Value", "Text, a variable like {{vars.total}}, or JSON").default(""),
+    value: text(
+      "Value",
+      "Text, a variable like {{vars.total}}, or JSON. Values put into JSON are escaped for you",
+    ).default(""),
   }),
   locales: {
     tr: {
@@ -1488,7 +1507,8 @@ export const returnValue = defineNodeMeta({
       fields: {
         value: {
           title: "Değer",
-          description: "Metin, {{vars.toplam}} gibi bir değişken ya da JSON",
+          description:
+            "Metin, {{vars.toplam}} gibi bir değişken ya da JSON. JSON'a giren değerler otomatik kaçışlanır",
         },
       },
     },

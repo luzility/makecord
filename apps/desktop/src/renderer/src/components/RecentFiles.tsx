@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useT } from "@/i18n";
 import { openFile, openPaths } from "@/lib/dock";
 import { fileIcon } from "@/lib/fileIcons";
+import { filesUnder } from "@/lib/files";
 import { useStore } from "@/lib/store";
 import { useModalFlag } from "./ui";
 
@@ -17,12 +18,17 @@ export function RecentFiles() {
   const set = useStore((s) => s.set);
   const recent = useStore((s) => s.recentFiles);
   const activePath = useStore((s) => s.activePath);
+  const tree = useStore((s) => s.tree);
   useModalFlag();
   const close = () => set({ recentOpen: false });
-  const paths = useMemo(
-    () => [...recent, ...openPaths()].filter((p, i, a) => a.indexOf(p) === i && p !== activePath),
-    [recent, activePath],
-  );
+  const paths = useMemo(() => {
+    const existing = tree ? new Set(filesUnder(tree)) : null;
+    const open = openPaths();
+    return [
+      ...recent.filter((p) => !existing || existing.has(p) || open.includes(p)),
+      ...open,
+    ].filter((p, i, a) => a.indexOf(p) === i && p !== activePath);
+  }, [recent, activePath, tree]);
 
   return (
     <div

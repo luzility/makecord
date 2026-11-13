@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { parseFieldList } from "./index.js";
-import { type AgentTool, parseJson, runAgent } from "./providers.js";
+import { type AgentTool, parseJson, reasoningModel, runAgent } from "./providers.js";
 
 type Handler = (body: any) => unknown;
 
@@ -157,10 +157,58 @@ test("openai uses max_completion_tokens and reasoning effort", async () => {
       choices: [{ finish_reason: "length", message: { role: "assistant", content: "x" } }],
     }),
   ]);
-  const res = await runAgent({ ...base, provider: "openai", model: "m", tools: [], fetch: f.impl });
+  const res = await runAgent({
+    ...base,
+    provider: "openai",
+    model: "gpt-5",
+    tools: [],
+    fetch: f.impl,
+  });
   assert.equal(f.bodies[0].max_completion_tokens, 1000);
   assert.equal(f.bodies[0].reasoning_effort, "low");
-  assert.equal(res.truncated, true);
+  assert.equal(res.truncated, "max_tokens");
+});
+
+test("reasoning effort is left out for openai models that don't reason", async () => {
+  const f = fakeFetch([
+    () => ({ choices: [{ finish_reason: "stop", message: { role: "assistant", content: "x" } }] }),
+  ]);
+  await runAgent({ ...base, provider: "openai", model: "gpt-4o-mini", tools: [], fetch: f.impl });
+  assert.equal("reasoning_effort" in f.bodies[0], false);
+  assert.equal(reasoningModel("o4-mini"), true);
+  assert.equal(reasoningModel("gpt-6.1"), true);
+  assert.equal(reasoningModel("gpt-4.1"), false);
+});
+
+test("a model that rejects reasoning effort is asked again without it", async () => {
+  const bodies: any[] = [];
+  const impl = (async (_url: unknown, init?: RequestInit) => {
+    const body = JSON.parse(String(init?.body));
+    bodies.push(body);
+    if ("reasoning_effort" in body) {
+      return new Response(
+        JSON.stringify({
+          error: { message: "Unsupported parameter: 'reasoning_effort' is not supported" },
+        }),
+        { status: 400, headers: { "content-type": "application/json" } },
+      );
+    }
+    return new Response(
+      JSON.stringify({
+        choices: [{ finish_reason: "stop", message: { role: "assistant", content: "ok" } }],
+      }),
+      { headers: { "content-type": "application/json" } },
+    );
+  }) as typeof fetch;
+  const res = await runAgent({
+    ...base,
+    provider: "openai",
+    model: "gpt-5",
+    tools: [],
+    fetch: impl,
+  });
+  assert.equal(bodies.length, 2);
+  assert.equal(res.text, "ok");
 });
 
 test("the step limit stops a looping agent", async () => {
@@ -169,7 +217,7 @@ test("the step limit stops a looping agent", async () => {
   const f = fakeFetch([loop, loop]);
   const res = await runAgent({ ...base, provider: "anthropic", maxSteps: 2, fetch: f.impl });
   assert.equal(res.steps, 2);
-  assert.equal(res.truncated, true);
+  assert.equal(res.truncated, "max_steps");
 });
 
 test("JSON answers are parsed even inside code fences", () => {

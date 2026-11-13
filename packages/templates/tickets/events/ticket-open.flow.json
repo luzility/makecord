@@ -51,10 +51,22 @@
       }
     },
     {
+      "id": "staff",
+      "type": "core.setVariable",
+      "position": {
+        "x": 960,
+        "y": 0
+      },
+      "data": {
+        "name": "staffRole",
+        "value": ""
+      }
+    },
+    {
       "id": "channel",
       "type": "core.createChannel",
       "position": {
-        "x": 960,
+        "x": 1280,
         "y": 0
       },
       "data": {
@@ -63,7 +75,7 @@
         "parentId": "",
         "topic": "Ticket for {{user.username}} ({{user.id}})",
         "private": true,
-        "allow": "{{user.id}}",
+        "allow": "{{user.id}},{{vars.staffRole}}",
         "variable": "channelId"
       }
     },
@@ -71,7 +83,7 @@
       "id": "welcome",
       "type": "core.sendMessage",
       "position": {
-        "x": 1280,
+        "x": 1600,
         "y": 0
       },
       "data": {
@@ -84,7 +96,7 @@
       "id": "reply",
       "type": "core.reply",
       "position": {
-        "x": 1600,
+        "x": 1920,
         "y": 0
       },
       "data": {
@@ -117,7 +129,7 @@
       "id": "e4",
       "source": "defer",
       "sourceHandle": "next",
-      "target": "channel"
+      "target": "staff"
     },
     {
       "id": "e5",
@@ -130,6 +142,24 @@
       "source": "welcome",
       "sourceHandle": "next",
       "target": "reply"
+    },
+    {
+      "id": "e7",
+      "source": "staff",
+      "sourceHandle": "next",
+      "target": "channel"
+    }
+  ],
+  "notes": [
+    {
+      "id": "staff-note",
+      "position": {
+        "x": 880,
+        "y": -260
+      },
+      "text": "Staff can't see ticket channels yet. Right-click your staff role in Discord, choose Copy Role ID (turn on Developer Mode first) and paste the ID into the Value of the Set Variable block below. Server admins can always see tickets.",
+      "width": 360,
+      "height": 150
     }
   ]
 }

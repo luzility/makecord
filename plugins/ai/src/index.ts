@@ -3,6 +3,7 @@ import type { z } from "zod";
 import * as m from "./meta.js";
 import {
   type AgentRequest,
+  type AgentResult,
   type AgentTool,
   describeError,
   PROVIDERS,
@@ -60,6 +61,40 @@ function fail(ctx: NodeContext, variable: string, e: unknown) {
   ctx.vars.set(`${variable}Error`, message);
   ctx.log("warn", message);
   return "failed";
+}
+
+const NO_ANSWER = {
+  max_tokens: "The answer hit Max tokens before any text came. Raise Max tokens",
+  max_steps: "Stopped after Max tool rounds without an answer. Raise Max tool rounds",
+};
+
+const CUT_OFF = {
+  max_tokens: "The answer hit Max tokens and may be cut off",
+  max_steps: "Stopped after Max tool rounds, so the answer may be incomplete",
+};
+
+function answerOf(ctx: NodeContext, res: AgentResult): string {
+  if (!res.text) {
+    throw new Error(res.truncated ? NO_ANSWER[res.truncated] : "The model gave no answer");
+  }
+  if (res.truncated) ctx.log("warn", CUT_OFF[res.truncated]);
+  return res.text;
+}
+
+function jsonOf(ctx: NodeContext, res: AgentResult): unknown {
+  const text = answerOf(ctx, res);
+  try {
+    return parseJson(text);
+  } catch (e) {
+    if (res.truncated === "max_tokens") {
+      throw new Error("The answer hit Max tokens before the JSON was complete. Raise Max tokens");
+    }
+    throw e;
+  }
+}
+
+function needText(text: string, what: string) {
+  if (!text.trim()) throw new Error(what);
 }
 
 const MEMORY_PREFIX = "ai.memory:";
@@ -161,6 +196,7 @@ export default definePlugin({
   nodes: [
     defineNode(m.generate, async (ctx, data) => {
       try {
+        needText(data.prompt, "The prompt is empty");
         await prepare(ctx, true);
         const system = [data.system.trim(), data.fitDiscord ? DISCORD_HINT : ""]
           .filter(Boolean)
@@ -174,7 +210,7 @@ export default definePlugin({
           maxSteps: 1,
         });
         logUsage(ctx, data.model, res);
-        ctx.vars.set(data.variable, clip(res.text, data.fitDiscord));
+        ctx.vars.set(data.variable, clip(answerOf(ctx, res), data.fitDiscord));
         ctx.vars.set(`${data.variable}Error`, "");
         return "next";
       } catch (e) {
@@ -184,6 +220,7 @@ export default definePlugin({
 
     defineNode(m.agent, async (ctx, data) => {
       try {
+        needText(data.prompt, "The message is empty");
         await prepare(ctx, true);
         const memoryKey = data.memory.trim();
         const history = memoryKey ? readMemory(ctx, memoryKey) : [];
@@ -205,12 +242,16 @@ export default definePlugin({
             `Called ${c.name}(${JSON.stringify(c.input)}): ${c.output}`,
           );
         }
-        const text = res.text || "…";
+        const text = answerOf(ctx, res);
         if (memoryKey) {
           writeMemory(
             ctx,
             memoryKey,
-            [...history, { role: "user", text: data.prompt }, { role: "assistant", text }],
+            [
+              ...readMemory(ctx, memoryKey),
+              { role: "user", text: data.prompt },
+              { role: "assistant", text },
+            ],
             data.memoryTurns,
           );
         }
@@ -228,6 +269,7 @@ export default definePlugin({
 
     defineNode(m.extract, async (ctx, data) => {
       try {
+        needText(data.input, "No text to extract from");
         await prepare(ctx, false);
         const fields = parseFieldList(data.fields);
         if (!fields.length)
@@ -243,7 +285,7 @@ export default definePlugin({
           schema: schemaFor(fields),
         });
         logUsage(ctx, data.model, res);
-        const parsed = parseJson(res.text) as Record<string, unknown>;
+        const parsed = jsonOf(ctx, res) as Record<string, unknown>;
         const out: Record<string, unknown> = {};
         for (const f of fields) {
           const v = parsed?.[f.name];
@@ -259,6 +301,11 @@ export default definePlugin({
 
     defineNode(m.check, async (ctx, data) => {
       try {
+        if (!data.input.trim()) {
+          ctx.vars.set(data.variable, "No text to check");
+          ctx.vars.set(`${data.variable}Error`, "");
+          return "no";
+        }
         await prepare(ctx, false);
         const res = await runAgent({
           ...request(ctx, data),
@@ -276,7 +323,7 @@ export default definePlugin({
           },
         });
         logUsage(ctx, data.model, res);
-        const parsed = parseJson(res.text) as { answer?: unknown; reason?: unknown };
+        const parsed = jsonOf(ctx, res) as { answer?: unknown; reason?: unknown };
         if (typeof parsed?.answer !== "boolean") throw new Error("The model didn't say yes or no");
         ctx.vars.set(data.variable, String(parsed.reason ?? ""));
         ctx.vars.set(`${data.variable}Error`, "");

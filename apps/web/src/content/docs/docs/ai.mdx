@@ -44,7 +44,9 @@ The **AI assistant** template does this for you. By hand:
 3. On `true`, add **AI Agent**. Its message is `{{message.content}}` and **Remember by** is `{{channel.id}}`, so each channel has its own conversation.
 4. Connect `next` to **Reply to Message** with `{{vars.answer}}`, and `failed` to another reply with `{{vars.answerError}}`.
 
-AI blocks answer slower than Discord's 3 second limit for commands, so in command and button flows they defer the reply for you. In message flows the bot shows that it's typing.
+AI blocks answer slower than Discord's 3 second limit for commands, so in command and button flows they defer the reply for you. In message flows the bot shows that it's typing. A **Reply** after an AI block can still be visible only to the user: the bot sends it privately and removes the public "thinking…" message.
+
+The bot never pings @everyone, @here or roles unless a block is set to, so a prompt can't make an AI answer ping the whole server. See [Blocks](/docs/blocks/).
 
 ## Memory
 

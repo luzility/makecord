@@ -46,6 +46,7 @@ export interface NodeContext {
   readonly nodeId: string;
   readonly store: KeyValueStore;
   message(name: string): BuiltMessage;
+  render(template: string, mode?: "text" | "json"): string;
   secret(name: string): string | undefined;
   functions(): readonly FunctionInfo[];
   callFunction(name: string, args: Record<string, unknown>): Promise<unknown>;
